@@ -17,7 +17,7 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# ── Core imports ──────────────────────────────────────────────────────────────
+# ── Core imports ───────────────────────────────────────────────────────────────
 from database import (
     init_db, signup_user, login_user,
     update_theme, save_study_session, get_user_stats,
@@ -82,8 +82,8 @@ TRANSLATIONS = {
         "dashboard": "Dashboard",             "tips": "Tips",
         "motivation": "Motivation",           "ai_tutor": "AI Tutor",
         "voice_ai": "Voice AI",               "resources": "Resources",
-        "profile": "My Profile",              "login": "Login",
-        "signup": "Sign Up",                  "logout": "Logout",
+        "profile": "My Profile",             "login": "Login",
+        "signup": "Sign Up",                 "logout": "Logout",
         "welcome": "Welcome, Doctor",        "choose_language": "Language",
         "study_smart": "Study Medicine the Smart Way",
         "complete_platform": "Complete AI-powered platform for Omani medical students",
@@ -94,13 +94,13 @@ TRANSLATIONS = {
         "cancel": "Cancel",                  "account_created": "Account created!",
         "please_login": "Please login to view your profile",
         "choose_timer": "Choose Timer Style", "mode": "Mode",
-        "subject": "Subject",                "start": "Start",
-        "pause": "Pause",                    "reset": "Reset",
+        "subject": "Subject",               "start": "Start",
+        "pause": "Pause",                   "reset": "Reset",
         "coming_soon": "Coming soon!",      "sessions": "Sessions",
         "medical_subjects": "Medical Subjects", "total_mcqs": "Total MCQs",
         "ai_tools": "AI Tools",             "beautiful_themes": "Themes",
         "study_hours": "Study Hours",       "bookmarks": "Bookmarks",
-        "progress": "Progress",              "no_bookmarks": "No bookmarks yet!",
+        "progress": "Progress",             "no_bookmarks": "No bookmarks yet!",
     },
     "ar": {
         "app_title": "الدراسة الطبية عُمان", "tagline": "منصة التعليم الطبي بالذكاء الاصطناعي",
@@ -108,10 +108,10 @@ TRANSLATIONS = {
         "flashcards": "البطاقات",            "pomodoro": "المؤقت",
         "mnemonics": "وسائل الحفظ",          "mcq_quiz": "الأسئلة",
         "dashboard": "لوحة التحكم",          "tips": "نصائح",
-        "motivation": "تحفيز",                "ai_tutor": "المعلم الذكي",
+        "motivation": "تحفيز",               "ai_tutor": "المعلم الذكي",
         "voice_ai": "الذكاء الصوتي",         "resources": "المراجع",
         "profile": "الملف الشخصي",          "login": "تسجيل الدخول",
-        "signup": "التسجيل",                 "logout": "خروج",
+        "signup": "التسجيل",                "logout": "خروج",
         "welcome": "مرحباً، دكتور",          "choose_language": "اللغة",
         "study_smart": "ادرس الطب بذكاء",
         "complete_platform": "منصة كاملة بالذكاء الاصطناعي للطلاب العمانيين",
@@ -122,13 +122,13 @@ TRANSLATIONS = {
         "cancel": "إلغاء",                  "account_created": "تم إنشاء الحساب!",
         "please_login": "يرجى تسجيل الدخول",
         "choose_timer": "اختر نمط المؤقت",   "mode": "الوضع",
-        "subject": "المادة",                 "start": "ابدأ",
-        "pause": "إيقاف",                    "reset": "إعادة",
-        "coming_soon": "قريباً!",             "sessions": "الجلسات",
+        "subject": "المادة",                "start": "ابدأ",
+        "pause": "إيقاف",                   "reset": "إعادة",
+        "coming_soon": "قريباً!",            "sessions": "الجلسات",
         "medical_subjects": "المواد الطبية", "total_mcqs": "إجمالي الأسئلة",
         "ai_tools": "أدوات الذكاء",         "beautiful_themes": "ثيمات",
         "study_hours": "ساعات الدراسة",     "bookmarks": "الإشارات المرجعية",
-        "progress": "التقدم",                "no_bookmarks": "لا توجد إشارات بعد!",
+        "progress": "التقدم",               "no_bookmarks": "لا توجد إشارات بعد!",
     },
 }
 
@@ -238,9 +238,32 @@ NAV_GROUPS = [
     },
 ]
 
+# Force sidebar open via JS
+import streamlit.components.v1 as _components
+_components.html("""
+<script>
+try {
+    var p = window.parent.document;
+    var sb = p.querySelector('section[data-testid="stSidebar"]');
+    if (sb) {
+        sb.style.setProperty('display','flex','important');
+        sb.style.setProperty('visibility','visible','important');
+        sb.style.setProperty('min-width','260px','important');
+        sb.style.setProperty('transform','none','important');
+    }
+    var ctrl = p.querySelector('[data-testid="collapsedControl"]');
+    if (ctrl) ctrl.style.setProperty('display','flex','important');
+    var sidebar = p.querySelector('[data-testid="stSidebar"]');
+    if (sidebar && sidebar.getAttribute('aria-expanded') === 'false') {
+        ctrl && ctrl.click();
+    }
+} catch(e) {}
+</script>
+""", height=0, scrolling=False)
+
 # ── Sidebar Content ────────────────────────────────────────────────────────────
-p  = theme["primary"]
-sb = theme["sidebar_bg"]
+p   = theme["primary"]
+sb  = theme["sidebar_bg"]
 txt = theme["text"]
 is_dark = theme.get("family") == "dark"
 sidebar_text  = "#e8f4ff" if is_dark else "#f0f4ff"
@@ -392,8 +415,7 @@ with st.sidebar:
             type="primary" if st.session_state.language == "en" else "secondary",
             key="lang_en",
         ):
-            st.session_state.language = "en"
-            st.rerun()
+            st.session_state.language = "en"; st.rerun()
     with lc2:
         if st.button(
             "🇴🇲 AR",
@@ -401,8 +423,7 @@ with st.sidebar:
             type="primary" if st.session_state.language == "ar" else "secondary",
             key="lang_ar",
         ):
-            st.session_state.language = "ar"
-            st.rerun()
+            st.session_state.language = "ar"; st.rerun()
 
     st.write("")
 
@@ -414,15 +435,6 @@ with st.sidebar:
     """, unsafe_allow_html=True)
 
     theme_keys = list(THEMES.keys())
-
-    # Safe theme initialization
-    if "theme" not in st.session_state:
-        st.session_state.theme = theme_keys[0]
-
-    # Prevent invalid theme crash
-    if st.session_state.theme not in theme_keys:
-        st.session_state.theme = theme_keys[0]
-
     sel_theme = st.selectbox(
         "Aesthetic Theme",
         theme_keys,
@@ -430,14 +442,10 @@ with st.sidebar:
         key="theme_sel",
         label_visibility="collapsed",
     )
-
     if sel_theme != st.session_state.theme:
         st.session_state.theme = sel_theme
         if st.session_state.logged_in:
-            try:
-                update_theme(st.session_state.user["id"], sel_theme)
-            except Exception:
-                pass
+            update_theme(st.session_state.user["id"], sel_theme)
         st.rerun()
 
     # Theme preview swatch
@@ -544,8 +552,7 @@ if st.session_state.page != "home":
                 type="primary" if _active else "secondary",
                 help=_lbl,
             ):
-                st.session_state.page = _pid
-                st.rerun()
+                st.session_state.page = _pid; st.rerun()
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -708,7 +715,7 @@ def _render_profile():
             ]
             rows = "".join(f"""
             <div style="display:flex;align-items:center;gap:8px;
-                padding:0.55rem 0;
+                padding:0.5rem 0;
                 border-bottom:1px solid {theme['card_border']};">
                 <span>{ico}</span>
                 <span style="font-size:0.85rem;color:{theme['text']};">{name}</span>
@@ -723,7 +730,7 @@ def _render_profile():
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# THEME SHOWCASE PAGE
+# THEME SHOWCASE PAGE (accessible via URL param or future nav)
 # ─────────────────────────────────────────────────────────────────────────────
 def _render_theme_showcase():
     """Beautiful grid showing all 15 themes with previews."""
@@ -731,6 +738,7 @@ def _render_theme_showcase():
                  "Choose your medical aesthetic — 15 premium styles",
                  badge="✦ 15 Themes")
 
+    # Categorize themes
     dark_themes  = {k: v for k, v in THEMES.items() if v.get("family") == "dark"}
     light_themes = {k: v for k, v in THEMES.items() if v.get("family") in ("light", "warm")}
 
@@ -746,6 +754,9 @@ def _render_theme_showcase():
         for i, (tkey, tval) in enumerate(cat_themes.items()):
             with cols[i % 3]:
                 tp   = tval["primary"]
+                tbg  = tval["bg"]
+                tsb  = tval["sidebar_bg"]
+                tgrd = tval["gradient"]
                 is_active = tkey == st.session_state.theme
                 border = f"2px solid {tp}" if is_active else f"1px solid {tval['card_border']}"
                 active_badge = '<span style="font-size:0.65rem;font-weight:800;color:#10d982;margin-left:6px;">✓ ACTIVE</span>' if is_active else ""
@@ -753,10 +764,144 @@ def _render_theme_showcase():
                 st.markdown(f"""
                 <div style="background:{tval['card_bg']};
                     border:{border};
-                    border-radius:18px;padding:1.1rem;margin-bottom:1rem;
-                    box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
-                    <div style="font-weight:bold;color:{tval['text']};display:flex;align-items:center;justify-content:between;">
-                        <span>{tkey}</span> {active_badge}
+                    border-radius:18px;padding:1.1rem;margin-bottom:0.8rem;
+                    backdrop-filter:blur(12px);
+                    transition:all 0.2s ease;overflow:hidden;position:relative;
+                    {'box-shadow:' + tval['glow'] if is_active else ''}">
+                    <div style="height:40px;border-radius:10px;
+                        background:{tgrd};margin-bottom:0.7rem;
+                        opacity:0.85;"></div>
+                    <div style="display:flex;justify-content:space-between;
+                        align-items:flex-start;">
+                        <div>
+                            <div style="font-family:'Bricolage Grotesque',sans-serif;
+                                font-size:0.88rem;font-weight:800;
+                                color:{tval['text']};">{tkey}{active_badge}</div>
+                            <div style="font-size:0.68rem;
+                                color:{tval['subtext']};margin-top:2px;
+                                text-transform:uppercase;letter-spacing:0.08em;
+                                font-weight:600;">{tval.get('family','').upper()}</div>
+                        </div>
+                        <div style="display:flex;gap:4px;margin-top:2px;">
+                            {''.join(f'<div style="width:12px;height:12px;border-radius:3px;background:{c};"></div>'
+                                for c in [tp, tval.get('secondary',tp),
+                                          tval.get('success','#10d982'),
+                                          tval.get('warning','#fbbf24')])}
+                        </div>
                     </div>
                 </div>
                 """, unsafe_allow_html=True)
+
+                if st.button(
+                    f"✓ Active" if is_active else f"Apply Theme",
+                    key=f"apply_theme_{tkey}",
+                    use_container_width=True,
+                    type="primary" if is_active else "secondary",
+                ):
+                    st.session_state.theme = tkey
+                    if st.session_state.logged_in:
+                        update_theme(st.session_state.user["id"], tkey)
+                    st.rerun()
+
+
+# ═════════════════════════════════════════════════════════════════════════════
+# ROUTING
+# ═════════════════════════════════════════════════════════════════════════════
+page = st.session_state.page
+
+if page == "auth":
+    auth_page(theme, login_user, signup_user)
+
+elif page == "home":
+    home_page(theme, tr, MOTIVATIONAL_QUOTES)
+
+elif page == "themes":
+    _render_theme_showcase()
+
+elif page == "subjects":
+    if MODULES_LOADED: subjects_page(theme)
+    else: st.error(f"Module error: {_MODULE_ERR}")
+
+elif page == "flashcards":
+    flashcards_page(theme)
+
+elif page == "mnemonics":
+    if MODULES_LOADED: mnemonics_page(theme)
+
+elif page == "mcq_quiz":
+    mcq_quiz_page(theme)
+
+elif page == "dashboard":
+    db_stats = {}
+    if st.session_state.logged_in:
+        db_stats = get_user_stats(st.session_state.user["id"]) or {}
+    else:
+        st.info("📊 Showing demo data — login to see your personal analytics.")
+    if MODULES_LOADED:
+        dashboard_page(theme, db_stats)
+
+elif page == "pomodoro":
+    timer_page(theme)
+
+elif page == "osce_timer":
+    if MODULES_LOADED: osce_timer_page(theme)
+    else: timer_page(theme)
+
+elif page == "ai_tutor":
+    ai_chat_tutor_page(theme)
+
+elif page == "voice_ai":
+    _page_header("🎤", tr("voice_ai"), "Hands-free studying powered by speech recognition",
+                 badge="Coming Soon")
+    st.info("🎤 Voice AI — launching soon!")
+
+elif page == "lab_game":
+    if MODULES_LOADED: lab_game_page(theme)
+
+elif page == "anatomy_3d":
+    if MODULES_LOADED: anatomy_3d_page(theme)
+
+elif page == "resources":
+    if MODULES_LOADED: resources_page(theme)
+
+elif page == "progress":
+    if not st.session_state.logged_in:
+        _require_login("progress")
+    elif MODULES_LOADED:
+        progress_tracker_page(theme, get_user_stats(st.session_state.user["id"]))
+
+elif page == "study_groups":
+    if MODULES_LOADED:
+        study_groups_page(theme,
+            st.session_state.user if st.session_state.logged_in else None)
+
+elif page == "discussion":
+    if MODULES_LOADED:
+        discussion_page(theme,
+            st.session_state.user if st.session_state.logged_in else None)
+
+elif page == "shared_notes":
+    if MODULES_LOADED:
+        shared_notes_page(theme,
+            st.session_state.user if st.session_state.logged_in else None)
+
+elif page == "leaderboards":
+    if MODULES_LOADED:
+        leaderboards_page(theme,
+            st.session_state.user if st.session_state.logged_in else None)
+
+elif page == "tips":
+    if MODULES_LOADED: tips_page(theme)
+
+elif page == "profile":
+    if not st.session_state.logged_in:
+        _require_login("profile")
+    else:
+        _render_profile()
+
+elif page == "about":
+    about_page(theme)
+
+else:
+    st.session_state.page = "home"
+    st.rerun()
