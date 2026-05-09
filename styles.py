@@ -93,28 +93,41 @@ small,.stCaption {{ color:var(--subtext) !important; }}
 [data-testid="stSidebar"] label,
 [data-testid="stSidebar"] div {{ color:{txt} !important; }}
 
-/* ── Header & Toolbar — hide everything except sidebar toggle ── */
-[data-testid="stHeader"] {{
-    background:    transparent !important;
-    border-bottom: none !important;
-}}
+/* ── Hide ALL Streamlit header/toolbar chrome ───────────────── */
+[data-testid="stHeader"],
 [data-testid="stToolbar"],
 [data-testid="stDecoration"],
 [data-testid="stStatusWidget"],
 [data-testid="stDeployButton"],
+[data-testid="collapsedControl"],
+[data-testid="stSidebarCollapsedControl"],
 #MainMenu,
 footer {{ display:none !important; }}
 
-/* ── Sidebar toggle arrow — fixed position, always on top ───── */
-[data-testid="collapsedControl"],
-[data-testid="stSidebarCollapsedControl"] {{
-    display:    flex !important;
-    visibility: visible !important;
-    opacity:    1 !important;
-    position:   fixed !important;
-    top:        0.6rem !important;
-    left:       0.6rem !important;
-    z-index:    999999 !important;
+/* ── Custom sidebar toggle arrow (injected via st.markdown) ─── */
+#sidebar-toggle-btn {{
+    position:        fixed;
+    top:             12px;
+    left:            12px;
+    z-index:         999999;
+    width:           32px;
+    height:          32px;
+    border-radius:   50%;
+    background:      {p};
+    border:          none;
+    cursor:          pointer;
+    display:         flex;
+    align-items:     center;
+    justify-content: center;
+    box-shadow:      0 2px 8px rgba(0,0,0,0.25);
+    transition:      background 0.2s, transform 0.2s;
+    font-size:       16px;
+    line-height:     1;
+    color:           {t["text_inverse"]};
+}}
+#sidebar-toggle-btn:hover {{
+    transform: scale(1.1);
+    background: {t["secondary"]};
 }}
 
 /* ── Block container ─────────────────────────────────────────── */
