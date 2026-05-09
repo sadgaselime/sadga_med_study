@@ -428,15 +428,16 @@ with st.sidebar:
     st.write("")
 
     # Theme Selector — Premium with category labels
-    st.markdown(f"""
-    <div style="font-size:0.6rem;font-weight:800;letter-spacing:0.14em;
-        text-transform:uppercase;color:{sidebar_group};
-        margin-bottom:0.35rem;padding-left:4px;">Aesthetic Theme</div>
-    """, unsafe_allow_html=True)
+   # Theme Selector — Premium with category labels
+st.markdown(f"""
+<div style="font-size:0.6rem;font-weight:800;letter-spacing:0.14em;
+    text-transform:uppercase;color:{sidebar_group};
+    margin-bottom:0.35rem;padding-left:4px;">Aesthetic Theme</div>
+""", unsafe_allow_html=True)
 
-    theme_keys = list(THEMES.keys())
+theme_keys = list(THEMES.keys())
 
-# Safe fallback theme
+# Safe theme initialization
 if "theme" not in st.session_state:
     st.session_state.theme = theme_keys[0]
 
@@ -448,14 +449,20 @@ sel_theme = st.selectbox(
     "Aesthetic Theme",
     theme_keys,
     index=theme_keys.index(st.session_state.theme),
-        key="theme_sel",
-        label_visibility="collapsed",
-    )
-    if sel_theme != st.session_state.theme:
-        st.session_state.theme = sel_theme
-        if st.session_state.logged_in:
+    key="theme_sel",
+    label_visibility="collapsed",
+)
+
+if sel_theme != st.session_state.theme:
+    st.session_state.theme = sel_theme
+
+    if st.session_state.logged_in:
+        try:
             update_theme(st.session_state.user["id"], sel_theme)
-        st.rerun()
+        except Exception:
+            pass
+
+    st.rerun()
 
     # Theme preview swatch
     _t = THEMES[sel_theme]
