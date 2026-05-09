@@ -93,29 +93,29 @@ small,.stCaption {{ color:var(--subtext) !important; }}
 [data-testid="stSidebar"] label,
 [data-testid="stSidebar"] div {{ color:{txt} !important; }}
 
-/* ── Sidebar toggle arrow — ALWAYS visible ──────────────────── */
-[data-testid="collapsedControl"],
-[data-testid="collapsedControl"] button,
-[data-testid="stSidebarCollapsedControl"],
-[data-testid="stSidebarCollapsedControl"] button {{
-    display:    flex !important;
-    visibility: visible !important;
-    opacity:    1 !important;
-    z-index:    999999 !important;
-}}
-
-/* ── Header — transparent but kept in DOM for toggle arrow ─── */
+/* ── Header & Toolbar — hide everything except sidebar toggle ── */
 [data-testid="stHeader"] {{
     background:    transparent !important;
     border-bottom: none !important;
 }}
-
-/* ── Hide only deploy/status chrome, NOT the toolbar itself ── */
+[data-testid="stToolbar"],
 [data-testid="stDecoration"],
 [data-testid="stStatusWidget"],
 [data-testid="stDeployButton"],
 #MainMenu,
 footer {{ display:none !important; }}
+
+/* ── Sidebar toggle arrow — fixed position, always on top ───── */
+[data-testid="collapsedControl"],
+[data-testid="stSidebarCollapsedControl"] {{
+    display:    flex !important;
+    visibility: visible !important;
+    opacity:    1 !important;
+    position:   fixed !important;
+    top:        0.6rem !important;
+    left:       0.6rem !important;
+    z-index:    999999 !important;
+}}
 
 /* ── Block container ─────────────────────────────────────────── */
 .block-container {{ padding-top:1.5rem !important; padding-bottom:3rem !important; }}
