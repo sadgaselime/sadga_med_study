@@ -527,13 +527,28 @@ html body [data-testid="stSidebar"] div {{
     color: {sidebar_txt} !important;
 }}
 
-/* ── Sidebar Toggle — always show ───────────────────────────────── */
-[data-testid="collapsedControl"] {{
-    display: flex !important;
+/* ── SIDEBAR FIX: Override Streamlit's translateX slide-out ─────── */
+/* Streamlit hides the sidebar with transform:translateX(-100%).     */
+/* We force it back to translateX(0) regardless of aria-expanded.   */
+[data-testid="stSidebar"] {{
+    transform: translateX(0) !important;
+    margin-left: 0 !important;
     visibility: visible !important;
-    opacity: 1 !important;
-    background: {sb} !important;
-    border-right: 1px solid var(--glass-border) !important;
+}}
+[data-testid="stSidebar"][aria-expanded="false"] {{
+    transform: translateX(0) !important;
+    margin-left: 0 !important;
+    min-width: 260px !important;
+    width: 260px !important;
+    visibility: visible !important;
+}}
+[data-testid="stSidebar"] > div:first-child {{
+    min-width: 260px !important;
+    transform: translateX(0) !important;
+}}
+/* Hide the collapse toggle so users cannot hide the sidebar */
+[data-testid="collapsedControl"] {{
+    display: none !important;
 }}
 
 /* ── Header ─────────────────────────────────────────────────────── */
