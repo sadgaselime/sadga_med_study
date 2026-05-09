@@ -525,7 +525,7 @@ if st.session_state.page != "home":
             f"background:{theme['gradient']};color:{theme['text_inverse']};"
             f"box-shadow:{theme['glow']};"
             if is_active else
-            f"background:{theme['glass_bg']};color:{theme['text_muted']};"
+            f"background:{theme['glass_bg']};color:{theme['subtext']};"
             f"border:1px solid {theme['card_border']};"
         )
         nav_btns_html += f"""
