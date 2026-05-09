@@ -239,28 +239,8 @@ NAV_GROUPS = [
 ]
 
 # Force sidebar open via JS
-import streamlit.components.v1 as _components
-_components.html("""
-<script>
-try {
-    var p = window.parent.document;
-    var sb = p.querySelector('section[data-testid="stSidebar"]');
-    if (sb) {
-        sb.style.setProperty('display','flex','important');
-        sb.style.setProperty('visibility','visible','important');
-        sb.style.setProperty('min-width','260px','important');
-        sb.style.setProperty('transform','none','important');
-    }
-    var ctrl = p.querySelector('[data-testid="collapsedControl"]');
-    if (ctrl) ctrl.style.setProperty('display','flex','important');
-    var sidebar = p.querySelector('[data-testid="stSidebar"]');
-    if (sidebar && sidebar.getAttribute('aria-expanded') === 'false') {
-        ctrl && ctrl.click();
-    }
-} catch(e) {}
-</script>
-""", height=0, scrolling=False)
 
+initial_sidebar_state="expanded",
 # ── Sidebar Content ────────────────────────────────────────────────────────────
 p   = theme["primary"]
 sb  = theme["sidebar_bg"]
