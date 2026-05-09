@@ -199,7 +199,6 @@ _render_ai_bubble()
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# ─────────────────────────────────────────────────────────────────────────────
 # SIDEBAR NAV
 # ─────────────────────────────────────────────────────────────────────────────
 SIDEBAR_NAV = [
@@ -225,31 +224,6 @@ SIDEBAR_NAV = [
     ("👤", "profile",      "My Profile"),
     ("🏅", "about",        "About"),
 ]
-
-# ── Force sidebar open via JavaScript ─────────────────────────────────────
-import streamlit.components.v1 as _components
-_components.html("""
-<script>
-try {
-    var p = window.parent.document;
-    // Force sidebar visible via CSS
-    var sb = p.querySelector('section[data-testid="stSidebar"]');
-    if (sb) {
-        sb.style.setProperty('display', 'flex', 'important');
-        sb.style.setProperty('visibility', 'visible', 'important');
-        sb.style.setProperty('min-width', '250px', 'important');
-        sb.style.setProperty('transform', 'none', 'important');
-    }
-    // Click toggle if collapsed
-    var ctrl = p.querySelector('[data-testid="collapsedControl"]');
-    if (ctrl) { ctrl.style.setProperty('display','flex','important'); }
-    var sidebar = p.querySelector('[data-testid="stSidebar"]');
-    if (sidebar && sidebar.getAttribute('aria-expanded') === 'false') {
-        ctrl && ctrl.click();
-    }
-} catch(e) {}
-</script>
-""", height=0, scrolling=False)
 
 # ── Sidebar — native Streamlit components only ─────────────────────────────
 with st.sidebar:
