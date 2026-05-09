@@ -93,16 +93,24 @@ small,.stCaption {{ color:var(--subtext) !important; }}
 [data-testid="stSidebar"] label,
 [data-testid="stSidebar"] div {{ color:{txt} !important; }}
 
-/* ── Hide ALL Streamlit header/toolbar chrome ───────────────── */
+/* ── Hide Streamlit chrome but keep native toggle in DOM ────── */
 [data-testid="stHeader"],
 [data-testid="stToolbar"],
 [data-testid="stDecoration"],
 [data-testid="stStatusWidget"],
 [data-testid="stDeployButton"],
-[data-testid="collapsedControl"],
-[data-testid="stSidebarCollapsedControl"],
 #MainMenu,
 footer {{ display:none !important; }}
+
+/* Keep native toggle buttons in DOM (hidden visually) so JS can click them */
+[data-testid="collapsedControl"],
+[data-testid="stSidebarCollapsedControl"] {{
+    position:   fixed !important;
+    top:        -9999px !important;
+    left:       -9999px !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+}}
 
 /* ── Custom sidebar toggle arrow (injected via st.markdown) ─── */
 #sidebar-toggle-btn {{
