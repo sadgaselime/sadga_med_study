@@ -93,19 +93,29 @@ small,.stCaption {{ color:var(--subtext) !important; }}
 [data-testid="stSidebar"] label,
 [data-testid="stSidebar"] div {{ color:{txt} !important; }}
 
-/* ── Sidebar toggle button — always show ────────────────────── */
-[data-testid="collapsedControl"] {{
+/* ── Sidebar toggle arrow — ALWAYS visible ──────────────────── */
+[data-testid="collapsedControl"],
+[data-testid="collapsedControl"] button,
+[data-testid="stSidebarCollapsedControl"],
+[data-testid="stSidebarCollapsedControl"] button {{
     display:    flex !important;
     visibility: visible !important;
     opacity:    1 !important;
+    z-index:    999999 !important;
 }}
 
-/* ── Header transparent ─────────────────────────────────────── */
-[data-testid="stHeader"] {{ background:transparent !important; border-bottom:none !important; }}
+/* ── Header — transparent but kept in DOM for toggle arrow ─── */
+[data-testid="stHeader"] {{
+    background:    transparent !important;
+    border-bottom: none !important;
+}}
 
-/* ── Hide chrome we don't need ──────────────────────────────── */
-[data-testid="stToolbar"],[data-testid="stDecoration"],[data-testid="stStatusWidget"],
-[data-testid="stDeployButton"],#MainMenu,footer {{ display:none !important; }}
+/* ── Hide only deploy/status chrome, NOT the toolbar itself ── */
+[data-testid="stDecoration"],
+[data-testid="stStatusWidget"],
+[data-testid="stDeployButton"],
+#MainMenu,
+footer {{ display:none !important; }}
 
 /* ── Block container ─────────────────────────────────────────── */
 .block-container {{ padding-top:1.5rem !important; padding-bottom:3rem !important; }}
