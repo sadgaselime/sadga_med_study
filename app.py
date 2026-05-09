@@ -84,7 +84,6 @@ try:
     from discussion       import discussion_page
     from shared_notes     import shared_notes_page
     from leaderboards     import leaderboards_page
-    from subjects_page    import subjects_page, SUBJECTS_LIBRARY
     from mnemonics_page   import mnemonics_page
     from dashboard_page   import dashboard_page
     from tips_page        import tips_page
@@ -92,6 +91,18 @@ try:
     MODULES_LOADED = True
 except Exception as _e:
     _MODULE_ERR = str(_e)
+
+# ── subjects_page imported separately so one bad export doesn't kill all modules ──
+_SUBJECTS_LOADED = False
+_SUBJECTS_ERR    = ""
+SUBJECTS_LIBRARY = {}
+try:
+    from subjects_page import subjects_page, SUBJECTS_LIBRARY
+    _SUBJECTS_LOADED = True
+except ImportError as _se:
+    _SUBJECTS_ERR = str(_se)
+except Exception as _se:
+    _SUBJECTS_ERR = str(_se)
 
 init_db()
 
@@ -263,8 +274,6 @@ NAV_GROUPS = [
         ]
     },
 ]
-
-# ── Sidebar is kept open purely via CSS in styles.py (no JS needed) ───────────
 
 # ── Sidebar Content ────────────────────────────────────────────────────────────
 p   = theme["primary"]
@@ -508,7 +517,7 @@ _render_ai_bubble()
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# QUICK NAV BAR — Shown on non-home pages
+# QUICK NAV BAR — Shown on non-home pages (functional Streamlit buttons only)
 # ─────────────────────────────────────────────────────────────────────────────
 if st.session_state.page != "home":
     _nav_items = [
@@ -517,35 +526,6 @@ if st.session_state.page != "home":
         ("🤖","ai_tutor","AI"),  ("📊","dashboard","Stats"),
         ("⏱️","pomodoro","Timer"),("🏆","leaderboards","Rank"),
     ]
-    # Premium scrollable nav bar
-    nav_btns_html = ""
-    for ico, pid, lbl in _nav_items:
-        is_active = st.session_state.page == pid
-        active_style = (
-            f"background:{theme['gradient']};color:{theme['text_inverse']};"
-            f"box-shadow:{theme['glow']};"
-            if is_active else
-            f"background:{theme['glass_bg']};color:{theme['subtext']};"
-            f"border:1px solid {theme['card_border']};"
-        )
-        nav_btns_html += f"""
-        <div style="{active_style}border-radius:12px;padding:0.45rem 0.9rem;
-            white-space:nowrap;font-size:0.82rem;font-weight:700;
-            cursor:pointer;transition:all 0.2s ease;
-            backdrop-filter:blur(12px);display:inline-flex;align-items:center;gap:5px;"
-            onclick="">{ico} {lbl}</div>"""
-
-    st.markdown(f"""
-    <div style="display:flex;gap:8px;overflow-x:auto;padding:0.5rem 0 0.8rem;
-        scrollbar-width:none;-webkit-overflow-scrolling:touch;
-        margin-bottom:0.5rem;">
-        {nav_btns_html}
-    </div>
-    <div style="height:1px;background:linear-gradient(90deg,transparent,
-        {theme['card_border']},transparent);margin-bottom:1.4rem;"></div>
-    """, unsafe_allow_html=True)
-
-    # Actual Streamlit buttons for nav (functional)
     _cols = st.columns(len(_nav_items))
     for _col, (_ico, _pid, _lbl) in zip(_cols, _nav_items):
         with _col:
@@ -557,7 +537,13 @@ if st.session_state.page != "home":
                 type="primary" if _active else "secondary",
                 help=_lbl,
             ):
-                st.session_state.page = _pid; st.rerun()
+                st.session_state.page = _pid
+                st.rerun()
+
+    st.markdown(f"""
+    <div style="height:1px;background:linear-gradient(90deg,transparent,
+        {theme['card_border']},transparent);margin:0.6rem 0 1.4rem;"></div>
+    """, unsafe_allow_html=True)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -735,7 +721,7 @@ def _render_profile():
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# THEME SHOWCASE PAGE (accessible via URL param or future nav)
+# THEME SHOWCASE PAGE
 # ─────────────────────────────────────────────────────────────────────────────
 def _render_theme_showcase():
     """Beautiful grid showing all 15 themes with previews."""
@@ -743,7 +729,6 @@ def _render_theme_showcase():
                  "Choose your medical aesthetic — 15 premium styles",
                  badge="✦ 15 Themes")
 
-    # Categorize themes
     dark_themes  = {k: v for k, v in THEMES.items() if v.get("family") == "dark"}
     light_themes = {k: v for k, v in THEMES.items() if v.get("family") in ("light", "warm")}
 
@@ -824,8 +809,11 @@ elif page == "themes":
     _render_theme_showcase()
 
 elif page == "subjects":
-    if MODULES_LOADED: subjects_page(theme)
-    else: st.error(f"Module error: {_MODULE_ERR}")
+    if _SUBJECTS_LOADED:
+        subjects_page(theme)
+    else:
+        st.error(f"⚠️ Subjects module error: {_SUBJECTS_ERR}")
+        st.info("**Fix:** open `subjects_page.py` and make sure it exports `subjects_page` and `SUBJECTS_LIBRARY` at the top level.")
 
 elif page == "flashcards":
     flashcards_page(theme)
