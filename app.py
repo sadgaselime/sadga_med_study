@@ -238,26 +238,60 @@ NAV_GROUPS = [
     },
 ]
 
-# Force sidebar open via JS
+# ── FIXED: Robust sidebar force-open JS ───────────────────────────────────────
 import streamlit.components.v1 as _components
 _components.html("""
 <script>
-try {
-    var p = window.parent.document;
-    var sb = p.querySelector('section[data-testid="stSidebar"]');
-    if (sb) {
-        sb.style.setProperty('display','flex','important');
-        sb.style.setProperty('visibility','visible','important');
-        sb.style.setProperty('min-width','260px','important');
-        sb.style.setProperty('transform','none','important');
-    }
-    var ctrl = p.querySelector('[data-testid="collapsedControl"]');
-    if (ctrl) ctrl.style.setProperty('display','flex','important');
-    var sidebar = p.querySelector('[data-testid="stSidebar"]');
-    if (sidebar && sidebar.getAttribute('aria-expanded') === 'false') {
-        ctrl && ctrl.click();
-    }
-} catch(e) {}
+(function tryOpen() {
+    try {
+        var doc = window.parent.document;
+
+        // Override the transform Streamlit uses to slide sidebar off-screen
+        var sb = doc.querySelector('[data-testid="stSidebar"]');
+        if (sb) {
+            sb.style.setProperty('transform', 'none', 'important');
+            sb.style.setProperty('margin-left', '0px', 'important');
+            sb.style.setProperty('min-width', '260px', 'important');
+            sb.style.setProperty('visibility', 'visible', 'important');
+        }
+
+        // Also click the toggle button if sidebar is reported as collapsed
+        if (sb && sb.getAttribute('aria-expanded') === 'false') {
+            var btn = doc.querySelector('[data-testid="collapsedControl"] button');
+            if (btn) btn.click();
+        }
+    } catch(e) {}
+})();
+
+// Retry at 500 ms — Streamlit may re-render and reset styles
+setTimeout(function() {
+    try {
+        var doc = window.parent.document;
+        var sb = doc.querySelector('[data-testid="stSidebar"]');
+        if (sb) {
+            sb.style.setProperty('transform', 'none', 'important');
+            sb.style.setProperty('margin-left', '0px', 'important');
+            sb.style.setProperty('min-width', '260px', 'important');
+            sb.style.setProperty('visibility', 'visible', 'important');
+        }
+    } catch(e) {}
+}, 500);
+
+// Retry at 1200 ms — catch any late re-renders
+setTimeout(function() {
+    try {
+        var doc = window.parent.document;
+        var sb = doc.querySelector('[data-testid="stSidebar"]');
+        if (sb && sb.getAttribute('aria-expanded') === 'false') {
+            var btn = doc.querySelector('[data-testid="collapsedControl"] button');
+            if (btn) btn.click();
+        }
+        if (sb) {
+            sb.style.setProperty('transform', 'none', 'important');
+            sb.style.setProperty('margin-left', '0px', 'important');
+        }
+    } catch(e) {}
+}, 1200);
 </script>
 """, height=0, scrolling=False)
 
