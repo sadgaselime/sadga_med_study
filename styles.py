@@ -507,48 +507,57 @@ p, li, span, label, td, th,
 }}
 small, .stCaption {{ color: var(--subtext) !important; }}
 
-/* ── SIDEBAR — Premium Design ────────────────────────────────────── */
-html body section[data-testid="stSidebar"],
-html body [data-testid="stSidebar"],
-html body [data-testid="stSidebar"] > div,
-html body [data-testid="stSidebar"] > div > div,
-html body [data-testid="stSidebar"] > div > div > div {{
-    background-color: {sb} !important;
-    background:       {sb} !important;
+/* ── SIDEBAR — Always Visible, Never Collapsible ─────────────────── */
+/* Target every possible selector Streamlit uses for the sidebar      */
+section[data-testid="stSidebar"],
+section[data-testid="stSidebar"][aria-expanded="true"],
+section[data-testid="stSidebar"][aria-expanded="false"] {{
+    transform: none !important;
+    -webkit-transform: none !important;
+    translate: none !important;
+    left: 0 !important;
+    margin-left: 0 !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    display: flex !important;
+    pointer-events: auto !important;
+    position: relative !important;
     min-width: 260px !important;
     max-width: 290px !important;
+    width: 260px !important;
+    background-color: {sb} !important;
+    background: {sb} !important;
     border-right: 1px solid var(--glass-border) !important;
     box-shadow: 4px 0 40px rgba(0,0,0,0.35) !important;
+    flex-shrink: 0 !important;
 }}
-html body [data-testid="stSidebar"] p,
-html body [data-testid="stSidebar"] span,
-html body [data-testid="stSidebar"] label,
-html body [data-testid="stSidebar"] div {{
+section[data-testid="stSidebar"] > div,
+section[data-testid="stSidebar"] > div > div,
+section[data-testid="stSidebar"] > div > div > div {{
+    background-color: {sb} !important;
+    background: {sb} !important;
+    min-width: 260px !important;
+    transform: none !important;
+    visibility: visible !important;
+}}
+section[data-testid="stSidebar"] p,
+section[data-testid="stSidebar"] span,
+section[data-testid="stSidebar"] label,
+section[data-testid="stSidebar"] div {{
     color: {sidebar_txt} !important;
 }}
-
-/* ── SIDEBAR FIX: Override Streamlit's translateX slide-out ─────── */
-/* Streamlit hides the sidebar with transform:translateX(-100%).     */
-/* We force it back to translateX(0) regardless of aria-expanded.   */
-[data-testid="stSidebar"] {{
-    transform: translateX(0) !important;
-    margin-left: 0 !important;
-    visibility: visible !important;
-}}
-[data-testid="stSidebar"][aria-expanded="false"] {{
-    transform: translateX(0) !important;
-    margin-left: 0 !important;
-    min-width: 260px !important;
-    width: 260px !important;
-    visibility: visible !important;
-}}
-[data-testid="stSidebar"] > div:first-child {{
-    min-width: 260px !important;
-    transform: translateX(0) !important;
-}}
-/* Hide the collapse toggle so users cannot hide the sidebar */
-[data-testid="collapsedControl"] {{
+/* Hide collapse toggle — sidebar is permanently open */
+[data-testid="collapsedControl"],
+button[data-testid="collapsedControl"] {{
     display: none !important;
+    visibility: hidden !important;
+}}
+/* Ensure the main layout doesn't shift when sidebar is "collapsed" */
+[data-testid="stAppViewContainer"] {{
+    flex-direction: row !important;
+}}
+[data-testid="stAppViewContainer"] > section:first-child {{
+    flex-shrink: 0 !important;
 }}
 
 /* ── Header ─────────────────────────────────────────────────────── */
