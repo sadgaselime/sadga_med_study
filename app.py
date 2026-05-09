@@ -17,6 +17,32 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
+# ── Inject sidebar-lock CSS immediately (before ThemeManager, before sidebar) ──
+st.markdown("""
+<style>
+section[data-testid="stSidebar"],
+section[data-testid="stSidebar"][aria-expanded="true"],
+section[data-testid="stSidebar"][aria-expanded="false"] {
+    transform: none !important;
+    -webkit-transform: none !important;
+    translate: none !important;
+    left: 0 !important;
+    margin-left: 0 !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    display: flex !important;
+    pointer-events: auto !important;
+    min-width: 260px !important;
+    width: 260px !important;
+    flex-shrink: 0 !important;
+}
+[data-testid="collapsedControl"] {
+    display: none !important;
+    visibility: hidden !important;
+}
+</style>
+""", unsafe_allow_html=True)
+
 # ── Core imports ───────────────────────────────────────────────────────────────
 from database import (
     init_db, signup_user, login_user,
@@ -238,62 +264,7 @@ NAV_GROUPS = [
     },
 ]
 
-# ── FIXED: Robust sidebar force-open JS ───────────────────────────────────────
-import streamlit.components.v1 as _components
-_components.html("""
-<script>
-(function tryOpen() {
-    try {
-        var doc = window.parent.document;
-
-        // Override the transform Streamlit uses to slide sidebar off-screen
-        var sb = doc.querySelector('[data-testid="stSidebar"]');
-        if (sb) {
-            sb.style.setProperty('transform', 'none', 'important');
-            sb.style.setProperty('margin-left', '0px', 'important');
-            sb.style.setProperty('min-width', '260px', 'important');
-            sb.style.setProperty('visibility', 'visible', 'important');
-        }
-
-        // Also click the toggle button if sidebar is reported as collapsed
-        if (sb && sb.getAttribute('aria-expanded') === 'false') {
-            var btn = doc.querySelector('[data-testid="collapsedControl"] button');
-            if (btn) btn.click();
-        }
-    } catch(e) {}
-})();
-
-// Retry at 500 ms — Streamlit may re-render and reset styles
-setTimeout(function() {
-    try {
-        var doc = window.parent.document;
-        var sb = doc.querySelector('[data-testid="stSidebar"]');
-        if (sb) {
-            sb.style.setProperty('transform', 'none', 'important');
-            sb.style.setProperty('margin-left', '0px', 'important');
-            sb.style.setProperty('min-width', '260px', 'important');
-            sb.style.setProperty('visibility', 'visible', 'important');
-        }
-    } catch(e) {}
-}, 500);
-
-// Retry at 1200 ms — catch any late re-renders
-setTimeout(function() {
-    try {
-        var doc = window.parent.document;
-        var sb = doc.querySelector('[data-testid="stSidebar"]');
-        if (sb && sb.getAttribute('aria-expanded') === 'false') {
-            var btn = doc.querySelector('[data-testid="collapsedControl"] button');
-            if (btn) btn.click();
-        }
-        if (sb) {
-            sb.style.setProperty('transform', 'none', 'important');
-            sb.style.setProperty('margin-left', '0px', 'important');
-        }
-    } catch(e) {}
-}, 1200);
-</script>
-""", height=0, scrolling=False)
+# ── Sidebar is kept open purely via CSS in styles.py (no JS needed) ───────────
 
 # ── Sidebar Content ────────────────────────────────────────────────────────────
 p   = theme["primary"]
