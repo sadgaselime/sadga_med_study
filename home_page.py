@@ -102,7 +102,7 @@ def _hero(t: dict):
     )
 
     st.markdown(
-        f'<div style="background:{t["hero_gradient"]};border:1px solid {t["card_border"]};'
+        f'<div style="background:{t["gradient"]};border:1px solid {t["card_border"]};'
         f'border-radius:24px;padding:2.6rem 3rem 2.2rem;margin-bottom:1rem;'
         f'position:relative;overflow:hidden;">'
         f'<div style="position:absolute;top:-10px;right:30px;pointer-events:none;">{steth}</div>'
