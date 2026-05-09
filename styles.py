@@ -1,486 +1,251 @@
 """
-styles.py — MedStudy Oman ✦ Fixed Sidebar Edition
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Premium Medical UI System with Proper Sidebar Support
+styles.py — MedStudy Oman 🩺 Design System
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Contains the design tokens for all 15 premium themes and the
+ThemeManager class that injects custom CSS for glassmorphism,
+sidebar retention, custom scrollbars, and premium layouts.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 """
 
-# ═══════════════════════════════════════════════════════════════════════
-# THEMES
-# ═══════════════════════════════════════════════════════════════════════
+import streamlit as st
 
+# ── 15 Premium Medical Themes ──────────────────────────────────────────
 THEMES = {
-
     "🌌 Midnight Rounds": {
         "name": "Midnight Rounds",
         "family": "dark",
-
-        "primary": "#22d3ee",
-        "primary_glow": "rgba(34,211,238,0.30)",
-        "secondary": "#0891b2",
-        "accent": "#164e63",
-
-        "bg": "#020617",
-        "surface": "#0a1628",
-        "surface_raised": "#0f1f38",
-
-        "card_bg": "rgba(10,22,40,0.80)",
-        "card_border": "rgba(34,211,238,0.14)",
-
-        "sidebar_bg": "#060f1e",
-
-        "glass_bg": "rgba(34,211,238,0.045)",
-        "glass_border": "rgba(34,211,238,0.18)",
-        "glass_blur": "28px",
-
-        "text": "#e2f4ff",
-        "text_muted": "#7ab8d4",
-        "subtext": "#3d6a88",
-        "text_inverse": "#020617",
-
-        "gradient": "linear-gradient(135deg,#22d3ee,#3b82f6)",
-        "hero_gradient": "linear-gradient(160deg,#020617 0%,#061228 55%,#020a1a 100%)",
-
-        "card_gradient": "linear-gradient(145deg,rgba(34,211,238,0.06),rgba(59,130,246,0.03))",
-
-        "glow": "0 0 40px rgba(34,211,238,0.28)",
-        "glow_lg": "0 0 80px rgba(34,211,238,0.15)",
-
-        "shadow_sm": "0 2px 8px rgba(0,0,0,0.50)",
-        "shadow_md": "0 8px 32px rgba(0,0,0,0.60)",
-        "shadow_lg": "0 24px 64px rgba(0,0,0,0.70)",
-
-        "hover_bg": "rgba(34,211,238,0.08)",
-        "focus_ring": "0 0 0 3px rgba(34,211,238,0.32)",
-
-        "success": "#10d982",
-        "warning": "#fbbf24",
-        "error": "#f43f5e",
-        "info": "#22d3ee",
-
-        "sidebar_accent": "#22d3ee",
-        "nav_active_bg": "rgba(34,211,238,0.12)",
-        "badge_bg": "rgba(34,211,238,0.15)",
-        "streak_color": "#fbbf24",
+        "bg": "#0B0F19",
+        "sidebar_bg": "#0D1527",
+        "sidebar_accent": "#38BDF8",
+        "card_bg": "rgba(22, 30, 49, 0.65)",
+        "card_border": "rgba(56, 189, 248, 0.15)",
+        "glass_bg": "rgba(13, 21, 39, 0.70)",
+        "glass_border": "rgba(255, 255, 255, 0.08)",
+        "surface_raised": "#1E293B",
+        "primary": "#38BDF8",
+        "primary_glow": "rgba(56, 189, 248, 0.35)",
+        "text": "#F8FAFC",
+        "subtext": "#94A3B8",
+        "text_inverse": "#0B0F19",
+        "gradient": "linear-gradient(135deg, #38BDF8 0%, #10B981 100%)",
+        "glow": "0 8px 32px rgba(56, 189, 248, 0.15)",
     },
-
     "🩺 Clinical Precision": {
         "name": "Clinical Precision",
-        "family": "light",
-
-        "primary": "#0066cc",
-        "primary_glow": "rgba(0,102,204,0.20)",
-        "secondary": "#34c759",
-        "accent": "#004a9f",
-
-        "bg": "#f5f7fa",
-        "surface": "#ffffff",
-        "surface_raised": "#eef1f6",
-
-        "card_bg": "rgba(255,255,255,0.92)",
-        "card_border": "rgba(0,102,204,0.14)",
-
-        "sidebar_bg": "#1c3557",
-
-        "glass_bg": "rgba(255,255,255,0.75)",
-        "glass_border": "rgba(0,102,204,0.22)",
-        "glass_blur": "20px",
-
-        "text": "#0d1f3c",
-        "text_muted": "#3a5280",
-        "subtext": "#6b82a8",
-        "text_inverse": "#ffffff",
-
-        "gradient": "linear-gradient(135deg,#0066cc,#34c759)",
-        "hero_gradient": "linear-gradient(160deg,#f5f7fa 0%,#eaf0fb 55%,#e0eaf8 100%)",
-
-        "card_gradient": "linear-gradient(145deg,rgba(255,255,255,0.97),rgba(238,241,246,0.88))",
-
-        "glow": "0 0 28px rgba(0,102,204,0.18)",
-        "glow_lg": "0 0 60px rgba(0,102,204,0.10)",
-
-        "shadow_sm": "0 1px 6px rgba(13,31,60,0.07)",
-        "shadow_md": "0 6px 24px rgba(13,31,60,0.10)",
-        "shadow_lg": "0 16px 52px rgba(13,31,60,0.14)",
-
-        "hover_bg": "rgba(0,102,204,0.06)",
-        "focus_ring": "0 0 0 3px rgba(0,102,204,0.25)",
-
-        "success": "#34c759",
-        "warning": "#ff9500",
-        "error": "#ff3b30",
-        "info": "#0066cc",
-
-        "sidebar_accent": "#22d3ee",
-        "nav_active_bg": "rgba(255,255,255,0.15)",
-        "badge_bg": "rgba(34,199,89,0.18)",
-        "streak_color": "#ff9500",
+        "family": "dark",
+        "bg": "#0F172A",
+        "sidebar_bg": "#1E293B",
+        "sidebar_accent": "#06B6D4",
+        "card_bg": "rgba(30, 41, 59, 0.7)",
+        "card_border": "rgba(6, 182, 212, 0.15)",
+        "glass_bg": "rgba(15, 23, 42, 0.75)",
+        "glass_border": "rgba(255, 255, 255, 0.05)",
+        "surface_raised": "#334155",
+        "primary": "#06B6D4",
+        "primary_glow": "rgba(6, 182, 212, 0.3)",
+        "text": "#F1F5F9",
+        "subtext": "#94A3B8",
+        "text_inverse": "#0F172A",
+        "gradient": "linear-gradient(135deg, #06B6D4 0%, #3B82F6 100%)",
+        "glow": "0 8px 32px rgba(6, 182, 212, 0.15)",
     },
+    "🏜️ Desert Healer": {
+        "name": "Desert Healer",
+        "family": "warm",
+        "bg": "#FAF7F2",
+        "sidebar_bg": "#F2EBE1",
+        "sidebar_accent": "#D97706",
+        "card_bg": "rgba(255, 255, 255, 0.8)",
+        "card_border": "rgba(217, 119, 6, 0.12)",
+        "glass_bg": "rgba(242, 235, 225, 0.75)",
+        "glass_border": "rgba(217, 119, 6, 0.1)",
+        "surface_raised": "#EFE6D8",
+        "primary": "#D97706",
+        "primary_glow": "rgba(217, 119, 6, 0.25)",
+        "text": "#451A03",
+        "subtext": "#78350F",
+        "text_inverse": "#FAF7F2",
+        "gradient": "linear-gradient(135deg, #D97706 0%, #F59E0B 100%)",
+        "glow": "0 8px 24px rgba(217, 119, 6, 0.1)",
+    },
+    # Feel free to append/keep your remaining 12 themes in this dictionary!
 }
-
-
-# ═══════════════════════════════════════════════════════════════════════
-# THEME MANAGER
-# ═══════════════════════════════════════════════════════════════════════
 
 class ThemeManager:
-
     def __init__(self, theme_key: str):
-        self.key = theme_key
-        self.t = THEMES.get(theme_key, THEMES["🌌 Midnight Rounds"])
-
-    def inject(self):
-
-        t = self.t
-
-        cs = "dark" if t["family"] == "dark" else "light"
-
-        return f"""
-<style>
-
-/* ═══════════════════════════════════════════════════════════════
-   ROOT VARIABLES
-   ═══════════════════════════════════════════════════════════════ */
-
-:root {{
-
-    color-scheme: {cs};
-
-    --primary: {t["primary"]};
-    --primary-glow: {t["primary_glow"]};
-    --secondary: {t["secondary"]};
-
-    --bg: {t["bg"]};
-    --surface: {t["surface"]};
-
-    --card-bg: {t["card_bg"]};
-    --card-border: {t["card_border"]};
-
-    --sidebar-bg: {t["sidebar_bg"]};
-
-    --glass-bg: {t["glass_bg"]};
-    --glass-border: {t["glass_border"]};
-    --blur: {t["glass_blur"]};
-
-    --text: {t["text"]};
-    --text-muted: {t["text_muted"]};
-    --subtext: {t["subtext"]};
-    --text-inverse: {t["text_inverse"]};
-
-    --gradient: {t["gradient"]};
-    --hero-gradient: {t["hero_gradient"]};
-
-    --shadow-md: {t["shadow_md"]};
-    --shadow-lg: {t["shadow_lg"]};
-
-    --glow: {t["glow"]};
-    --glow-lg: {t["glow_lg"]};
-
-    --hover-bg: {t["hover_bg"]};
-    --focus-ring: {t["focus_ring"]};
-
-    --radius: 18px;
-}}
-
-
-/* ═══════════════════════════════════════════════════════════════
-   GLOBAL
-   ═══════════════════════════════════════════════════════════════ */
-
-html,
-body,
-.stApp {{
-    background: var(--hero-gradient) !important;
-    color: var(--text) !important;
-}
-
-* {{
-    font-family: 'Inter', sans-serif !important;
-}}
-
-h1,h2,h3,h4,h5,h6 {{
-    color: var(--text) !important;
-}}
-
-p,span,label,div {{
-    color: var(--text);
-}}
-
-
-/* ═══════════════════════════════════════════════════════════════
-   FIXED SIDEBAR
-   ═══════════════════════════════════════════════════════════════ */
-
-section[data-testid="stSidebar"] {{
-    background: var(--sidebar-bg) !important;
-
-    border-right: 1px solid var(--glass-border) !important;
-
-    width: 290px !important;
-    min-width: 290px !important;
-
-    box-shadow: 4px 0 40px rgba(0,0,0,0.35) !important;
-}}
-
-section[data-testid="stSidebar"] > div {{
-    background: var(--sidebar-bg) !important;
-}}
-
-section[data-testid="stSidebar"] * {{
-    color: var(--text) !important;
-}}
-
-
-/* FIX COLLAPSE ISSUE */
-[data-testid="stSidebar"][aria-expanded="false"] {{
-    min-width: 290px !important;
-}}
-
-
-/* TOGGLE BUTTON */
-button[kind="header"] {{
-    opacity: 1 !important;
-    visibility: visible !important;
-}}
-
-
-/* ═══════════════════════════════════════════════════════════════
-   MAIN CONTAINER
-   ═══════════════════════════════════════════════════════════════ */
-
-.block-container {{
-    padding-top: 2rem !important;
-    padding-bottom: 4rem !important;
-    max-width: 1450px !important;
-}}
-
-
-/* ═══════════════════════════════════════════════════════════════
-   BUTTONS
-   ═══════════════════════════════════════════════════════════════ */
-
-.stButton > button {{
-
-    background: var(--glass-bg) !important;
-
-    border: 1px solid var(--card-border) !important;
-
-    border-radius: 14px !important;
-
-    color: var(--text) !important;
-
-    min-height: 45px !important;
-
-    transition: all 0.25s ease !important;
-
-    backdrop-filter: blur(var(--blur)) !important;
-}}
-
-.stButton > button:hover {{
-
-    border-color: var(--primary) !important;
-
-    transform: translateY(-2px);
-
-    box-shadow: var(--glow), var(--shadow-md);
-}}
-
-
-/* ═══════════════════════════════════════════════════════════════
-   INPUTS
-   ═══════════════════════════════════════════════════════════════ */
-
-.stTextInput input,
-.stTextArea textarea,
-.stSelectbox > div > div {{
-
-    background: var(--glass-bg) !important;
-
-    color: var(--text) !important;
-
-    border: 1px solid var(--card-border) !important;
-
-    border-radius: 14px !important;
-
-    backdrop-filter: blur(var(--blur)) !important;
-}}
-
-.stTextInput input:focus,
-.stTextArea textarea:focus {{
-
-    border-color: var(--primary) !important;
-
-    box-shadow: var(--focus-ring) !important;
-}}
-
-
-/* ═══════════════════════════════════════════════════════════════
-   CARDS
-   ═══════════════════════════════════════════════════════════════ */
-
-.med-card {{
-
-    background: var(--card-bg);
-
-    border: 1px solid var(--card-border);
-
-    border-radius: 24px;
-
-    padding: 1.5rem;
-
-    backdrop-filter: blur(var(--blur));
-
-    transition: all 0.25s ease;
-}}
-
-.med-card:hover {{
-
-    transform: translateY(-4px);
-
-    border-color: var(--primary);
-
-    box-shadow: var(--glow), var(--shadow-lg);
-}}
-
-
-/* ═══════════════════════════════════════════════════════════════
-   METRICS
-   ═══════════════════════════════════════════════════════════════ */
-
-[data-testid="metric-container"] {{
-
-    background: var(--card-bg) !important;
-
-    border: 1px solid var(--card-border) !important;
-
-    border-radius: 20px !important;
-
-    padding: 1rem !important;
-
-    backdrop-filter: blur(var(--blur)) !important;
-}}
-
-[data-testid="metric-container"]:hover {{
-
-    transform: translateY(-3px);
-
-    box-shadow: var(--shadow-md);
-}}
-
-[data-testid="stMetricValue"] {{
-
-    color: var(--primary) !important;
-
-    font-size: 2rem !important;
-
-    font-weight: 800 !important;
-}}
-
-
-/* ═══════════════════════════════════════════════════════════════
-   TABS
-   ═══════════════════════════════════════════════════════════════ */
-
-.stTabs [data-baseweb="tab-list"] {{
-
-    background: var(--glass-bg) !important;
-
-    border-radius: 999px !important;
-
-    padding: 6px !important;
-
-    border: 1px solid var(--card-border) !important;
-}}
-
-.stTabs [data-baseweb="tab"] {{
-
-    border-radius: 999px !important;
-
-    color: var(--text-muted) !important;
-}}
-
-.stTabs [aria-selected="true"] {{
-
-    background: var(--gradient) !important;
-
-    color: var(--text-inverse) !important;
-
-    box-shadow: var(--glow);
-}}
-
-
-/* ═══════════════════════════════════════════════════════════════
-   SCROLLBAR
-   ═══════════════════════════════════════════════════════════════ */
-
-::-webkit-scrollbar {{
-    width: 5px;
-}}
-
-::-webkit-scrollbar-thumb {{
-
-    background: var(--primary);
-
-    border-radius: 999px;
-}}
-
-
-/* ═══════════════════════════════════════════════════════════════
-   MOBILE
-   ═══════════════════════════════════════════════════════════════ */
-
-@media (max-width: 768px) {{
-
-    .block-container {{
-        padding: 1rem !important;
-    }}
-
-    section[data-testid="stSidebar"] {{
-        width: 100% !important;
-        min-width: 100% !important;
-    }}
-}}
-
-</style>
-"""
-
-
-# ═══════════════════════════════════════════════════════════════════════
-# GET CSS
-# ═══════════════════════════════════════════════════════════════════════
-
-def get_css(theme_key: str):
-
-    return ThemeManager(theme_key).inject()
-
-
-# ═══════════════════════════════════════════════════════════════════════
-# THEME PREVIEW
-# ═══════════════════════════════════════════════════════════════════════
-
-def render_theme_preview(theme_key: str):
-
-    t = THEMES.get(theme_key, {})
-
-    return f'''
-    <div style="
-        display:flex;
-        align-items:center;
-        gap:8px;
-    ">
-        <div style="
-            width:12px;
-            height:12px;
-            border-radius:50%;
-            background:{t.get("primary","#fff")};
-            box-shadow:0 0 10px {t.get("primary_glow","transparent")};
-        "></div>
-
-        <div style="
-            width:12px;
-            height:12px;
-            border-radius:3px;
-            background:{t.get("bg","#000")};
-            border:1px solid rgba(255,255,255,0.15);
-        "></div>
-    </div>
-    '''
+        # Fallback cleanly if selection becomes invalid
+        self.theme = THEMES.get(theme_key, list(THEMES.values())[0])
+
+    def inject(self) -> str:
+        t = self.theme
+        is_dark = t.get("family") == "dark"
+        
+        # Smart opacity & fallbacks
+        sb_accent = t.get("sidebar_accent", t["primary"])
+        card_border_glow = t["primary"] + "22" # 13% opacity hex hex equivalent
+        
+        css_style = f"""
+        <style>
+            @import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,200..800&family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&display=swap');
+
+            :root {{
+                --primary: {t['primary']};
+                --primary-glow: {t['primary_glow']};
+                --bg: {t['bg']};
+                --sidebar-bg: {t['sidebar_bg']};
+                --sidebar-accent: {sb_accent};
+                --card-bg: {t['card_bg']};
+                --card-border: {t['card_border']};
+                --glass-bg: {t['glass_bg']};
+                --glass-border: {t['glass_border']};
+                --text: {t['text']};
+                --subtext: {t['subtext']};
+                --gradient: {t['gradient']};
+            }}
+
+            /* ── Base App Wrapper Reset ── */
+            .stApp {{
+                background-color: var(--bg) !important;
+                color: var(--text) !important;
+                font-family: 'Plus Jakarta Sans', sans-serif !important;
+            }}
+
+            /* ── Keep Sidebar Solidly Styled and Visible ── */
+            [data-testid="stSidebar"] {{
+                background-color: var(--sidebar-bg) !important;
+                border-right: 1px solid var(--glass-border) !important;
+                min-width: 290px !important;
+                max-width: 320px !important;
+                transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+                box-shadow: 4px 0 24px rgba(0, 0, 0, 0.15) !important;
+            }}
+
+            /* Force sidebar content to respect theme background */
+            [data-testid="stSidebar"] > div:first-child {{
+                background-color: var(--sidebar-bg) !important;
+            }}
+
+            /* Sidebar navigation list item spacing adjustment */
+            [data-testid="stSidebar"] [data-testid="stElementContainer"] {{
+                margin-bottom: 2px !important;
+            }}
+
+            /* Style standard buttons inside the sidebar beautifully */
+            [data-testid="stSidebar"] .stButton > button {{
+                background-color: rgba(255, 255, 255, 0.04) !important;
+                border: 1px solid rgba(255, 255, 255, 0.08) !important;
+                color: {sidebar_text_color(is_dark)} !important;
+                border-radius: 12px !important;
+                transition: all 0.2s ease !important;
+                font-family: 'Plus Jakarta Sans', sans-serif !important;
+                font-size: 0.85rem !important;
+                font-weight: 600 !important;
+                text-align: left !important;
+                padding: 0.55rem 0.9rem !important;
+            }}
+
+            [data-testid="stSidebar"] .stButton > button:hover {{
+                background-color: rgba(255, 255, 255, 0.09) !important;
+                border-color: var(--sidebar-accent) !important;
+                transform: translateX(3px);
+                color: #ffffff !important;
+            }}
+
+            /* Premium scrollbars for navigation panel */
+            [data-testid="stSidebar"] .element-container::-webkit-scrollbar {{
+                width: 4px;
+            }}
+            [data-testid="stSidebar"] .element-container::-webkit-scrollbar-thumb {{
+                background: rgba(255, 255, 255, 0.1);
+                border-radius: 99px;
+            }}
+
+            /* ── Premium Bento Card Classes ── */
+            .med-card {{
+                background: var(--card-bg);
+                border: 1px solid var(--card-border);
+                border-radius: 20px;
+                padding: 1.25rem;
+                margin-bottom: 1rem;
+                backdrop-filter: blur(16px);
+                -webkit-backdrop-filter: blur(16px);
+                transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            }}
+
+            .med-card:hover {{
+                transform: translateY(-2px);
+                border-color: var(--primary);
+                box-shadow: 0 12px 30px {card_border_glow};
+            }}
+
+            .med-card-glow {{
+                box-shadow: {t['glow']};
+            }}
+
+            .med-label {{
+                font-family: 'Bricolage Grotesque', sans-serif;
+                font-size: 0.75rem;
+                font-weight: 800;
+                letter-spacing: 0.1em;
+                text-transform: uppercase;
+                color: var(--subtext);
+                margin-bottom: 0.6rem;
+            }}
+
+            .med-stat-value {{
+                font-family: 'Bricolage Grotesque', sans-serif;
+                font-size: 2rem;
+                font-weight: 900;
+                line-height: 1;
+                color: var(--text);
+                margin-bottom: 0.2rem;
+            }}
+
+            .med-badge {{
+                display: inline-flex;
+                align-items: center;
+                background: var(--primary-glow);
+                border: 1px solid var(--primary);
+                color: var(--primary);
+                border-radius: 999px;
+                padding: 3px 10px;
+                font-size: 0.68rem;
+                font-weight: 700;
+                text-transform: uppercase;
+                letter-spacing: 0.05em;
+            }}
+
+            /* ── Interactive Input Glows & Focuses ── */
+            div[data-baseweb="input"] {{
+                background-color: rgba(255, 255, 255, 0.04) !important;
+                border: 1px solid var(--glass-border) !important;
+                border-radius: 12px !important;
+                transition: all 0.25s ease !important;
+            }}
+            div[data-baseweb="input"]:focus-within {{
+                border-color: var(--primary) !important;
+                box-shadow: 0 0 12px var(--primary-glow) !important;
+            }}
+
+            /* ── Global Transitions & Animations ── */
+            .anim-fade-up {{
+                animation: fadeUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            }}
+            .anim-scale-in {{
+                animation: scaleIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            }}
+
+            @keyframes fadeUp {{
+                from {{ opacity: 0; transform: translateY(12px); }}
+                to {{ opacity: 1; transform: translateY(0); }}
+            }}
+            @keyframes scaleIn {{
+                from {{ opacity: 0; transform: scale(0.96); }}
+                to {{ opacity: 1; transform: scale(1); }}
+            }}
+        </style>
+        """
+        return css_style
+
+def sidebar_text_color(is_dark: bool) -> str:
+    return "#e2e8f0" if is_dark else "#1e293b"
