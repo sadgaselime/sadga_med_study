@@ -1,13 +1,13 @@
 """
 app.py — MedStudy Oman 🩺
-PHASES 1–5 (Sidebar Recovery & Cloud Build Stabilized)
+PHASE: Absolute UI Layout Alignment
 """
 
 import streamlit as st
 import time
 import random
 
-# 1. Page Config (Must be the very first Streamlit command)
+# 1. Page Config (Must be the first Streamlit command)
 st.set_page_config(
     page_title="MedStudy Oman",
     page_icon="🩺",
@@ -29,7 +29,7 @@ from ai_chat_page    import ai_tutor_page as ai_chat_tutor_page
 from mcq_quiz_page   import mcq_quiz_page
 from flashcards_page import flashcards_page
 
-# Safe imports for mobile helper (We'll safely catch if it has layout bugs)
+# Safe imports for mobile helper
 try:
     from mobile import inject_mobile, render_bottom_nav
     HAS_MOBILE = True
@@ -78,46 +78,51 @@ theme = THEMES.get(st.session_state.theme, list(THEMES.values())[0])
 # Apply general theme styles
 st.markdown(_tm.inject(), unsafe_allow_html=True)
 
-if HAS_MOBILE:
-    # NOTE: If the sidebar is still missing, temporarily comment the line below 
-    # to check if your mobile layout is what's hiding the sidebar!
-    inject_mobile(theme)
-
-# 🚨 THE "UNSQUASH" SIDEBAR OVERRIDE 🚨
-# This overrides any custom styles.py or Bento-grid CSS pushing the sidebar off screen.
+# 🚨 THE TOTAL LAYOUT REPAIR OVERRIDE 🚨
+# This overrides the structural containers Streamlit uses to render the sidebar.
 st.markdown(f"""
     <style>
-        /* Force the sidebar container to display with proper dimensions */
-        section[data-testid="stSidebar"] {{
-            display: flex !important;
-            visibility: visible !important;
-            min-width: 290px !important;
-            max-width: 290px !important;
-            transform: none !important;
-            transition: none !important;
-            background-color: {theme.get("card_bg", "#ffffff")} !important;
-            border-right: 2px solid {theme.get("card_border", "#e2e8f0")} !important;
-        }}
-        
-        /* Stop the sidebar's internal wrapper from shrinking */
-        [data-testid="stSidebarContent"] {{
-            visibility: visible !important;
-            opacity: 1 !important;
-            display: block !important;
-            width: 100% !important;
-        }}
-
-        /* Repair the app layout structure to handle sidebars properly */
+        /* 1. Force the absolute outer container to align properly */
         [data-testid="stAppViewContainer"] {{
             display: flex !important;
             flex-direction: row !important;
             width: 100vw !important;
         }}
-        
-        /* Remove the weird duplicate borders/vertical lines */
-        .st-emotion-cache-6qob1r, .st-emotion-cache-16idsys, .st-emotion-cache-1dp5vir {{
+
+        /* 2. Target the main sidebar section */
+        section[data-testid="stSidebar"] {{
+            display: flex !important;
+            visibility: visible !important;
+            min-width: 290px !important;
+            max-width: 290px !important;
+            transform: translate3d(0px, 0px, 0px) !important;
+            background-color: {theme.get("card_bg", "#ffffff")} !important;
+            border-right: 1.5px solid {theme.get("card_border", "#e2e8f0")} !important;
+        }}
+
+        /* 3. Target the inner element containing actual sidebar widgets */
+        [data-testid="stSidebarContent"] {{
+            display: block !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+            width: 100% !important;
+        }}
+
+        /* 4. Kill the duplicate "ghost border" elements that cause double vertical lines */
+        [data-testid="collapsedControl"],
+        .st-emotion-cache-6qob1r, 
+        .st-emotion-cache-16idsys, 
+        .st-emotion-cache-1dp5vir,
+        .st-emotion-cache-16idxsn {{
             border-right: none !important;
             box-shadow: none !important;
+            display: none !important;
+        }}
+
+        /* 5. Force the main layout content wrapper to make room for our sidebar */
+        [data-testid="stMainViewContainer"] {{
+            margin-left: 0px !important;
+            width: calc(100% - 290px) !important;
         }}
     </style>
 """, unsafe_allow_html=True)
@@ -159,7 +164,7 @@ with st.sidebar:
         st.session_state.theme = sel_theme
         st.rerun()
 
-# ── Main Page Routing ────────────────────────────────────────────────────────
+# ── Page Routing ─────────────────────────────────────────────────────────────
 page = st.session_state.page
 
 if page == "auth":
