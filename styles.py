@@ -32,7 +32,7 @@ class ThemeManager:
 
     def inject(self) -> str:
         t  = self.t
-        sb = t["sidebar_bg"]   # hardcoded bg for guaranteed visibility
+        sb = t["sidebar_bg"]
         p  = t["primary"]
         txt = t["text"]
         sub = t["subtext"]
@@ -77,35 +77,33 @@ class ThemeManager:
 h1,h2,h3,h4,h5,h6 {{ font-family:'Syne',sans-serif !important; font-weight:800 !important; letter-spacing:-0.02em; color:var(--text) !important; }}
 html,body {{ background:var(--bg) !important; color:var(--text) !important; }}
 .stApp {{ background:var(--hero-gradient) !important; }}
-.main,.main .block-container,[data-testid="stAppViewContainer"],[data-testid="stAppViewContainer"] > .main,[data-testid="stMain"],[data-testid="stVerticalBlock"],[data-testid="column"],.element-container {{ background:transparent !important; color:var(--text) !important; }}
+.main,.main .block-container,[data-testid="stAppViewContainer"],[data-testid="stAppViewContainer"] > .main,[data-testid="stMain"],[data-testid="stVerticalBlock"],[data-testid="stColumn"],.element-container {{ background:transparent !important; color:var(--text) !important; }}
 p,li,span,label,td,th,.stMarkdown,.stMarkdown *,[data-testid="stMarkdownContainer"],[data-testid="stMarkdownContainer"] * {{ color:var(--text) !important; }}
 small,.stCaption {{ color:var(--subtext) !important; }}
 
-/* ── SIDEBAR — HARDCODED BACKGROUND (guaranteed visible) ────── */
-html body section[data-testid="stSidebar"],
-html body [data-testid="stSidebar"],
-html body [data-testid="stSidebar"] > div,
-html body [data-testid="stSidebar"] > div > div,
-html body [data-testid="stSidebar"] > div > div > div {{
+/* ── SIDEBAR — background + border only, no forced width ────── */
+[data-testid="stSidebar"] > div:first-child {{
     background-color: {sb} !important;
     background:       {sb} !important;
-    min-width:        250px !important;
-    max-width:        280px !important;
     border-right:     3px solid {p} !important;
     box-shadow:       6px 0 24px rgba(0,0,0,0.20) !important;
 }}
-html body [data-testid="stSidebar"] p,
-html body [data-testid="stSidebar"] span,
-html body [data-testid="stSidebar"] label,
-html body [data-testid="stSidebar"] div {{ color:{txt} !important; }}
+[data-testid="stSidebar"] p,
+[data-testid="stSidebar"] span,
+[data-testid="stSidebar"] label,
+[data-testid="stSidebar"] div {{ color:{txt} !important; }}
 
-/* ── Sidebar toggle — ALWAYS show ──────────────────────────── */
-[data-testid="collapsedControl"] {{ display:flex !important; visibility:visible !important; opacity:1 !important; }}
+/* ── Sidebar toggle button — always show ────────────────────── */
+[data-testid="collapsedControl"] {{
+    display:    flex !important;
+    visibility: visible !important;
+    opacity:    1 !important;
+}}
 
-/* ── Header transparent (keep in DOM for sidebar toggle) ────── */
+/* ── Header transparent ─────────────────────────────────────── */
 [data-testid="stHeader"] {{ background:transparent !important; border-bottom:none !important; }}
 
-/* ── Hide only chrome we don't need ─────────────────────────── */
+/* ── Hide chrome we don't need ──────────────────────────────── */
 [data-testid="stToolbar"],[data-testid="stDecoration"],[data-testid="stStatusWidget"],
 [data-testid="stDeployButton"],#MainMenu,footer {{ display:none !important; }}
 
