@@ -110,6 +110,21 @@ SUBJECT_FILTERS = [
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# THEME HELPERS — safe getters for keys that may not exist in all themes
+# ─────────────────────────────────────────────────────────────────────────────
+def _t(theme: dict, key: str, fallback: str = "") -> str:
+    """Safe theme key getter with sensible fallbacks."""
+    if key in theme:
+        return theme[key]
+    fallbacks = {
+        "text_muted":  theme.get("subtext", "rgba(255,255,255,0.45)"),
+        "shadow_sm":   f"0 2px 8px rgba(0,0,0,0.15)",
+        "focus_ring":  f"0 0 0 3px {theme.get('primary', '#06b6d4')}40",
+    }
+    return fallbacks.get(key, fallback)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # GEMINI API CALL
 # ─────────────────────────────────────────────────────────────────────────────
 def _call_gemini(messages: list, api_key: str) -> str:
@@ -198,6 +213,9 @@ def ai_tutor_page(theme: dict = None):
 
     api_key = _get_api_key()
 
+    # Resolve potentially missing theme keys once
+    text_muted = _t(theme, "text_muted")
+
     # ── Page header ───────────────────────────────────────────────────────────
     h_col, btn_col = st.columns([5, 2])
     with h_col:
@@ -230,7 +248,7 @@ def ai_tutor_page(theme: dict = None):
             st.markdown(
                 f'<div style="background:{theme["glass_bg"]};'
                 f'border:1px solid {theme["card_border"]};border-radius:12px;'
-                f'padding:0.45rem 0.8rem;font-size:0.78rem;color:{theme["text_muted"]};'
+                f'padding:0.45rem 0.8rem;font-size:0.78rem;color:{text_muted};'
                 f'text-align:center;">{msgs // 2} exchanges</div>',
                 unsafe_allow_html=True,
             )
@@ -266,6 +284,8 @@ def ai_tutor_page(theme: dict = None):
 # CONTROLS PANEL  (right side)
 # ─────────────────────────────────────────────────────────────────────────────
 def _render_controls(theme: dict, api_key):
+    text_muted = _t(theme, "text_muted")
+
     # Subject context filter
     st.markdown(
         f'<div style="font-size:0.7rem;font-weight:800;color:{theme["subtext"]};'
@@ -321,7 +341,7 @@ def _render_controls(theme: dict, api_key):
         <div style="font-size:0.68rem;font-weight:800;color:{theme['subtext']};
              letter-spacing:0.12em;text-transform:uppercase;margin-bottom:0.6rem;">
              Session Stats</div>
-        <div style="font-size:0.8rem;color:{theme['text_muted']};line-height:2;">
+        <div style="font-size:0.8rem;color:{text_muted};line-height:2;">
             💬 {turns} exchanges<br>
             📚 {st.session_state.ai_subject_filter}<br>
             {'✅ API Connected' if api_key else '❌ No API Key'}<br>
@@ -337,7 +357,7 @@ def _render_controls(theme: dict, api_key):
         <div style="font-size:0.68rem;font-weight:800;color:{theme['primary']};
              letter-spacing:0.10em;text-transform:uppercase;margin-bottom:0.5rem;">
              💡 Tips</div>
-        <div style="font-size:0.75rem;color:{theme['text_muted']};line-height:1.7;">
+        <div style="font-size:0.75rem;color:{text_muted};line-height:1.7;">
             • Ask about drug mechanisms<br>
             • Request differential diagnoses<br>
             • Get OSCE examination guides<br>
@@ -352,7 +372,7 @@ def _render_controls(theme: dict, api_key):
 # CHAT AREA
 # ─────────────────────────────────────────────────────────────────────────────
 def _render_chat_area(theme: dict):
-    is_dark = theme["family"] == "dark"
+    shadow_sm = _t(theme, "shadow_sm")
 
     # Chat container
     st.markdown(
@@ -417,7 +437,6 @@ def _render_chat_area(theme: dict):
                 """, unsafe_allow_html=True)
 
             else:  # assistant
-                # Render the markdown content properly
                 st.markdown(f"""
                 <div style="display:flex;justify-content:flex-start;margin-bottom:1.2rem;">
                     <div style="width:32px;height:32px;border-radius:50%;
@@ -432,7 +451,7 @@ def _render_chat_area(theme: dict):
                              border-radius:4px 18px 18px 18px;padding:1rem 1.2rem;
                              font-size:0.87rem;line-height:1.7;
                              color:{theme['text']};
-                             box-shadow:{theme['shadow_sm']};">
+                             box-shadow:{shadow_sm};">
                              {_md_to_html(content, theme)}
                         </div>
                         <div style="font-size:0.65rem;color:{theme['subtext']};
@@ -608,6 +627,10 @@ def _get_ai_response(user_text: str, api_key, theme: dict):
 # CSS
 # ─────────────────────────────────────────────────────────────────────────────
 def _inject_chat_css(t: dict):
+    # Resolve missing keys with safe fallbacks
+    text_muted = _t(t, "text_muted")
+    focus_ring = _t(t, "focus_ring")
+
     st.markdown(f"""
     <style>
     /* Chat container scrollable */
@@ -620,7 +643,7 @@ def _inject_chat_css(t: dict):
         color: {t['primary']};
     }}
     .ai-message-body em {{
-        color: {t['text_muted']};
+        color: {text_muted};
     }}
 
     /* Input area */
@@ -635,7 +658,7 @@ def _inject_chat_css(t: dict):
     }}
     .stTextArea textarea:focus {{
         border-color: {t['primary']}   !important;
-        box-shadow:   {t['focus_ring']} !important;
+        box-shadow:   {focus_ring} !important;
     }}
 
     /* Quick prompt buttons (controls panel) */
