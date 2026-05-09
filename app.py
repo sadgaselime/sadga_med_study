@@ -17,7 +17,7 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# ── Core imports ───────────────────────────────────────────────────────────────
+# ── Core imports ────────────────────────────────────f───────────────────────────
 from database import (
     init_db, signup_user, login_user,
     update_theme, save_study_session, get_user_stats,
@@ -435,10 +435,19 @@ with st.sidebar:
     """, unsafe_allow_html=True)
 
     theme_keys = list(THEMES.keys())
-    sel_theme = st.selectbox(
-        "Aesthetic Theme",
-        theme_keys,
-        index=theme_keys.index(st.session_state.theme),
+
+# Safe fallback theme
+if "theme" not in st.session_state:
+    st.session_state.theme = theme_keys[0]
+
+# Prevent invalid theme crash
+if st.session_state.theme not in theme_keys:
+    st.session_state.theme = theme_keys[0]
+
+sel_theme = st.selectbox(
+    "Aesthetic Theme",
+    theme_keys,
+    index=theme_keys.index(st.session_state.theme),
         key="theme_sel",
         label_visibility="collapsed",
     )
