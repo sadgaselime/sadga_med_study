@@ -23,7 +23,7 @@ from database import (
 from styles          import ThemeManager, THEMES
 from login_page      import auth_page
 from home_page       import home_page
-from timer_enhanced      import timer_page
+from timer_page      import timer_page
 from about_page      import about_page
 from ai_chat_page    import ai_tutor_page as ai_chat_tutor_page
 from mcq_quiz_page   import mcq_quiz_page
