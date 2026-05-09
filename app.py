@@ -177,22 +177,46 @@ inject_mobile(theme)   # Phase 9 — responsive CSS + PWA meta
 
 # ── Custom sidebar toggle arrow ───────────────────────────────────────────────
 st.markdown("""
-<button id="sidebar-toggle-btn" onclick="
-    var sb = window.parent.document.querySelector('[data-testid=stSidebar]');
-    var btn = window.parent.document.getElementById('sidebar-toggle-btn');
-    if (!sb) return;
-    var expanded = sb.getAttribute('aria-expanded');
-    var isOpen = expanded === 'true' || (expanded !== 'false' && sb.getBoundingClientRect().left >= 0);
-    if (isOpen) {
-        sb.style.transition = 'transform 0.3s ease';
-        sb.style.transform = 'translateX(-110%)';
-        btn.innerHTML = '&#9654;';
-    } else {
-        sb.style.transition = 'transform 0.3s ease';
-        sb.style.transform = 'translateX(0)';
-        btn.innerHTML = '&#9664;';
+<button id="sidebar-toggle-btn" title="Toggle sidebar">&#9664;</button>
+<script>
+(function() {
+    function clickNativeToggle() {
+        var doc = window.parent.document;
+        // Try the collapsed control button (arrow when sidebar is hidden)
+        var btn = doc.querySelector('[data-testid="collapsedControl"] button')
+                || doc.querySelector('[data-testid="stSidebarCollapsedControl"] button')
+                || doc.querySelector('button[kind="header"]');
+        if (btn) { btn.click(); return true; }
+        return false;
     }
-" title="Toggle sidebar">&#9664;</button>
+
+    function updateArrow() {
+        var doc = window.parent.document;
+        var sb  = doc.querySelector('[data-testid="stSidebar"]');
+        var myBtn = doc.getElementById('sidebar-toggle-btn');
+        if (!sb || !myBtn) return;
+        var open = sb.getBoundingClientRect().left >= -10;
+        myBtn.innerHTML = open ? '&#9664;' : '&#9654;';
+    }
+
+    document.getElementById('sidebar-toggle-btn').addEventListener('click', function() {
+        // Find Streamlit's own sidebar toggle buttons and click whichever is visible
+        var doc = window.parent.document;
+        var candidates = [
+            doc.querySelector('[data-testid="collapsedControl"] button'),
+            doc.querySelector('[data-testid="stSidebarCollapsedControl"] button'),
+            doc.querySelector('[data-testid="stSidebar"] button[aria-label]'),
+        ];
+        for (var i = 0; i < candidates.length; i++) {
+            if (candidates[i]) { candidates[i].click(); break; }
+        }
+        setTimeout(updateArrow, 350);
+    });
+
+    // Set initial arrow direction after a short delay
+    setTimeout(updateArrow, 500);
+})();
+</script>
 """, unsafe_allow_html=True)
 
 # Welcome toast on first login
