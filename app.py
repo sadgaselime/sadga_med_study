@@ -175,6 +175,26 @@ theme  = THEMES.get(st.session_state.theme, list(THEMES.values())[0])
 st.markdown(_tm.inject(), unsafe_allow_html=True)
 inject_mobile(theme)   # Phase 9 — responsive CSS + PWA meta
 
+# ── Custom sidebar toggle arrow ───────────────────────────────────────────────
+st.markdown("""
+<button id="sidebar-toggle-btn" onclick="
+    var sb = window.parent.document.querySelector('[data-testid=stSidebar]');
+    var btn = window.parent.document.getElementById('sidebar-toggle-btn');
+    if (!sb) return;
+    var expanded = sb.getAttribute('aria-expanded');
+    var isOpen = expanded === 'true' || (expanded !== 'false' && sb.getBoundingClientRect().left >= 0);
+    if (isOpen) {
+        sb.style.transition = 'transform 0.3s ease';
+        sb.style.transform = 'translateX(-110%)';
+        btn.innerHTML = '&#9654;';
+    } else {
+        sb.style.transition = 'transform 0.3s ease';
+        sb.style.transform = 'translateX(0)';
+        btn.innerHTML = '&#9664;';
+    }
+" title="Toggle sidebar">&#9664;</button>
+""", unsafe_allow_html=True)
+
 # Welcome toast on first login
 if st.session_state.get("just_logged_in") and st.session_state.logged_in:
     _u = st.session_state.user
