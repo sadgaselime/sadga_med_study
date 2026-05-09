@@ -93,23 +93,50 @@ small,.stCaption {{ color:var(--subtext) !important; }}
 [data-testid="stSidebar"] label,
 [data-testid="stSidebar"] div {{ color:{txt} !important; }}
 
-/* ── Hide Streamlit chrome but keep native toggle in DOM ────── */
-[data-testid="stHeader"],
-[data-testid="stToolbar"],
+/* ── Hide Streamlit chrome ───────────────────────────────────── */
 [data-testid="stDecoration"],
 [data-testid="stStatusWidget"],
 [data-testid="stDeployButton"],
 #MainMenu,
 footer {{ display:none !important; }}
 
-/* Keep native toggle buttons in DOM (hidden visually) so JS can click them */
+/* Hide toolbar text/content but keep the header for the toggle arrow */
+[data-testid="stToolbar"] {{ visibility:hidden !important; height:0 !important; overflow:hidden !important; }}
+[data-testid="stHeader"] {{ background:transparent !important; border-bottom:none !important; height:auto !important; }}
+
+/* Style the native sidebar toggle arrow nicely */
 [data-testid="collapsedControl"],
 [data-testid="stSidebarCollapsedControl"] {{
-    position:   fixed !important;
-    top:        -9999px !important;
-    left:       -9999px !important;
-    visibility: hidden !important;
-    pointer-events: none !important;
+    display:          flex !important;
+    visibility:       visible !important;
+    opacity:          1 !important;
+    position:         fixed !important;
+    top:              10px !important;
+    left:             10px !important;
+    z-index:          999999 !important;
+    background:       {p} !important;
+    border-radius:    50% !important;
+    width:            34px !important;
+    height:           34px !important;
+    align-items:      center !important;
+    justify-content:  center !important;
+    box-shadow:       0 2px 8px rgba(0,0,0,0.25) !important;
+}}
+[data-testid="collapsedControl"] button,
+[data-testid="stSidebarCollapsedControl"] button {{
+    display:     flex !important;
+    visibility:  visible !important;
+    opacity:     1 !important;
+    color:       {t["text_inverse"]} !important;
+    background:  transparent !important;
+    border:      none !important;
+    padding:     0 !important;
+    font-size:   16px !important;
+}}
+[data-testid="collapsedControl"] svg,
+[data-testid="stSidebarCollapsedControl"] svg {{
+    fill: {t["text_inverse"]} !important;
+    color: {t["text_inverse"]} !important;
 }}
 
 /* ── Custom sidebar toggle arrow (injected via st.markdown) ─── */
