@@ -97,7 +97,7 @@ def _hero(t: dict):
     tags_html = "".join(
         f'<span style="background:{t["glass_bg"]};border:1px solid {t["glass_border"]};'
         f'border-radius:999px;padding:4px 12px;font-size:0.73rem;font-weight:600;'
-        f'color:{t["text_muted"]};">{tag}</span>'
+        f'color:{t["subtext"]};">{tag}</span>'
         for tag in ["🇴🇲 SQU-COM","🏛 OMSB","🌍 WFME","📋 USMLE","🩺 PLAB"]
     )
 
