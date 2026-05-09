@@ -300,17 +300,15 @@ THEMES = {
 
 class ThemeManager:
     def __init__(self, theme_key: str):
-        # Fallback cleanly if an invalid key is ever passed
         self.theme = THEMES.get(theme_key, list(THEMES.values())[0])
 
     def inject(self) -> str:
         t = self.theme
         is_dark = t.get("family") == "dark"
         sb_accent = t.get("sidebar_accent", t["primary"])
-        card_border_glow = t["primary"] + "22"  # ~13% opacity hex
+        card_border_glow = t["primary"] + "22"
         sb_text = "#e2e8f0" if is_dark else "#1e293b"
         
-        # Using double braces {{ }} throughout to safely compile CSS inside python f-strings
         css_style = f"""
         <style>
             @import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,200..800&family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&display=swap');
@@ -337,32 +335,19 @@ class ThemeManager:
                 font-family: 'Plus Jakarta Sans', sans-serif !important;
             }}
 
-            /* ── Keep Sidebar Solidly Styled and Visible (Stops Flashing/Hiding) ── */
-            [data-testid="stSidebar"], 
-            section[data-testid="stSidebar"], 
-            div[data-testid="stSidebarCollapsedControl"] + section {{
+            /* ── Beautiful Sidebar Styling ── */
+            [data-testid="stSidebar"] {{
                 background-color: var(--sidebar-bg) !important;
                 border-right: 1px solid var(--glass-border) !important;
                 min-width: 290px !important;
                 max-width: 320px !important;
-                width: 290px !important;
-                transform: none !important; /* Forces the sidebar to stay on screen */
-                transition: none !important; /* Prevents sidebar slide animations on page reload */
                 box-shadow: 4px 0 24px rgba(0, 0, 0, 0.15) !important;
-                visibility: visible !important; /* Guarantees the sidebar is visible */
-                display: flex !important;
             }}
 
-            /* Forces internal container elements to respect the background color */
-            [data-testid="stSidebar"] > div:first-child,
-            [data-testid="stSidebar"] [data-testid="stSidebarUserContent"] {{
+            /* Ensure structural inner div takes full background color */
+            [data-testid="stSidebar"] > div:first-child {{
                 background-color: var(--sidebar-bg) !important;
                 background-image: none !important;
-            }}
-
-            /* Sidebar navigation list item spacing adjustment */
-            [data-testid="stSidebar"] [data-testid="stElementContainer"] {{
-                margin-bottom: 2px !important;
             }}
 
             /* Style standard buttons inside the sidebar beautifully */
@@ -377,6 +362,7 @@ class ThemeManager:
                 font-weight: 600 !important;
                 text-align: left !important;
                 padding: 0.55rem 0.9rem !important;
+                width: 100% !important;
             }}
 
             [data-testid="stSidebar"] .stButton > button:hover {{
@@ -384,15 +370,6 @@ class ThemeManager:
                 border-color: var(--sidebar-accent) !important;
                 transform: translateX(3px);
                 color: #ffffff !important;
-            }}
-
-            /* Premium scrollbars for navigation panel */
-            [data-testid="stSidebar"] .element-container::-webkit-scrollbar {{
-                width: 4px;
-            }}
-            [data-testid="stSidebar"] .element-container::-webkit-scrollbar-thumb {{
-                background: rgba(255, 255, 255, 0.1);
-                border-radius: 99px;
             }}
 
             /* ── Premium Bento Card Classes ── */
@@ -436,20 +413,6 @@ class ThemeManager:
                 margin-bottom: 0.2rem;
             }}
 
-            .med-badge {{
-                display: inline-flex;
-                align-items: center;
-                background: var(--primary-glow);
-                border: 1px solid var(--primary);
-                color: var(--primary);
-                border-radius: 999px;
-                padding: 3px 10px;
-                font-size: 0.68rem;
-                font-weight: 700;
-                text-transform: uppercase;
-                letter-spacing: 0.05em;
-            }}
-
             /* ── Interactive Input Glows & Focuses ── */
             div[data-baseweb="input"] {{
                 background-color: rgba(255, 255, 255, 0.04) !important;
@@ -460,23 +423,6 @@ class ThemeManager:
             div[data-baseweb="input"]:focus-within {{
                 border-color: var(--primary) !important;
                 box-shadow: 0 0 12px var(--primary-glow) !important;
-            }}
-
-            /* ── Global Transitions & Animations ── */
-            .anim-fade-up {{
-                animation: fadeUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-            }}
-            .anim-scale-in {{
-                animation: scaleIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-            }}
-
-            @keyframes fadeUp {{
-                from {{ opacity: 0; transform: translateY(12px); }}
-                to {{ opacity: 1; transform: translateY(0); }}
-            }}
-            @keyframes scaleIn {{
-                from {{ opacity: 0; transform: scale(0.96); }}
-                to {{ opacity: 1; transform: scale(1); }}
             }}
         </style>
         """
