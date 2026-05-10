@@ -1,1422 +1,816 @@
 """
-anatomy_3d.py — 3D Anatomy Atlas 🫁
-Full interactive anatomy viewer with React frontend embedded via Streamlit components
+anatomy_3d.py — 3D Anatomy Atlas
+Interactive atlas using HTML5 Canvas — guaranteed to render
 """
 
 import streamlit as st
 import streamlit.components.v1 as components
 
-ANATOMY_HTML = r"""
-<!DOCTYPE html>
+ANATOMY_HTML = """<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <style>
-  * { margin:0; padding:0; box-sizing:border-box; }
-  body { background:#0a0e1a; color:#e8f4ff; font-family:'Segoe UI',system-ui,sans-serif; overflow:hidden; }
-  #app { display:flex; height:100vh; width:100vw; position:relative; }
+*{margin:0;padding:0;box-sizing:border-box;}
+html,body{width:100%;height:100%;background:#080c18;overflow:hidden;font-family:'Segoe UI',sans-serif;color:#e0eeff;}
+#root{display:flex;width:100vw;height:100vh;}
 
-  /* LEFT PANEL */
-  #left-panel {
-    width:220px; min-width:220px; background:#0d1120; border-right:1px solid #1e2a45;
-    display:flex; flex-direction:column; z-index:10; overflow:hidden;
-  }
-  #left-panel h2 {
-    font-size:11px; font-weight:700; letter-spacing:.14em; text-transform:uppercase;
-    color:#4a7fa5; padding:14px 14px 8px; border-bottom:1px solid #1e2a45;
-  }
-  #system-tabs { display:flex; flex-wrap:wrap; gap:4px; padding:10px; border-bottom:1px solid #1e2a45; }
-  .sys-btn {
-    font-size:10px; padding:4px 8px; border-radius:6px; border:1px solid #1e2a45;
-    background:#111827; color:#7ba8c9; cursor:pointer; transition:all .15s;
-    font-weight:600; letter-spacing:.04em;
-  }
-  .sys-btn:hover { background:#1e2a45; color:#e8f4ff; }
-  .sys-btn.active { background:#1a3a5c; border-color:#2a6496; color:#60b3e8; }
+#left{width:200px;min-width:200px;background:#0b0f1e;border-right:1px solid #1a2640;display:flex;flex-direction:column;overflow:hidden;}
+#left-title{font-size:10px;font-weight:800;letter-spacing:.13em;text-transform:uppercase;color:#3a6a8a;padding:12px 12px 8px;border-bottom:1px solid #1a2640;}
+#sys-tabs{display:flex;flex-wrap:wrap;gap:3px;padding:8px;border-bottom:1px solid #1a2640;}
+.stab{font-size:9px;font-weight:700;padding:3px 6px;border-radius:5px;border:1px solid #1a2640;background:#0d1220;color:#5a8aaa;cursor:pointer;letter-spacing:.04em;}
+.stab:hover{background:#1a2640;color:#ddeeff;}
+.stab.on{background:#0f2035;border-color:#2060a0;color:#50aaee;}
+#part-list{flex:1;overflow-y:auto;padding:4px;}
+#part-list::-webkit-scrollbar{width:3px;}
+#part-list::-webkit-scrollbar-thumb{background:#1a2640;border-radius:2px;}
+.pgrp{font-size:8px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#204060;padding:7px 8px 3px;}
+.pitem{display:flex;align-items:center;gap:6px;padding:5px 8px;border-radius:6px;cursor:pointer;font-size:11px;color:#7090a8;border:1px solid transparent;margin-bottom:1px;}
+.pitem:hover{background:#0d1828;color:#ddeeff;}
+.pitem.sel{background:#0a1c30;border-color:#1a5080;color:#50aaee;font-weight:700;}
+.pdot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
 
-  #part-list { flex:1; overflow-y:auto; padding:6px; }
-  #part-list::-webkit-scrollbar { width:4px; }
-  #part-list::-webkit-scrollbar-track { background:#0d1120; }
-  #part-list::-webkit-scrollbar-thumb { background:#1e2a45; border-radius:2px; }
+#center{flex:1;position:relative;background:#060a14;overflow:hidden;}
+#c{display:block;width:100%;height:100%;}
 
-  .part-item {
-    padding:7px 10px; border-radius:8px; cursor:pointer; font-size:12px;
-    color:#a0bcd4; transition:all .15s; margin-bottom:2px;
-    border:1px solid transparent; display:flex; align-items:center; gap:7px;
-  }
-  .part-item:hover { background:#111827; color:#e8f4ff; border-color:#1e2a45; }
-  .part-item.selected { background:#0f2540; border-color:#2a6496; color:#60b3e8; font-weight:600; }
-  .part-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+#topbar{position:absolute;top:10px;left:50%;transform:translateX(-50%);display:flex;gap:5px;background:rgba(8,12,24,.92);border:1px solid #1a2640;border-radius:9px;padding:5px 8px;backdrop-filter:blur(8px);z-index:10;}
+.vbtn{font-size:9px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;padding:4px 10px;border-radius:5px;border:1px solid #1a2640;background:transparent;color:#5a8aaa;cursor:pointer;}
+.vbtn:hover{background:#1a2640;color:#ddeeff;}
+.vbtn.on{background:#0f2035;border-color:#2060a0;color:#50aaee;}
 
-  /* CENTER VIEWER */
-  #viewer { flex:1; position:relative; overflow:hidden; background:#060912; }
-  #canvas-wrap { width:100%; height:100%; display:flex; align-items:center; justify-content:center; }
-  #anatomy-svg { cursor:grab; user-select:none; max-height:100vh; }
-  #anatomy-svg:active { cursor:grabbing; }
+#topright{position:absolute;top:10px;right:10px;display:flex;gap:5px;z-index:10;}
+.tbtn{font-size:9px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;padding:4px 10px;border-radius:6px;border:1px solid #1a2640;background:rgba(8,12,24,.92);color:#5a8aaa;cursor:pointer;}
+.tbtn:hover{background:#1a2640;color:#ddeeff;}
+.tbtn.on{background:#0f2035;border-color:#2060a0;color:#50aaee;}
 
-  /* ORIENTATION BUTTONS */
-  #orientation-bar {
-    position:absolute; top:14px; left:50%; transform:translateX(-50%);
-    display:flex; gap:6px; background:rgba(13,17,32,.85); border:1px solid #1e2a45;
-    border-radius:10px; padding:6px 10px; backdrop-filter:blur(8px);
-  }
-  .orient-btn {
-    font-size:10px; font-weight:700; letter-spacing:.08em; text-transform:uppercase;
-    padding:5px 12px; border-radius:6px; border:1px solid #1e2a45;
-    background:transparent; color:#7ba8c9; cursor:pointer; transition:all .15s;
-  }
-  .orient-btn:hover { background:#1e2a45; color:#e8f4ff; }
-  .orient-btn.active { background:#1a3a5c; border-color:#2a6496; color:#60b3e8; }
+#botbar{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);display:flex;gap:6px;align-items:center;background:rgba(8,12,24,.92);border:1px solid #1a2640;border-radius:9px;padding:6px 12px;backdrop-filter:blur(8px);z-index:10;}
+.zbtn{width:28px;height:28px;border-radius:6px;border:1px solid #1a2640;background:#0d1220;color:#5a8aaa;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;}
+.zbtn:hover{background:#1a2640;color:#ddeeff;}
+#zval{font-size:11px;color:#3a6a8a;min-width:38px;text-align:center;font-weight:700;}
 
-  /* CONTROLS */
-  #controls-bar {
-    position:absolute; bottom:14px; left:50%; transform:translateX(-50%);
-    display:flex; gap:8px; background:rgba(13,17,32,.85); border:1px solid #1e2a45;
-    border-radius:10px; padding:8px 14px; backdrop-filter:blur(8px);
-    align-items:center;
-  }
-  .ctrl-btn {
-    width:32px; height:32px; border-radius:8px; border:1px solid #1e2a45;
-    background:#111827; color:#7ba8c9; cursor:pointer; font-size:14px;
-    display:flex; align-items:center; justify-content:center; transition:all .15s;
-  }
-  .ctrl-btn:hover { background:#1e2a45; color:#e8f4ff; }
-  #zoom-val { font-size:11px; color:#4a7fa5; min-width:38px; text-align:center; font-weight:600; }
+#tip{position:absolute;pointer-events:none;background:rgba(8,14,28,.97);border:1px solid #2060a0;border-radius:7px;padding:5px 10px;font-size:11px;font-weight:700;color:#ddeeff;white-space:nowrap;display:none;z-index:99;}
 
-  /* LABEL TOGGLE */
-  #label-toggle {
-    position:absolute; top:14px; right:14px;
-    display:flex; gap:6px;
-  }
-  .toggle-btn {
-    font-size:10px; font-weight:700; letter-spacing:.07em; text-transform:uppercase;
-    padding:5px 11px; border-radius:7px; border:1px solid #1e2a45;
-    background:rgba(13,17,32,.85); color:#7ba8c9; cursor:pointer; transition:all .15s;
-    backdrop-filter:blur(8px);
-  }
-  .toggle-btn:hover { background:#1e2a45; color:#e8f4ff; }
-  .toggle-btn.active { background:#1a3a5c; border-color:#2a6496; color:#60b3e8; }
-
-  /* HOVER TOOLTIP */
-  #tooltip {
-    position:absolute; pointer-events:none; background:rgba(13,17,32,.95);
-    border:1px solid #2a6496; border-radius:8px; padding:6px 10px;
-    font-size:12px; color:#e8f4ff; white-space:nowrap; display:none;
-    backdrop-filter:blur(12px); z-index:100; font-weight:600;
-  }
-
-  /* RIGHT DETAIL PANEL */
-  #detail-panel {
-    width:280px; min-width:280px; background:#0d1120; border-left:1px solid #1e2a45;
-    display:flex; flex-direction:column; z-index:10; transition:all .3s;
-  }
-  #detail-header {
-    padding:14px 16px 10px; border-bottom:1px solid #1e2a45;
-    display:flex; align-items:center; gap:10px;
-  }
-  #detail-icon { font-size:22px; }
-  #detail-name { font-size:15px; font-weight:700; color:#e8f4ff; line-height:1.2; }
-  #detail-latin { font-size:10px; color:#4a7fa5; font-style:italic; margin-top:2px; }
-  #detail-body { flex:1; overflow-y:auto; padding:14px; }
-  #detail-body::-webkit-scrollbar { width:4px; }
-  #detail-body::-webkit-scrollbar-track { background:#0d1120; }
-  #detail-body::-webkit-scrollbar-thumb { background:#1e2a45; border-radius:2px; }
-
-  .detail-section { margin-bottom:14px; }
-  .detail-section h4 {
-    font-size:10px; font-weight:700; letter-spacing:.12em; text-transform:uppercase;
-    color:#2a6496; margin-bottom:7px; padding-bottom:4px;
-    border-bottom:1px solid #1e2a45;
-  }
-  .detail-section p { font-size:12px; color:#a0bcd4; line-height:1.6; }
-  .detail-tag {
-    display:inline-block; background:#0f2540; border:1px solid #1e2a45;
-    border-radius:5px; font-size:10px; color:#60b3e8; padding:3px 8px;
-    margin:2px 3px 2px 0; font-weight:600;
-  }
-  .detail-row {
-    display:flex; justify-content:space-between; align-items:center;
-    padding:5px 0; border-bottom:1px solid #111827; font-size:11px;
-  }
-  .detail-row span:first-child { color:#4a7fa5; font-weight:600; }
-  .detail-row span:last-child { color:#c0d8ea; }
-  #detail-empty {
-    flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center;
-    color:#2a4060; font-size:13px; gap:10px; padding:20px; text-align:center;
-  }
-  #detail-empty svg { opacity:.3; }
-
-  /* SVG anatomy styles */
-  .anatomy-part {
-    cursor:pointer; transition:all .18s;
-  }
-  .anatomy-part:hover { filter:brightness(1.4) drop-shadow(0 0 6px rgba(96,179,232,.7)); }
-  .anatomy-part.highlighted { filter:brightness(1.6) drop-shadow(0 0 10px rgba(96,179,232,1)); }
-  .anatomy-label {
-    font-family:'Segoe UI',sans-serif; font-size:9px; fill:#a0bcd4;
-    pointer-events:none; text-anchor:middle; font-weight:600;
-  }
-  .label-line { stroke:#2a4060; stroke-width:.6; fill:none; pointer-events:none; }
+#right{width:260px;min-width:260px;background:#0b0f1e;border-left:1px solid #1a2640;display:flex;flex-direction:column;}
+#dhead{padding:12px 14px 10px;border-bottom:1px solid #1a2640;display:flex;align-items:flex-start;gap:8px;}
+#dicon{font-size:20px;margin-top:1px;}
+#dname{font-size:13px;font-weight:800;color:#ddeeff;line-height:1.2;}
+#dlatin{font-size:10px;color:#3a6a8a;font-style:italic;margin-top:2px;}
+#dbody{flex:1;overflow-y:auto;padding:12px;}
+#dbody::-webkit-scrollbar{width:3px;}
+#dbody::-webkit-scrollbar-thumb{background:#1a2640;border-radius:2px;}
+.dsec{margin-bottom:12px;}
+.dsec h4{font-size:9px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#1a5080;margin-bottom:6px;padding-bottom:3px;border-bottom:1px solid #1a2640;}
+.dsec p{font-size:11px;color:#8090a8;line-height:1.6;}
+.dtag{display:inline-block;background:#0a1828;border:1px solid #1a2640;border-radius:4px;font-size:9px;color:#50aaee;padding:2px 6px;margin:2px 2px 2px 0;font-weight:600;}
+.ctag{display:inline-block;background:#180808;border:1px solid #501010;border-radius:4px;font-size:9px;color:#e07070;padding:2px 6px;margin:2px 2px 2px 0;font-weight:600;}
+.drow{display:flex;justify-content:space-between;align-items:flex-start;padding:4px 0;border-bottom:1px solid #0d1220;font-size:10px;}
+.drow span:first-child{color:#3a6a8a;font-weight:700;flex-shrink:0;margin-right:6px;}
+.drow span:last-child{color:#a0b8c8;text-align:right;line-height:1.4;}
+#dempty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#1a3050;font-size:12px;gap:8px;padding:16px;text-align:center;line-height:1.5;}
 </style>
 </head>
 <body>
-<div id="app">
+<div id="root">
 
-  <!-- LEFT PANEL: Systems + Part List -->
-  <div id="left-panel">
-    <h2>Body Systems</h2>
-    <div id="system-tabs"></div>
-    <div id="part-list"></div>
+<div id="left">
+  <div id="left-title">Body Systems</div>
+  <div id="sys-tabs"></div>
+  <div id="part-list"></div>
+</div>
+
+<div id="center">
+  <div id="topbar">
+    <button class="vbtn on" data-v="ant">Anterior</button>
+    <button class="vbtn" data-v="pos">Posterior</button>
+    <button class="vbtn" data-v="latr">Rt. Lateral</button>
+    <button class="vbtn" data-v="latl">Lt. Lateral</button>
+    <button class="vbtn" data-v="sup">Superior</button>
   </div>
-
-  <!-- CENTER: Anatomy Viewer -->
-  <div id="viewer">
-    <div id="orientation-bar">
-      <button class="orient-btn active" onclick="setView('anterior')">Anterior</button>
-      <button class="orient-btn" onclick="setView('posterior')">Posterior</button>
-      <button class="orient-btn" onclick="setView('lateral-r')">Right</button>
-      <button class="orient-btn" onclick="setView('lateral-l')">Left</button>
-      <button class="orient-btn" onclick="setView('superior')">Superior</button>
-    </div>
-    <div id="label-toggle">
-      <button class="toggle-btn active" id="lbl-btn" onclick="toggleLabels()">Labels ON</button>
-      <button class="toggle-btn" id="layers-btn" onclick="cycleLayer()">All Layers</button>
-    </div>
-    <div id="canvas-wrap">
-      <svg id="anatomy-svg" viewBox="0 0 520 780" xmlns="http://www.w3.org/2000/svg"></svg>
-    </div>
-    <div id="controls-bar">
-      <button class="ctrl-btn" onclick="adjustZoom(-0.15)" title="Zoom Out">−</button>
-      <span id="zoom-val">100%</span>
-      <button class="ctrl-btn" onclick="adjustZoom(0.15)" title="Zoom In">+</button>
-      <button class="ctrl-btn" onclick="resetView()" title="Reset" style="margin-left:6px;">⟳</button>
-    </div>
-    <div id="tooltip"></div>
+  <div id="topright">
+    <button class="tbtn on" id="lblbtn">Labels ON</button>
+    <button class="tbtn on" id="laybtn">All Layers</button>
   </div>
+  <canvas id="c"></canvas>
+  <div id="botbar">
+    <button class="zbtn" id="zminus">−</button>
+    <span id="zval">100%</span>
+    <button class="zbtn" id="zplus">+</button>
+    <button class="zbtn" id="zreset" style="margin-left:4px;font-size:13px;">⟳</button>
+  </div>
+  <div id="tip"></div>
+</div>
 
-  <!-- RIGHT PANEL: Part Details -->
-  <div id="detail-panel">
-    <div id="detail-header">
-      <span id="detail-icon">🔬</span>
-      <div>
-        <div id="detail-name">Select a structure</div>
-        <div id="detail-latin">Click any part to explore</div>
-      </div>
+<div id="right">
+  <div id="dhead">
+    <span id="dicon">🔬</span>
+    <div>
+      <div id="dname">Select a structure</div>
+      <div id="dlatin">Click any part to explore</div>
     </div>
-    <div id="detail-body">
-      <div id="detail-empty">
-        <svg width="60" height="60" viewBox="0 0 60 60" fill="none">
-          <circle cx="30" cy="22" r="12" stroke="#2a6496" stroke-width="2"/>
-          <path d="M14 50c0-8.8 7.2-16 16-16s16 7.2 16 16" stroke="#2a6496" stroke-width="2"/>
-          <circle cx="30" cy="22" r="4" fill="#2a6496"/>
-        </svg>
-        <span>Click any anatomical structure on the model to view detailed information</span>
-      </div>
-      <div id="detail-content" style="display:none;"></div>
+  </div>
+  <div id="dbody">
+    <div id="dempty">
+      <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+        <circle cx="24" cy="18" r="10" stroke="#1a5080" stroke-width="1.5"/>
+        <path d="M10 42c0-7.7 6.3-14 14-14s14 6.3 14 14" stroke="#1a5080" stroke-width="1.5"/>
+        <circle cx="24" cy="18" r="3.5" fill="#1a5080"/>
+      </svg>
+      Click any anatomical structure on the model to view detailed information
     </div>
+    <div id="dcontent" style="display:none"></div>
   </div>
 </div>
 
+</div>
 <script>
-// ═══════════════════════════════════════════════════════
-// ANATOMY DATABASE — All major + minor structures
-// ═══════════════════════════════════════════════════════
-const ANATOMY_DB = {
-  // ── SKELETAL ─────────────────────────────────────────
-  skull:         { name:"Skull",             latin:"Cranium",                 system:"Skeletal",  color:"#b8cfe8", icon:"🦷",
-    desc:"The skull is a bony framework of the head, consisting of 22 bones that protect the brain and support the face.",
-    function:"Protects the brain, houses sensory organs, provides attachment for facial muscles",
-    components:["Frontal bone","Parietal bones (×2)","Temporal bones (×2)","Occipital bone","Sphenoid bone","Ethmoid bone"],
-    blood_supply:"Internal carotid, vertebral arteries", innervation:"Cranial nerves I-XII",
-    clinical:"Fractures, craniosynostosis, Paget's disease", size:"~21 cm length" },
-
-  mandible:      { name:"Mandible",          latin:"Os mandibulae",           system:"Skeletal",  color:"#b8cfe8", icon:"🦷",
-    desc:"The lower jaw bone, the only movable bone of the skull. Houses the lower teeth and articulates with the temporal bone.",
-    function:"Mastication, speech, lower dental arch support",
-    components:["Body","Ramus","Condyle","Coronoid process","Mental protuberance"],
-    blood_supply:"Inferior alveolar artery", innervation:"Inferior alveolar nerve (V3)",
-    clinical:"Fractures, TMJ disorders, osteonecrosis", size:"~10 cm width" },
-
-  vertebral_column: { name:"Vertebral Column", latin:"Columna vertebralis", system:"Skeletal", color:"#b8cfe8", icon:"🦴",
-    desc:"The spine consists of 33 vertebrae: 7 cervical, 12 thoracic, 5 lumbar, 5 sacral (fused), 4 coccygeal (fused).",
-    function:"Axial support, spinal cord protection, movement, weight transmission",
-    components:["Cervical vertebrae C1-C7","Thoracic vertebrae T1-T12","Lumbar vertebrae L1-L5","Sacrum","Coccyx"],
-    blood_supply:"Segmental spinal arteries", innervation:"Spinal nerves",
-    clinical:"Herniated disc, scoliosis, spinal stenosis, fractures", size:"~72 cm length" },
-
-  clavicle:      { name:"Clavicle",          latin:"Clavicula",               system:"Skeletal",  color:"#b8cfe8", icon:"🦴",
-    desc:"The collarbone; an S-shaped bone connecting the sternum to the scapula. The only bony attachment of the upper limb to the axial skeleton.",
-    function:"Transmits forces from upper limb to sternum, protects neurovascular structures",
-    components:["Sternal end","Shaft","Acromial end"],
-    blood_supply:"Suprascapular artery, thoracoacromial artery", innervation:"Supraclavicular nerves",
-    clinical:"Most commonly fractured bone; shoulder injuries", size:"~15 cm length" },
-
-  sternum:       { name:"Sternum",           latin:"Sternum",                 system:"Skeletal",  color:"#b8cfe8", icon:"🦴",
-    desc:"The flat bone in the center of the chest, articulating with the clavicles and ribs 1-7.",
-    function:"Protects heart and great vessels, attachment for ribs",
-    components:["Manubrium","Body (gladiolus)","Xiphoid process","Sternal angle of Louis"],
-    blood_supply:"Internal thoracic arteries", innervation:"Intercostal nerves",
-    clinical:"Sternal fracture, median sternotomy for cardiac surgery", size:"~17 cm length" },
-
-  ribs:          { name:"Ribs",              latin:"Costae",                  system:"Skeletal",  color:"#b8cfe8", icon:"🦴",
-    desc:"12 pairs of curved bones forming the rib cage. True ribs (1-7) attach directly to sternum; false (8-10) via costal cartilage; floating (11-12) free anteriorly.",
-    function:"Protect thoracic organs, respiratory mechanics",
-    components:["True ribs 1-7","False ribs 8-10","Floating ribs 11-12","Costal cartilage","Costal groove"],
-    blood_supply:"Posterior intercostal arteries", innervation:"Intercostal nerves",
-    clinical:"Rib fractures, flail chest, costochondritis", size:"Varies 14-24 cm" },
-
-  humerus:       { name:"Humerus",           latin:"Humerus",                 system:"Skeletal",  color:"#b8cfe8", icon:"🦴",
-    desc:"The long bone of the upper arm, articulating with the scapula at the shoulder and the radius/ulna at the elbow.",
-    function:"Upper limb support, attachment for arm muscles",
-    components:["Head","Greater tuberosity","Lesser tuberosity","Anatomical neck","Surgical neck","Deltoid tuberosity","Medial/lateral epicondyles","Capitulum","Trochlea"],
-    blood_supply:"Anterior/posterior circumflex humeral arteries", innervation:"Radial nerve in spiral groove",
-    clinical:"Proximal fractures (surgical neck), shaft fractures (radial nerve palsy)", size:"~33 cm length" },
-
-  radius:        { name:"Radius",            latin:"Radius",                  system:"Skeletal",  color:"#b8cfe8", icon:"🦴",
-    desc:"The lateral bone of the forearm; wider distally, articulates with the carpal bones at the wrist.",
-    function:"Forearm rotation, wrist support",
-    components:["Head","Neck","Radial tuberosity","Styloid process","Lister's tubercle"],
-    blood_supply:"Radial artery", innervation:"Radial nerve",
-    clinical:"Colles' fracture (most common adult fracture), Smith's fracture", size:"~24 cm length" },
-
-  ulna:          { name:"Ulna",              latin:"Ulna",                    system:"Skeletal",  color:"#b8cfe8", icon:"🦴",
-    desc:"The medial bone of the forearm; wider proximally, forms the elbow joint with the humerus.",
-    function:"Elbow stability, forearm rotation",
-    components:["Olecranon","Trochlear notch","Coronoid process","Radial notch","Styloid process"],
-    blood_supply:"Ulnar artery", innervation:"Ulnar nerve",
-    clinical:"Monteggia fracture, olecranon bursitis", size:"~26 cm length" },
-
-  pelvis:        { name:"Pelvis",            latin:"Pelvis",                  system:"Skeletal",  color:"#b8cfe8", icon:"🦴",
-    desc:"The bony ring formed by the sacrum and two hip bones (os coxae). Transmits weight to lower limbs and protects pelvic organs.",
-    function:"Weight transmission, pelvic organ protection, lower limb attachment",
-    components:["Ilium","Ischium","Pubis","Acetabulum","Sacrum","Pubic symphysis","Sacroiliac joints"],
-    blood_supply:"Internal iliac artery branches", innervation:"Lumbosacral plexus",
-    clinical:"Pelvic fractures, hip dysplasia; sex differences important in obstetrics", size:"Male narrower/deeper; female wider/shallower" },
-
-  femur:         { name:"Femur",             latin:"Femur",                   system:"Skeletal",  color:"#b8cfe8", icon:"🦴",
-    desc:"The longest and strongest bone in the body, forming the thigh.",
-    function:"Lower limb support, hip and knee joint formation",
-    components:["Head","Neck","Greater trochanter","Lesser trochanter","Shaft","Medial/lateral condyles","Intercondylar notch","Linea aspera"],
-    blood_supply:"Medial/lateral circumflex femoral arteries, profunda femoris", innervation:"Femoral nerve",
-    clinical:"Femoral neck fractures (elderly), shaft fractures, AVN of head", size:"~46 cm length; ~1/4 of body height" },
-
-  patella:       { name:"Patella",           latin:"Patella",                 system:"Skeletal",  color:"#b8cfe8", icon:"🦴",
-    desc:"The kneecap; the largest sesamoid bone, embedded in the quadriceps tendon.",
-    function:"Increases mechanical advantage of quadriceps, protects knee",
-    components:["Articular surface","Apex","Base","Medial/lateral facets"],
-    blood_supply:"Genicular arteries", innervation:"Femoral/saphenous nerves",
-    clinical:"Patellar fracture, chondromalacia, patellar dislocation", size:"~5 cm diameter" },
-
-  tibia:         { name:"Tibia",             latin:"Tibia",                   system:"Skeletal",  color:"#b8cfe8", icon:"🦴",
-    desc:"The larger, weight-bearing bone of the leg (shin bone), articulating with femur, fibula, and talus.",
-    function:"Weight bearing, ankle/knee joint formation",
-    components:["Medial/lateral condyles","Tibial plateau","Tibial tuberosity","Anterior crest","Medial malleolus"],
-    blood_supply:"Anterior/posterior tibial arteries", innervation:"Deep peroneal nerve",
-    clinical:"Tibial shaft fractures, Osgood-Schlatter, stress fractures", size:"~38 cm length" },
-
-  fibula:        { name:"Fibula",            latin:"Fibula",                  system:"Skeletal",  color:"#b8cfe8", icon:"🦴",
-    desc:"The slender lateral bone of the leg; non-weight bearing but important for ankle stability.",
-    function:"Ankle stability, muscle attachment",
-    components:["Head","Neck","Shaft","Lateral malleolus"],
-    blood_supply:"Peroneal artery", innervation:"Common peroneal nerve at neck",
-    clinical:"Lateral malleolus fractures (most common ankle fracture), fibular neck injury (peroneal nerve)", size:"~36 cm length" },
-
-  // ── MUSCULAR ─────────────────────────────────────────
-  deltoid:       { name:"Deltoid",           latin:"M. deltoideus",           system:"Muscular",  color:"#e88a8a", icon:"💪",
-    desc:"Triangular muscle forming the rounded contour of the shoulder, composed of anterior, middle, and posterior parts.",
-    function:"Arm abduction (main); flexion (anterior), extension (posterior)",
-    components:["Anterior part (clavicular)","Middle part (acromial)","Posterior part (spinous)"],
-    blood_supply:"Anterior circumflex humeral artery, thoracoacromial artery", innervation:"Axillary nerve (C5-C6)",
-    clinical:"Deltoid injection site; axillary nerve injury causes deltoid paralysis ('square shoulder')", size:"~18 cm wide" },
-
-  biceps_brachii:{ name:"Biceps Brachii",    latin:"M. biceps brachii",       system:"Muscular",  color:"#e88a8a", icon:"💪",
-    desc:"Two-headed muscle of the anterior compartment of the arm; crosses both shoulder and elbow joints.",
-    function:"Forearm supination (strongest), elbow flexion, shoulder flexion",
-    components:["Long head (supraglenoid tubercle)","Short head (coracoid process)","Bicipital aponeurosis"],
-    blood_supply:"Brachial artery", innervation:"Musculocutaneous nerve (C5-C6)",
-    clinical:"Distal biceps tendon rupture ('Popeye sign'); bicipital tendinitis", size:"~14 cm contracted length" },
-
-  triceps:       { name:"Triceps Brachii",   latin:"M. triceps brachii",      system:"Muscular",  color:"#e88a8a", icon:"💪",
-    desc:"Three-headed posterior arm muscle; the only extensor of the elbow.",
-    function:"Elbow extension, shoulder extension (long head)",
-    components:["Long head","Lateral head","Medial head"],
-    blood_supply:"Deep brachial artery", innervation:"Radial nerve (C6-C8)",
-    clinical:"Radial nerve palsy causes wrist drop; triceps tendon rupture rare", size:"~15 cm" },
-
-  pectoralis_major:{ name:"Pectoralis Major", latin:"M. pectoralis major",   system:"Muscular",  color:"#e88a8a", icon:"💪",
-    desc:"Large fan-shaped muscle of the anterior chest wall with clavicular and sternocostal heads.",
-    function:"Adduction, medial rotation, flexion of arm",
-    components:["Clavicular head","Sternocostal head","Abdominal part"],
-    blood_supply:"Pectoral branches of thoracoacromial artery", innervation:"Medial and lateral pectoral nerves (C5-T1)",
-    clinical:"Rupture in weightlifters; radical mastectomy involves this muscle", size:"~20 cm" },
-
-  latissimus_dorsi:{ name:"Latissimus Dorsi", latin:"M. latissimus dorsi",  system:"Muscular",  color:"#e88a8a", icon:"💪",
-    desc:"Largest muscle of the back, arising from lower thoracic, lumbar, and sacral regions.",
-    function:"Arm adduction, extension, medial rotation; 'swimming muscle'",
-    components:["Vertebral part","Scapular part","Iliac part","Costal slips"],
-    blood_supply:"Thoracodorsal artery", innervation:"Thoracodorsal nerve (C6-C8)",
-    clinical:"Used in breast reconstruction (TRAM/latissimus flaps), shoulder dislocations", size:"~40 cm" },
-
-  quadriceps:    { name:"Quadriceps",        latin:"M. quadriceps femoris",   system:"Muscular",  color:"#e88a8a", icon:"💪",
-    desc:"Group of four muscles occupying the anterior thigh, converging into the quadriceps tendon and patellar ligament.",
-    function:"Knee extension; hip flexion (rectus femoris)",
-    components:["Rectus femoris","Vastus lateralis","Vastus medialis","Vastus intermedius"],
-    blood_supply:"Femoral artery branches", innervation:"Femoral nerve (L2-L4)",
-    clinical:"Quadriceps tendon rupture; patellofemoral syndrome; VMO in knee rehab", size:"Largest muscle group in body" },
-
-  hamstrings:    { name:"Hamstrings",        latin:"Mm. ischiocruales",       system:"Muscular",  color:"#e88a8a", icon:"💪",
-    desc:"Three posterior thigh muscles arising from the ischial tuberosity.",
-    function:"Knee flexion, hip extension",
-    components:["Biceps femoris (long + short head)","Semimembranosus","Semitendinosus"],
-    blood_supply:"Perforating arteries of profunda femoris", innervation:"Sciatic nerve (L5-S2)",
-    clinical:"Most common muscle strain in athletes; proximal hamstring avulsion", size:"~35 cm" },
-
-  gastrocnemius: { name:"Gastrocnemius",     latin:"M. gastrocnemius",        system:"Muscular",  color:"#e88a8a", icon:"💪",
-    desc:"Superficial two-headed calf muscle forming the rounded contour of the lower leg.",
-    function:"Plantarflexion, knee flexion",
-    components:["Medial head","Lateral head"],
-    blood_supply:"Sural arteries", innervation:"Tibial nerve (S1-S2)",
-    clinical:"'Tennis leg' (muscle tear), DVT mimicry, Achilles tendon pathology", size:"~20 cm" },
-
-  diaphragm:     { name:"Diaphragm",         latin:"Diaphragma",              system:"Muscular",  color:"#e88a8a", icon:"💪",
-    desc:"The dome-shaped musculotendinous partition separating the thoracic and abdominal cavities; the primary muscle of respiration.",
-    function:"Inspiration (contracts and flattens), rises in expiration",
-    components:["Central tendon","Sternal part","Costal part","Lumbar part","Aortic hiatus T12","Esophageal hiatus T10","Caval opening T8"],
-    blood_supply:"Phrenic arteries, musculophrenic artery", innervation:"Phrenic nerve (C3-C5) — 'C3,4,5 keeps the diaphragm alive'",
-    clinical:"Hiatal hernia, diaphragmatic hernia (Bochdalek/Morgagni), hiccups", size:"~28 cm diameter" },
-
-  // ── CARDIOVASCULAR ───────────────────────────────────
-  heart:         { name:"Heart",             latin:"Cor",                     system:"Cardiovascular", color:"#e85a5a", icon:"❤️",
-    desc:"A hollow muscular organ located in the mediastinum, slightly left of center. It has 4 chambers and pumps ~5L/min at rest.",
-    function:"Pumps oxygenated blood to body (left side) and deoxygenated blood to lungs (right side)",
-    components:["Right atrium","Left atrium","Right ventricle","Left ventricle","SA node","AV node","Bundle of His","Tricuspid valve","Mitral valve","Pulmonary valve","Aortic valve"],
-    blood_supply:"Right coronary artery (RCA), Left anterior descending (LAD), Left circumflex (LCx)",
-    innervation:"Vagus nerve (parasympathetic), sympathetic cardiac nerves",
-    clinical:"MI, heart failure, valvular disease, arrhythmias", size:"~12×9×6 cm; ~300g" },
-
-  aorta:         { name:"Aorta",             latin:"Aorta",                   system:"Cardiovascular", color:"#e85a5a", icon:"🩸",
-    desc:"The largest artery in the body, arising from the left ventricle and distributing oxygenated blood to the entire body.",
-    function:"Main conduit for systemic circulation",
-    components:["Aortic root","Ascending aorta","Aortic arch","Descending thoracic aorta","Abdominal aorta","Common iliac arteries"],
-    blood_supply:"Vasa vasorum", innervation:"Sympathetic and sensory fibers",
-    clinical:"Aortic dissection, aortic aneurysm, coarctation, aortitis", size:"~2.5 cm diameter; 40 cm length" },
-
-  pulmonary_vessels:{ name:"Pulmonary Vessels", latin:"Vasa pulmonalia",     system:"Cardiovascular", color:"#e85a5a", icon:"🩸",
-    desc:"The pulmonary trunk and arteries carry deoxygenated blood to the lungs; pulmonary veins return oxygenated blood to the left atrium.",
-    function:"Pulmonary circulation",
-    components:["Pulmonary trunk","Right pulmonary artery","Left pulmonary artery","Right pulmonary veins (×2)","Left pulmonary veins (×2)"],
-    blood_supply:"Bronchial arteries", innervation:"Pulmonary plexus",
-    clinical:"Pulmonary embolism, pulmonary hypertension, ASD/VSD", size:"Pulmonary trunk ~5 cm" },
-
-  carotid:       { name:"Carotid Arteries",  latin:"Aa. carotides",           system:"Cardiovascular", color:"#e85a5a", icon:"🩸",
-    desc:"The common carotid arteries on each side of the neck divide at C4 into the internal (brain) and external (face) carotid arteries.",
-    function:"Blood supply to brain, face, and neck",
-    components:["Common carotid artery","Internal carotid artery","External carotid artery","Carotid sinus","Carotid body"],
-    blood_supply:"Subclavian artery (right: brachiocephalic; left: directly from aorta)",
-    innervation:"Sympathetic fibers, glossopharyngeal nerve (sinus)",
-    clinical:"Carotid stenosis, stroke, TIA, carotid endarterectomy", size:"~6 mm diameter" },
-
-  // ── RESPIRATORY ──────────────────────────────────────
-  lungs:         { name:"Lungs",             latin:"Pulmones",                system:"Respiratory", color:"#e8a05a", icon:"🫁",
-    desc:"Two spongy organs occupying the pleural cavities. Right lung has 3 lobes; left has 2 (with cardiac notch).",
-    function:"Gas exchange: O₂ uptake, CO₂ removal",
-    components:["Right upper/middle/lower lobes","Left upper/lower lobes","Hilum","Pleura (visceral/parietal)","Alveoli (~500 million)","Bronchopulmonary segments"],
-    blood_supply:"Pulmonary arteries (gas exchange), bronchial arteries (nutrition)",
-    innervation:"Pulmonary plexus (vagal parasympathetic + sympathetic)",
-    clinical:"Pneumonia, COPD, lung cancer, pneumothorax, pulmonary embolism", size:"Right ~700g; left ~600g" },
-
-  trachea:       { name:"Trachea",           latin:"Trachea",                 system:"Respiratory", color:"#e8a05a", icon:"🫁",
-    desc:"The windpipe; a cartilaginous and muscular tube connecting the larynx to the bronchi, ~11 cm long, bifurcating at T4/T5 (carina).",
-    function:"Air conduction to lungs, mucociliary clearance",
-    components:["C-shaped cartilaginous rings (16-20)","Trachealis muscle","Carina","Right/left main bronchi"],
-    blood_supply:"Inferior thyroid artery", innervation:"Recurrent laryngeal nerve, vagus",
-    clinical:"Tracheal intubation, tracheostomy, tracheal stenosis, foreign body aspiration", size:"~11 cm × 2 cm" },
-
-  larynx:        { name:"Larynx",            latin:"Larynx",                  system:"Respiratory", color:"#e8a05a", icon:"🎤",
-    desc:"The voice box; a cartilaginous structure between the pharynx and trachea, containing the vocal folds.",
-    function:"Phonation, airway protection, cough reflex",
-    components:["Thyroid cartilage","Cricoid cartilage","Arytenoid cartilages","Epiglottis","Vocal folds (true/false)","Glottis"],
-    blood_supply:"Superior and inferior laryngeal arteries", innervation:"Superior and recurrent laryngeal nerves (CN X)",
-    clinical:"Laryngeal cancer, vocal cord polyps, laryngospasm, intubation landmarks", size:"~5 cm length" },
-
-  // ── DIGESTIVE ────────────────────────────────────────
-  liver:         { name:"Liver",             latin:"Hepar",                   system:"Digestive",   color:"#c8782a", icon:"🫀",
-    desc:"The largest internal organ (~1.5 kg), located in the right hypochondrium. Divided into 8 functional Couinaud segments.",
-    function:"Metabolism, detoxification, bile production, protein synthesis, glycogen storage",
-    components:["Right lobe","Left lobe","Caudate lobe","Quadrate lobe","Gallbladder","Portal triad (portal vein, hepatic artery, bile duct)","Hepatic veins"],
-    blood_supply:"Portal vein (75%), hepatic artery (25%)", innervation:"Celiac plexus (T7-T9)",
-    clinical:"Cirrhosis, hepatitis, hepatocellular carcinoma, portal hypertension", size:"~1500 g; 15-17 cm span" },
-
-  stomach:       { name:"Stomach",           latin:"Gaster / Ventriculus",    system:"Digestive",   color:"#c8782a", icon:"🫀",
-    desc:"J-shaped dilated portion of the GI tract between the esophagus and duodenum, located in the left hypochondrium/epigastrium.",
-    function:"Mechanical and chemical digestion, HCl secretion, intrinsic factor production",
-    components:["Cardia","Fundus","Body (corpus)","Antrum","Pylorus","Lesser curvature","Greater curvature","Rugae"],
-    blood_supply:"Celiac trunk branches (left/right gastric, gastroepiploic, short gastric arteries)",
-    innervation:"Vagus nerve, celiac plexus",
-    clinical:"Peptic ulcer, gastric cancer, GERD, pyloric stenosis", size:"~25 cm; 1-2L capacity" },
-
-  small_intestine:{ name:"Small Intestine",  latin:"Intestinum tenue",        system:"Digestive",   color:"#c8782a", icon:"🫀",
-    desc:"6-7 meter tube with three parts: duodenum, jejunum, ileum. Site of most nutrient absorption.",
-    function:"Digestion and absorption of nutrients",
-    components:["Duodenum (25 cm; 4 parts)","Jejunum (~2.5 m)","Ileum (~3.5 m)","Villi & microvilli","Peyer's patches","Ileocecal valve"],
-    blood_supply:"Superior mesenteric artery", innervation:"Vagus nerve, superior mesenteric plexus",
-    clinical:"Crohn's disease, celiac disease, intestinal obstruction, intussusception", size:"~6.5 m total" },
-
-  large_intestine:{ name:"Large Intestine",  latin:"Intestinum crassum",      system:"Digestive",   color:"#c8782a", icon:"🫀",
-    desc:"The final ~1.5 m of the GI tract; absorbs water and electrolytes, forming feces.",
-    function:"Water/electrolyte absorption, feces formation, gut flora habitat",
-    components:["Cecum + appendix","Ascending colon","Transverse colon","Descending colon","Sigmoid colon","Rectum","Anal canal","Taeniae coli","Haustra"],
-    blood_supply:"Superior (right side) + inferior (left side) mesenteric arteries", innervation:"Vagus (proximal), pelvic splanchnic nerves (distal)",
-    clinical:"Colorectal cancer, diverticulitis, appendicitis, UC, Hirschsprung's", size:"~1.5 m; 6 cm diameter" },
-
-  pancreas:      { name:"Pancreas",          latin:"Pancreas",                system:"Digestive",   color:"#c8782a", icon:"🫀",
-    desc:"Both exocrine and endocrine gland lying retroperitoneally behind the stomach.",
-    function:"Exocrine: digestive enzymes. Endocrine: insulin (β), glucagon (α), somatostatin (δ)",
-    components:["Head (in duodenal curve)","Neck","Body","Tail (near spleen)","Islets of Langerhans","Acinar cells","Main pancreatic duct (of Wirsung)"],
-    blood_supply:"Splenic artery, superior/inferior pancreaticoduodenal arteries", innervation:"Celiac plexus, vagus",
-    clinical:"Pancreatitis, pancreatic cancer (poor prognosis), diabetes mellitus", size:"~15 cm length; ~70-100g" },
-
-  // ── NERVOUS SYSTEM ───────────────────────────────────
-  brain:         { name:"Brain",             latin:"Encephalon",              system:"Nervous",     color:"#d4a0e8", icon:"🧠",
-    desc:"The control center of the nervous system, comprising ~86 billion neurons. Weighs ~1.4 kg and consumes 20% of body's oxygen.",
-    function:"Cognition, movement, sensation, autonomic regulation, endocrine control",
-    components:["Cerebrum (frontal/parietal/temporal/occipital lobes)","Cerebellum","Brainstem (midbrain/pons/medulla)","Limbic system","Basal ganglia","Thalamus","Hypothalamus","Ventricles","Corpus callosum"],
-    blood_supply:"Internal carotid arteries (anterior circulation), vertebral/basilar arteries (posterior circulation), Circle of Willis",
-    innervation:"Cranial nerves I-XII",
-    clinical:"Stroke, brain tumors, epilepsy, Alzheimer's, Parkinson's, TBI", size:"~1400 g; ~1400 cc volume" },
-
-  spinal_cord:   { name:"Spinal Cord",       latin:"Medulla spinalis",        system:"Nervous",     color:"#d4a0e8", icon:"🧠",
-    desc:"The cylindrical nerve tract within the vertebral canal extending from the medulla oblongata to the conus medullaris at L1-L2.",
-    function:"Conduit for sensory/motor signals; reflex arcs",
-    components:["31 spinal nerve segments","Cervical enlargement","Lumbar enlargement","Conus medullaris","Cauda equina","Filum terminale","Gray/white matter","Anterior/posterior horns"],
-    blood_supply:"Anterior spinal artery (single), posterior spinal arteries (paired), Artery of Adamkiewicz",
-    innervation:"31 pairs of spinal nerves",
-    clinical:"Spinal cord injury, MS, syringomyelia, spinal stenosis", size:"~45 cm length; ~1 cm diameter" },
-
-  // ── URINARY ──────────────────────────────────────────
-  kidneys:       { name:"Kidneys",           latin:"Renes",                   system:"Urinary",     color:"#7a9ee8", icon:"🫘",
-    desc:"Two bean-shaped retroperitoneal organs at T12-L3 level, each ~150 g, filtering ~180L of plasma per day.",
-    function:"Blood filtration, urine production, BP regulation (RAAS), erythropoietin, Vit D activation",
-    components:["Cortex","Medulla","Pyramids","Columns of Bertin","Calyces (major/minor)","Renal pelvis","Glomerulus","Nephron (~1 million per kidney)","Juxtaglomerular apparatus"],
-    blood_supply:"Renal arteries (directly from aorta at L1-L2)", innervation:"Renal plexus (T10-L1)",
-    clinical:"Renal failure, nephrolithiasis, UTI, renal cell carcinoma, HTN", size:"~11×6×3 cm; ~150 g" },
-
-  bladder:       { name:"Urinary Bladder",   latin:"Vesica urinaria",         system:"Urinary",     color:"#7a9ee8", icon:"🫘",
-    desc:"A hollow muscular organ in the pelvic cavity that stores urine, capable of holding 400-600 mL.",
-    function:"Urine storage and micturition",
-    components:["Detrusor muscle","Trigone","Internal urethral sphincter","Ureteral orifices","Dome","Neck"],
-    blood_supply:"Superior and inferior vesical arteries (internal iliac)", innervation:"Pelvic splanchnic nerves (S2-S4), hypogastric plexus",
-    clinical:"UTI, bladder cancer (TCC most common), overactive bladder, urinary retention", size:"~400-600 mL capacity" },
-
-  // ── ENDOCRINE ────────────────────────────────────────
-  thyroid:       { name:"Thyroid Gland",     latin:"Glandula thyreoidea",     system:"Endocrine",   color:"#78d4a0", icon:"🔬",
-    desc:"Butterfly-shaped endocrine gland in the anterior neck, at C5-T1 level, consisting of two lobes connected by an isthmus.",
-    function:"Produces T3/T4 (metabolism, growth), calcitonin (calcium homeostasis)",
-    components:["Right lobe","Left lobe","Isthmus","Pyramidal lobe (50%)","Follicular cells","Parafollicular (C) cells"],
-    blood_supply:"Superior thyroid artery (ECA), inferior thyroid artery (thyrocervical trunk)", innervation:"Sympathetic via superior/middle cervical ganglia",
-    clinical:"Hypothyroidism, hyperthyroidism (Graves'), thyroid cancer, goiter", size:"~25 g total; 4-5 cm each lobe" },
-
-  adrenal_glands:{ name:"Adrenal Glands",    latin:"Glandulae suprarenales",  system:"Endocrine",   color:"#78d4a0", icon:"🔬",
-    desc:"Two triangular glands (right pyramidal, left semilunar) capping the kidneys retroperitoneally. Each ~5g.",
-    function:"Cortex: cortisol, aldosterone, DHEA. Medulla: adrenaline (epinephrine), noradrenaline",
-    components:["Cortex: zona glomerulosa/fasciculata/reticularis","Medulla: chromaffin cells"],
-    blood_supply:"Superior/middle/inferior suprarenal arteries", innervation:"Splanchnic nerves (greater/lesser)",
-    clinical:"Cushing's syndrome, Addison's disease, pheochromocytoma, Conn's syndrome", size:"~5 cm × 3 cm × 1 cm each" },
-
-  pituitary:     { name:"Pituitary Gland",   latin:"Hypophysis cerebri",      system:"Endocrine",   color:"#78d4a0", icon:"🔬",
-    desc:"The 'master gland'; a pea-sized structure at the sella turcica of the sphenoid bone, connected to the hypothalamus.",
-    function:"Anterior: GH, TSH, ACTH, FSH, LH, prolactin. Posterior: ADH, oxytocin",
-    components:["Anterior pituitary (adenohypophysis)","Posterior pituitary (neurohypophysis)","Pituitary stalk (infundibulum)"],
-    blood_supply:"Hypophyseal portal system (anterior), inferior hypophyseal artery (posterior)",
-    innervation:"Hypothalamic-hypophyseal tract",
-    clinical:"Pituitary adenoma, acromegaly, Cushing's, diabetes insipidus, craniopharyngioma", size:"~1 cm × 1 cm; ~0.5 g" },
-
-  // ── REPRODUCTIVE (basic) ─────────────────────────────
-  testes:        { name:"Testes",            latin:"Testes",                  system:"Reproductive", color:"#d4c878", icon:"🔬",
-    desc:"Paired male gonads in the scrotum, descended from the abdomen during development.",
-    function:"Spermatogenesis (FSH-dependent), testosterone production (LH-dependent)",
-    components:["Seminiferous tubules","Leydig cells","Sertoli cells","Epididymis","Tunica albuginea","Rete testis"],
-    blood_supply:"Testicular artery (from aorta at L2)", innervation:"Genital branch of genitofemoral nerve, sympathetic plexus",
-    clinical:"Testicular torsion (emergency), orchitis, seminoma (most common testicular cancer)", size:"~4.5×3×2.5 cm; 20g each" },
-
-  // ── LYMPHATIC ────────────────────────────────────────
-  spleen:        { name:"Spleen",            latin:"Lien / Splen",            system:"Lymphatic",   color:"#a078d4", icon:"🔬",
-    desc:"The largest lymphoid organ (~150g), located in the left hypochondrium between ribs 9-11.",
-    function:"Blood filtration, immune response, blood cell reservoir, fetal hematopoiesis",
-    components:["White pulp (lymphoid)","Red pulp (blood filtration)","Splenic sinuses","Splenic cords of Billroth","Capsule + trabeculae"],
-    blood_supply:"Splenic artery (largest branch of celiac trunk)", innervation:"Celiac plexus",
-    clinical:"Splenomegaly, splenic rupture (trauma — emergency splenectomy), hypersplenism", size:"~11×7×4 cm; ~150 g" },
-
-  lymph_nodes:   { name:"Lymph Nodes",       latin:"Nodi lymphoidei",         system:"Lymphatic",   color:"#a078d4", icon:"🔬",
-    desc:"Small oval structures (~600 in body) distributed along lymphatic vessels, acting as immunological filters.",
-    function:"Filter lymph, mount immune responses, B and T cell activation",
-    components:["Cortex (B cells, follicles)","Paracortex (T cells)","Medulla","Afferent/efferent lymphatics","Hilum"],
-    blood_supply:"Small arterioles via hilum", innervation:"Autonomic nerve fibers",
-    clinical:"Lymphadenopathy, lymphoma (Hodgkin's/non-Hodgkin's), metastatic nodes, reactive lymphadenitis", size:"2-25 mm; varies greatly" },
-
-  thymus:        { name:"Thymus",            latin:"Thymus",                  system:"Lymphatic",   color:"#a078d4", icon:"🔬",
-    desc:"Bilobed lymphoid organ in the anterior superior mediastinum; large in childhood, involutes after puberty.",
-    function:"T-lymphocyte maturation and selection (positive/negative selection)",
-    components:["Lobules","Cortex (immature T cells)","Medulla (mature T cells)","Hassall's corpuscles","Thymic epithelial cells"],
-    blood_supply:"Internal thoracic artery, inferior thyroid artery", innervation:"Vagus, phrenic nerves",
-    clinical:"Thymoma (associated with myasthenia gravis), DiGeorge syndrome, T cell immunodeficiency", size:"~30g in puberty; regresses with age" },
-
-  // ── EYE / EAR ────────────────────────────────────────
-  eye:           { name:"Eye",               latin:"Oculus",                  system:"Sensory",     color:"#58d4c8", icon:"👁️",
-    desc:"The organ of vision; a sphere ~24mm in diameter, containing optical and neural structures.",
-    function:"Image formation and transduction to neural signals",
-    components:["Cornea","Anterior/posterior chambers","Iris","Lens","Vitreous humour","Retina (rods/cones)","Optic nerve (CN II)","Choroid","Sclera","Macula lutea","Fovea centralis"],
-    blood_supply:"Ophthalmic artery (from ICA), central retinal artery", innervation:"CN II (optic), CN III/IV/VI (extraocular), CN V (cornea)",
-    clinical:"Glaucoma, cataract, retinal detachment, macular degeneration, diabetic retinopathy", size:"~24 mm diameter" },
-
-  ear:           { name:"Ear",               latin:"Auris",                   system:"Sensory",     color:"#58d4c8", icon:"👂",
-    desc:"The organ of hearing and equilibrium, divided into external, middle, and inner ear.",
-    function:"Sound transduction, spatial orientation/balance",
-    components:["External: auricle, EAC, tympanic membrane","Middle: malleus, incus, stapes, Eustachian tube","Inner: cochlea (hearing), vestibular system (balance), CN VIII"],
-    blood_supply:"External carotid artery branches, labyrinthine artery (AICA branch)",
-    innervation:"CN VIII (vestibulocochlear), CN V, VII, X",
-    clinical:"Otitis media, sensorineural hearing loss, Meniere's disease, vestibular schwannoma", size:"Cochlea ~3 cm diameter" },
+// ═══════════════════════════════════════════
+// ANATOMY DATABASE
+// ═══════════════════════════════════════════
+const DB = {
+  skull:{name:"Skull",latin:"Cranium",sys:"Skeletal",col:"#90b8d8",icon:"🦴",
+    desc:"22 bones protecting the brain and supporting the face. Neurocranium (8 bones) + viscerocranium (14 bones).",
+    fn:"Brain protection, sensory organ housing, facial muscle attachment, mastication",
+    parts:["Frontal bone","Parietal ×2","Temporal ×2","Occipital","Sphenoid","Ethmoid","Maxilla ×2","Zygomatic ×2","Nasal ×2","Lacrimal ×2","Palatine ×2","Vomer","Inf. nasal conchae ×2","Mandible"],
+    blood:"Internal carotid + vertebral arteries",nerve:"Cranial nerves I–XII",
+    clinical:"Skull fractures, craniosynostosis, Paget's disease, basal skull fracture (Battle's sign)",size:"~21 cm length"},
+  mandible:{name:"Mandible",latin:"Os mandibulae",sys:"Skeletal",col:"#90b8d8",icon:"🦴",
+    desc:"Only movable bone of the skull — the lower jaw. Forms the TMJ (temporomandibular joint) with the temporal bone.",
+    fn:"Mastication, speech, lower dental arch support",
+    parts:["Body","Ramus ×2","Condyle","Coronoid process","Mental protuberance","Alveolar process","Mandibular foramen"],
+    blood:"Inferior alveolar artery",nerve:"Inferior alveolar nerve (V3 — mandibular branch of trigeminal)",
+    clinical:"Fractures (most common facial bone after nasal), TMJ disorders, osteonecrosis of jaw (bisphosphonate-related)",size:"~10 cm width"},
+  vertebral_column:{name:"Vertebral Column",latin:"Columna vertebralis",sys:"Skeletal",col:"#90b8d8",icon:"🦴",
+    desc:"33 vertebrae: 7 cervical, 12 thoracic, 5 lumbar, 5 sacral (fused), 4 coccygeal (fused). Four physiological curves.",
+    fn:"Axial support, spinal cord protection, movement, weight transmission to lower limbs",
+    parts:["Cervical C1–C7 (atlas + axis)","Thoracic T1–T12","Lumbar L1–L5","Sacrum S1–S5","Coccyx","Intervertebral discs","Anterior/posterior longitudinal ligaments","Ligamentum flavum","Facet joints"],
+    blood:"Segmental spinal arteries from aorta",nerve:"31 pairs of spinal nerves",
+    clinical:"Herniated disc, scoliosis, spinal stenosis, osteoporotic compression fracture, ankylosing spondylitis",size:"~72 cm; 4 curves (cervical/lumbar lordosis, thoracic/sacral kyphosis)"},
+  clavicle:{name:"Clavicle",latin:"Clavicula",sys:"Skeletal",col:"#90b8d8",icon:"🦴",
+    desc:"S-shaped bone; only bony connection of upper limb to axial skeleton. Most frequently fractured bone in the body.",
+    fn:"Transmits forces from upper limb to sternum, protects subclavian vessels and brachial plexus",
+    parts:["Sternal end","Shaft","Acromial end","Conoid tubercle","Costoclavicular ligament attachment"],
+    blood:"Thoracoacromial + suprascapular arteries",nerve:"Supraclavicular nerves C3–C4",
+    clinical:"Most commonly fractured bone (fall on outstretched hand/shoulder); shoulder separation (AC joint injury)",size:"~15 cm length"},
+  sternum:{name:"Sternum",latin:"Sternum",sys:"Skeletal",col:"#90b8d8",icon:"🦴",
+    desc:"Flat midline bone of the anterior thorax. Articulates with clavicles and costal cartilages of ribs 1–7.",
+    fn:"Protects heart and great vessels; rib and pectoral muscle attachment",
+    parts:["Manubrium","Body (gladiolus)","Xiphoid process","Sternal angle of Louis (T4/T5 — rib 2, aortic arch, carina)"],
+    blood:"Internal thoracic arteries",nerve:"Intercostal nerves",
+    clinical:"Sternal fracture (seat-belt injury), median sternotomy, sternal bone marrow biopsy, pectus excavatum/carinatum",size:"~17 cm length"},
+  ribs:{name:"Ribs",latin:"Costae",sys:"Skeletal",col:"#90b8d8",icon:"🦴",
+    desc:"12 pairs. True (1–7): direct sternal attachment. False (8–10): costal cartilage. Floating (11–12): free end.",
+    fn:"Thoracic organ protection, respiratory mechanics (bucket-handle and pump-handle movements)",
+    parts:["True ribs 1–7","False ribs 8–10","Floating ribs 11–12","Costal cartilage","Costal groove (VAN: vein above, artery middle, nerve below)","Head, neck, tubercle, angle, shaft"],
+    blood:"Posterior intercostal arteries (from aorta)",nerve:"Intercostal nerves T1–T11",
+    clinical:"Fractures (flail chest if ≥3 consecutive), costochondritis (Tietze syndrome), pleural effusion landmarks",size:"Varies 14–24 cm"},
+  humerus:{name:"Humerus",latin:"Humerus",sys:"Skeletal",col:"#90b8d8",icon:"🦴",
+    desc:"Long bone of the upper arm. Proximal end articulates at shoulder (glenohumeral joint); distal end forms elbow.",
+    fn:"Upper limb lever, muscle attachment, shoulder + elbow joint formation",
+    parts:["Head","Anatomical neck","Surgical neck","Greater tuberosity","Lesser tuberosity","Intertubercular (bicipital) groove","Deltoid tuberosity","Radial (spiral) groove","Medial epicondyle","Lateral epicondyle","Capitulum","Trochlea","Olecranon fossa"],
+    blood:"Anterior + posterior circumflex humeral arteries",nerve:"Radial nerve in spiral groove; axillary nerve at surgical neck",
+    clinical:"Surgical neck fracture → axillary nerve injury; spiral groove fracture → radial nerve palsy (wrist drop); supracondylar fracture (children) → anterior interosseous nerve",size:"~33 cm length"},
+  radius:{name:"Radius",latin:"Radius",sys:"Skeletal",col:"#90b8d8",icon:"🦴",
+    desc:"Lateral forearm bone; wider distally. Pivots around ulna during pronation/supination.",
+    fn:"Forearm rotation (pronation/supination), wrist joint formation",
+    parts:["Head (circular — for rotation)","Neck","Radial tuberosity (biceps insertion)","Shaft","Styloid process","Lister's tubercle","Carpal articular surface"],
+    blood:"Radial artery branches",nerve:"Superficial radial nerve (sensory), posterior interosseous (motor)",
+    clinical:"Colles' fracture (dorsal displacement — dinner fork deformity, most common adult fracture), Smith's fracture (volar), Galeazzi fracture",size:"~24 cm length"},
+  ulna:{name:"Ulna",latin:"Ulna",sys:"Skeletal",col:"#90b8d8",icon:"🦴",
+    desc:"Medial forearm bone; wider proximally. Forms the stable hinge of the elbow joint.",
+    fn:"Elbow hinge stability, forearm rotation",
+    parts:["Olecranon (triceps insertion)","Trochlear notch","Coronoid process","Radial notch","Ulnar tuberosity","Shaft","Styloid process","Head"],
+    blood:"Ulnar artery",nerve:"Ulnar nerve passes posterior to medial epicondyle",
+    clinical:"Monteggia fracture (proximal ulna + radial head dislocation), olecranon fracture, olecranon bursitis",size:"~26 cm length"},
+  pelvis:{name:"Pelvis",latin:"Pelvis",sys:"Skeletal",col:"#90b8d8",icon:"🦴",
+    desc:"Bony ring: 2 hip bones (ilium+ischium+pubis each) + sacrum + coccyx. Major sex differences relevant in obstetrics.",
+    fn:"Weight transmission, pelvic organ protection, lower limb attachment",
+    parts:["Ilium (largest — iliac crest)","Ischium (ischial tuberosity — sit bone)","Pubis","Acetabulum (socket for femoral head)","Sacrum","Pubic symphysis","Sacroiliac joints","Greater + lesser sciatic notches","Obturator foramen (largest foramen in body)"],
+    blood:"Internal iliac artery and branches",nerve:"Lumbosacral plexus L1–S4",
+    clinical:"Pelvic ring fractures, hip dysplasia, obstetric pelvis types (gynecoid most common/favourable), AVN of femoral head, sacral fracture",size:"Female: wider, shallower, larger outlet. Male: narrower, deeper"},
+  femur:{name:"Femur",latin:"Femur",sys:"Skeletal",col:"#90b8d8",icon:"🦴",
+    desc:"Longest and strongest bone in the body. Angle of inclination ~126°, anteversion ~10–15°.",
+    fn:"Lower limb weight bearing, hip + knee joint formation",
+    parts:["Head","Fovea capitis (ligamentum teres)","Neck","Greater trochanter","Lesser trochanter","Intertrochanteric line (ant) / crest (post)","Shaft","Linea aspera","Medial + lateral condyles","Intercondylar notch","Adductor tubercle"],
+    blood:"Medial circumflex femoral (main femoral head supply), lateral circumflex femoral, profunda femoris",nerve:"Femoral, obturator, sciatic nerve branches",
+    clinical:"Femoral neck fracture (AVN risk, especially displaced), shaft fracture (significant blood loss ~1500mL), SCFE in adolescents, condylar fracture",size:"~46 cm; 1/4 of body height"},
+  patella:{name:"Patella",latin:"Patella",sys:"Skeletal",col:"#90b8d8",icon:"🦴",
+    desc:"Largest sesamoid bone. Embedded in quadriceps tendon, articulates with femoral trochlea.",
+    fn:"Increases quadriceps lever arm by ~50%, protects anterior knee, transmits tendon forces",
+    parts:["Base (superior border)","Apex (inferior)","Medial + lateral facets (articular)","Anterior non-articular surface","Odd facet (extreme medial)"],
+    blood:"Genicular arterial anastomosis",nerve:"Femoral + saphenous nerve branches",
+    clinical:"Patellar fracture (transverse most common), chondromalacia patellae, patellar dislocation (lateral), patellofemoral syndrome, bipartite patella (normal variant)",size:"~4–5 cm diameter; ~22 g"},
+  tibia:{name:"Tibia",latin:"Tibia",sys:"Skeletal",col:"#90b8d8",icon:"🦴",
+    desc:"Medial, weight-bearing bone of the leg (~85% of load). Second longest bone in the body.",
+    fn:"Weight bearing, knee + ankle (mortise) joint formation, muscle attachment",
+    parts:["Medial + lateral condyles","Tibial plateau","Tibial tuberosity (patellar ligament)","Gerdy's tubercle (IT band)","Anterior crest (shin)","Soleal line","Medial malleolus","Fibular notch"],
+    blood:"Anterior + posterior tibial arteries",nerve:"Deep peroneal nerve (anterior compartment), tibial nerve (posterior)",
+    clinical:"Tibial shaft fracture (high energy), Osgood-Schlatter disease (tibial tuberosity apophysitis), stress fracture, tibial plateau fracture (valgus force)",size:"~38 cm length"},
+  fibula:{name:"Fibula",latin:"Fibula",sys:"Skeletal",col:"#90b8d8",icon:"🦴",
+    desc:"Slender lateral leg bone. Not weight-bearing but critical for ankle mortise integrity.",
+    fn:"Ankle stability (lateral malleolus), peroneal muscle origin, fibular graft donor site",
+    parts:["Head","Neck (common peroneal nerve)","Shaft","Lateral malleolus"],
+    blood:"Peroneal (fibular) artery",nerve:"Common peroneal nerve winds around fibular neck",
+    clinical:"Lateral malleolus fracture (most common ankle fracture — Weber A/B/C), fibular neck fracture → foot drop, free fibular flap for jaw reconstruction",size:"~36 cm length"},
+  heart:{name:"Heart",latin:"Cor",sys:"Cardiovascular",col:"#d04040",icon:"❤️",
+    desc:"Hollow muscular pump in the middle mediastinum. ~100,000 beats/day, ~5L/min cardiac output at rest.",
+    fn:"Pumps oxygenated blood to body (left) and deoxygenated blood to lungs (right)",
+    parts:["Right atrium + auricle","Left atrium + auricle","Right ventricle","Left ventricle","SA node (pacemaker — right atrium)","AV node","Bundle of His + Purkinje fibres","Tricuspid valve (3 cusps — right)","Mitral/bicuspid valve (2 cusps — left)","Pulmonary valve","Aortic valve","Coronary sinus","Fossa ovalis","Chordae tendineae + papillary muscles"],
+    blood:"RCA (right coronary), LAD (left anterior descending), LCx (left circumflex)",nerve:"Vagus X (↓HR), sympathetic cardiac nerves (↑HR, contractility)",
+    clinical:"Myocardial infarction, heart failure (HFrEF/HFpEF), valvular disease, arrhythmias, cardiac tamponade, pericarditis",size:"~12×9×6 cm; ~300 g; fist-sized"},
+  aorta:{name:"Aorta",latin:"Aorta",sys:"Cardiovascular",col:"#c03030",icon:"🩸",
+    desc:"Largest artery. Arises from LV, arches left, descends through thorax and abdomen to bifurcate at L4.",
+    fn:"Main arterial conduit for systemic oxygenated blood distribution",
+    parts:["Aortic root + sinuses of Valsalva","Ascending aorta","Aortic arch (brachiocephalic, L common carotid, L subclavian)","Descending thoracic aorta","Abdominal aorta","Celiac, SMA, renal, IMA, common iliac branches"],
+    blood:"Vasa vasorum (vessel wall)",nerve:"Aortic plexus",
+    clinical:"Aortic dissection (Type A — ascending, surgical; Type B — descending, medical), abdominal aortic aneurysm (>5.5cm → surgery), coarctation, Marfan syndrome",size:"~3 cm diameter; ~40 cm length"},
+  carotid:{name:"Carotid Arteries",latin:"Aa. carotides",sys:"Cardiovascular",col:"#c03040",icon:"🩸",
+    desc:"Common carotid arteries divide at C4 level into ICA (brain, ~70% cerebral supply) and ECA (face/neck).",
+    fn:"Cerebral blood supply (ICA → anterior circulation), face and neck (ECA)",
+    parts:["CCA (common carotid)","ICA (internal — no branches in neck)","ECA (external — 8 branches: STA, facial, lingual, occipital, maxillary, etc.)","Carotid sinus (baroreceptor — CN IX)","Carotid body (chemoreceptor — O2/CO2/pH)","Carotid sheath (with IJV, vagus)"],
+    blood:"Right: brachiocephalic trunk. Left: directly from aortic arch",nerve:"Glossopharyngeal IX (sinus reflex), sympathetic carotid plexus",
+    clinical:"Carotid atherosclerosis (TIA/stroke), carotid endarterectomy, carotid body tumour (paraganglioma), carotid dissection",size:"~6 mm diameter"},
+  pulmonary_vessels:{name:"Pulmonary Vessels",latin:"Vasa pulmonalia",sys:"Cardiovascular",col:"#5050c8",icon:"🩸",
+    desc:"Unique: arteries carry deoxygenated blood TO lungs; veins return oxygenated blood FROM lungs to LA.",
+    fn:"Pulmonary circulation — gas exchange loop",
+    parts:["Pulmonary trunk (from RV)","Right pulmonary artery","Left pulmonary artery","Right pulmonary veins ×2 (superior + inferior)","Left pulmonary veins ×2"],
+    blood:"Bronchial arteries (vessel wall nutrition)",nerve:"Pulmonary plexus (vagal + sympathetic)",
+    clinical:"Pulmonary embolism (DVT→PE), pulmonary hypertension, Eisenmenger syndrome (ASD/VSD), pulmonary oedema",size:"Pulmonary trunk ~3 cm; normal PA pressure 25/8 mmHg"},
+  lungs:{name:"Lungs",latin:"Pulmones",sys:"Respiratory",col:"#c07030",icon:"🫁",
+    desc:"Right: 3 lobes, 10 bronchopulmonary segments. Left: 2 lobes, 8–9 segments (cardiac notch + lingula). ~500M alveoli.",
+    fn:"O₂ uptake + CO₂ elimination. ~500mL tidal volume, TLC ~6L, FRC ~2.5L",
+    parts:["Right: upper/middle/lower lobes","Left: upper/lower lobes","Hilum (bronchus, PA, pulmonary veins, lymphatics, nerve)","Visceral + parietal pleura","Bronchopulmonary segments (surgical units)","Alveoli (type I pneumocytes — gas exchange; type II — surfactant)","Carina at T4/T5"],
+    blood:"Pulmonary arteries (gas exchange) + bronchial arteries (nutrition)",nerve:"Pulmonary plexus T2–T5 (sympathetic: bronchodilation) + vagus (bronchoconstriction)",
+    clinical:"Pneumonia, COPD (emphysema/chronic bronchitis), lung cancer (#1 cancer death), pneumothorax, TB, pulmonary fibrosis",size:"Right ~700g, Left ~600g; TLC ~6L"},
+  trachea:{name:"Trachea",latin:"Trachea",sys:"Respiratory",col:"#c07030",icon:"🫁",
+    desc:"~11 cm × 2 cm cartilaginous tube. 16–20 C-shaped rings of hyaline cartilage. Bifurcates at carina (T4/T5).",
+    fn:"Air conduction, mucociliary escalator (ciliated pseudostratified columnar epithelium)",
+    parts:["16–20 C-shaped cartilage rings","Trachealis muscle (posterior — allows oesophageal expansion)","Carina (sensitive reflex zone)","Right main bronchus (wider, shorter, more vertical — foreign body site)","Left main bronchus (longer, more horizontal)"],
+    blood:"Inferior thyroid artery",nerve:"Recurrent laryngeal nerve, vagus nerve",
+    clinical:"Endotracheal intubation landmarks, tracheostomy (between rings 2–4), tracheal stenosis, right-sided foreign body aspiration, COPD",size:"~11 cm long; ~2 cm diameter; narrowest at cricoid in children"},
+  larynx:{name:"Larynx",latin:"Larynx",sys:"Respiratory",col:"#c07030",icon:"🎤",
+    desc:"Voice box at C3–C6. Contains the glottis (true vocal folds) — narrowest part of adult airway.",
+    fn:"Phonation, airway protection (epiglottis during swallowing), cough reflex",
+    parts:["Thyroid cartilage (Adam's apple)","Cricoid cartilage (only complete ring — landmark for cricothyroidotomy)","Arytenoid cartilages ×2","Epiglottis","True vocal folds/cords (glottis)","False vocal folds (vestibular folds)","Aryepiglottic folds","Subglottis"],
+    blood:"Superior + inferior laryngeal arteries",nerve:"Superior laryngeal nerve (internal: sensation; external: cricothyroid muscle) + RLN (all other intrinsic muscles). Both from CN X.",
+    clinical:"Laryngeal cancer (supraglottic/glottic/subglottic), vocal cord polyps, laryngospasm, RLN palsy after thyroid surgery → hoarseness",size:"~5 cm length; male larynx larger (puberty hormones)"},
+  thyroid:{name:"Thyroid Gland",latin:"Glandula thyreoidea",sys:"Endocrine",col:"#60d890",icon:"🔬",
+    desc:"Butterfly-shaped gland at C5–T1, anterior to trachea. Largest purely endocrine gland.",
+    fn:"T3/T4 production (metabolism, growth, thermogenesis, cardiac rate). Calcitonin (↓serum Ca²⁺).",
+    parts:["Right lobe","Left lobe","Isthmus (over tracheal rings 2–3)","Pyramidal lobe (50% have)","Follicular cells (T3/T4)","Parafollicular C cells (calcitonin)","Thyroid follicles (colloid)","Parathyroid glands ×4 (on posterior surface)"],
+    blood:"Superior thyroid artery (1st branch ECA) + inferior thyroid artery (thyrocervical trunk of subclavian)",nerve:"Sympathetic from superior/middle cervical ganglia. RLN runs in tracheoesophageal groove.",
+    clinical:"Hypothyroidism (Hashimoto's), hyperthyroidism (Graves'), papillary/follicular/medullary/anaplastic cancer, goitre, thyroid storm",size:"~25–30g; 4–5 cm each lobe"},
+  adrenal_glands:{name:"Adrenal Glands",latin:"Glandulae suprarenales",sys:"Endocrine",col:"#60d890",icon:"🔬",
+    desc:"Two glands atop kidneys. Right: pyramidal (overlaps IVC). Left: crescent-shaped. Cortex + medulla have different embryology.",
+    fn:"Cortex: cortisol (stress), aldosterone (Na⁺/K⁺/BP), DHEA (androgens). Medulla: epinephrine + norepinephrine (fight-or-flight).",
+    parts:["Cortex — zona glomerulosa (aldosterone → salt)","Cortex — zona fasciculata (cortisol → sugar)","Cortex — zona reticularis (androgens → sex) — GFR: salt/sugar/sex","Medulla — chromaffin cells (catecholamines)"],
+    blood:"Superior suprarenal (inferior phrenic) + middle suprarenal (aorta) + inferior suprarenal (renal artery). Venous: R→IVC, L→left renal vein.",
+    nerve:"Greater splanchnic nerve (pre-ganglionic sympathetic direct to medulla)",
+    clinical:"Cushing's syndrome (↑cortisol), Addison's disease (adrenal insufficiency), pheochromocytoma (medulla), Conn's (hyperaldosteronism)",size:"~5×3×1 cm; ~5g each"},
+  pituitary:{name:"Pituitary Gland",latin:"Hypophysis cerebri",sys:"Endocrine",col:"#60d890",icon:"🔬",
+    desc:"'Master gland' in sella turcica of sphenoid bone. Connected to hypothalamus via infundibulum (stalk). Optic chiasm lies immediately above.",
+    fn:"Anterior (adenohypophysis): GH, TSH, ACTH, FSH, LH, prolactin. Posterior (neurohypophysis): ADH + oxytocin (made in hypothalamus, stored here).",
+    parts:["Anterior pituitary (adenohypophysis)","Posterior pituitary (neurohypophysis)","Pars intermedia","Infundibulum/stalk","Sella turcica","Cavernous sinus (lateral — CN III/IV/V1/V2/VI)"],
+    blood:"Hypophyseal portal system (anterior — unique portal blood supply). Inferior hypophyseal artery (posterior).",
+    nerve:"Hypothalamic–hypophyseal axons (ADH/oxytocin). Dopamine (portal) inhibits prolactin.",
+    clinical:"Pituitary adenoma (prolactinoma #1), acromegaly (GH excess), Cushing's disease (ACTH), diabetes insipidus (ADH deficiency), bitemporal hemianopia (optic chiasm compression)",size:"~1×1 cm; ~0.6 g"},
+  brain:{name:"Brain",latin:"Encephalon",sys:"Nervous",col:"#c080e0",icon:"🧠",
+    desc:"~86 billion neurons, ~100 trillion synapses, ~1.4 kg. Uses 20% of body O₂ and glucose despite being 2% of body weight.",
+    fn:"Cognition, memory, language, movement, sensation, autonomic regulation, endocrine control",
+    parts:["Frontal lobe (motor cortex, Broca's area, personality)","Parietal lobe (somatosensory, spatial)","Temporal lobe (Wernicke's, memory, hearing)","Occipital lobe (visual cortex)","Cerebellum (coordination, balance, fine motor)","Midbrain (CN III/IV, substantia nigra, red nucleus)","Pons (CN V/VI/VII/VIII, respiratory centre)","Medulla (CN IX–XII, cardiac/respiratory/vasomotor centres)","Thalamus (relay station)","Hypothalamus (autonomic, endocrine, temperature)","Basal ganglia (movement initiation)","Corpus callosum","Limbic system (emotion, memory)","4 ventricles (CSF)"],
+    blood:"Anterior circulation: ICA → ACA + MCA. Posterior: vertebral → basilar → PCA. Circle of Willis (anastomosis).",
+    nerve:"Cranial nerves I–XII",
+    clinical:"Ischaemic stroke (MCA most common), haemorrhagic stroke, brain tumour (GBM most malignant), epilepsy, Alzheimer's, Parkinson's, meningitis, TBI",size:"~1400g; ~1350mL volume; ~1.4L CSF/day produced"},
+  spinal_cord:{name:"Spinal Cord",latin:"Medulla spinalis",sys:"Nervous",col:"#c080e0",icon:"🧠",
+    desc:"Extends from medulla oblongata to conus medullaris at L1–L2. Cauda equina (L2–S5 roots) continues below in the dural sac.",
+    fn:"Two-way signal conduit (ascending sensory / descending motor); spinal reflex arcs",
+    parts:["31 spinal segments: 8C 12T 5L 5S 1Co","Cervical enlargement C4–T1 (brachial plexus)","Lumbar enlargement L2–S3 (lumbosacral plexus)","Conus medullaris (~L1-L2)","Cauda equina (L2–S5 nerve roots)","Filum terminale","Grey matter H (dorsal = sensory; ventral = motor)","White matter tracts (spinothalamic, corticospinal, dorsal columns)"],
+    blood:"Anterior spinal artery (single — motor), posterior spinal arteries ×2 (sensory), artery of Adamkiewicz (T9–L1)",
+    nerve:"31 pairs of mixed spinal nerves",
+    clinical:"Spinal cord injury (ASIA grading), multiple sclerosis, syringomyelia, cauda equina syndrome (emergency), spinal stenosis",size:"~45 cm length; ~1 cm diameter"},
+  liver:{name:"Liver",latin:"Hepar",sys:"Digestive",col:"#a06018",icon:"🫀",
+    desc:"Largest internal organ (~1.5 kg). Right hypochondrium. 8 functional Couinaud segments; dual blood supply.",
+    fn:"Metabolism (glucose/lipid/protein), detoxification, bile (600–1200mL/day), clotting factors (II,V,VII,IX,X,XI), albumin, glycogen storage, drug metabolism (CYP450)",
+    parts:["Right lobe","Left lobe","Caudate lobe (Sg I)","Quadrate lobe","Gallbladder (stores + concentrates bile)","Portal triad (portal vein + hepatic artery + bile duct)","Hepatic veins → IVC","Glisson's capsule","Kupffer cells (macrophages)","Hepatocyte lobule"],
+    blood:"Portal vein 75% (nutrient-rich) + hepatic artery 25% (oxygenated)",
+    nerve:"Celiac plexus T7–T9, vagus",
+    clinical:"Cirrhosis, viral hepatitis A/B/C, hepatocellular carcinoma, portal hypertension (varices, ascites, splenomegaly), NAFLD",size:"~1500g; 15–17 cm span"},
+  stomach:{name:"Stomach",latin:"Gaster",sys:"Digestive",col:"#a06018",icon:"🫀",
+    desc:"J-shaped dilated GI segment (cardia→pylorus). Left hypochondrium + epigastrium. Capacity 1–2L.",
+    fn:"Mechanical churning, HCl secretion (pH 1–3), pepsinogen, intrinsic factor (B12 absorption), food reservoir",
+    parts:["Cardia","Fundus","Body/corpus","Antrum","Pylorus + pyloric sphincter","Lesser curvature (left gastric + right gastric arteries)","Greater curvature (gastroepiploic arteries)","Rugae","Parietal cells (HCl + intrinsic factor)","Chief cells (pepsinogen)","G cells (gastrin)","D cells (somatostatin)"],
+    blood:"Celiac trunk branches: left/right gastric, left/right gastroepiploic, short gastric arteries",
+    nerve:"Vagus X (parasympathetic — ↑secretion + motility), celiac plexus (sympathetic)",
+    clinical:"Peptic ulcer disease (H. pylori + NSAIDs), gastric cancer (intestinal/diffuse), GERD, gastroparesis, pyloric stenosis (infants — olive mass)",size:"~25 cm length; 1–2L capacity"},
+  small_intestine:{name:"Small Intestine",latin:"Intestinum tenue",sys:"Digestive",col:"#a06018",icon:"🫀",
+    desc:"6–7 m tube: duodenum (25 cm), jejunum (~2.5 m), ileum (~3.5 m). 90% of nutrient absorption occurs here.",
+    fn:"Digestion (bile + pancreatic enzymes) + absorption (villi + microvilli = ×600 surface area increase)",
+    parts:["Duodenum D1–D4 (retroperitoneal D2–D4)","Ampulla of Vater (bile + pancreatic duct)","Jejunum (tall villi, prominent plicae circulares)","Ileum (Peyer's patches, ileocecal valve)","Villi (enterocytes, goblet cells, enteroendocrine)","Microvilli/brush border","Crypts of Lieberkühn","Brunner's glands (duodenum — alkaline mucus)"],
+    blood:"Superior mesenteric artery (SMA)",nerve:"Vagus (proximal), superior mesenteric plexus (distal)",
+    clinical:"Crohn's disease (skip lesions, transmural), celiac disease (gluten), SBO, Meckel's diverticulum (2 inches, 2 feet from IC valve, 2% population), intussusception",size:"~6.5 m total; ~2.5 cm diameter"},
+  large_intestine:{name:"Large Intestine",latin:"Intestinum crassum",sys:"Digestive",col:"#804010",icon:"🫀",
+    desc:"~1.5 m. Wider (~6 cm) than small intestine. Absorbs water + electrolytes; forms faeces. Has taeniae coli, haustra, appendices epiploicae.",
+    fn:"Water + electrolyte absorption, gut microbiome fermentation, faeces formation and continence",
+    parts:["Caecum (blind pouch)","Appendix (lymphoid — lymphatic organ; McBurney's point)","Ascending colon","Hepatic (right colic) flexure","Transverse colon (intraperitoneal)","Splenic (left colic) flexure","Descending colon","Sigmoid colon","Rectum","Anal canal (dentate line — columnar above, squamous below)","Taeniae coli (3 bands)","Haustra"],
+    blood:"SMA (ileocolic, right colic, middle colic — right side) + IMA (left colic, sigmoid, superior rectal — left side). Watershed: Griffiths point (splenic flexure) + Sudeck's point.",
+    nerve:"Vagus to splenic flexure; pelvic splanchnic S2–S4 distal",
+    clinical:"Colorectal cancer (#2 cancer death), diverticulitis, appendicitis (obstructed lumen), UC (continuous, mucosal), volvulus, Hirschsprung's disease",size:"~1.5 m; 6 cm diameter"},
+  pancreas:{name:"Pancreas",latin:"Pancreas",sys:"Digestive",col:"#a06018",icon:"🫀",
+    desc:"Mixed exocrine/endocrine retroperitoneal gland. C-curve of duodenum to splenic hilum. 95% exocrine (acini), 5% endocrine (islets of Langerhans).",
+    fn:"Exocrine: amylase, lipase, proteases (trypsin/chymotrypsin/elastase) in alkaline (HCO₃⁻) juice. Endocrine: insulin (β), glucagon (α), somatostatin (δ), PP (γ).",
+    parts:["Head (in duodenal C-curve)","Uncinate process (behind SMA/SMV)","Neck","Body","Tail (near splenic hilum)","Main duct of Wirsung → ampulla of Vater","Accessory duct of Santorini → minor papilla","Islets of Langerhans","Acinar cells"],
+    blood:"Splenic artery (body/tail), superior + inferior pancreaticoduodenal arteries (head)",
+    nerve:"Celiac plexus, vagus",
+    clinical:"Acute pancreatitis (gallstones + alcohol = 80%), chronic pancreatitis, PDAC (pancreatic ductal adenocarcinoma — poor prognosis, Courvoisier's sign), insulinoma, VIPoma",size:"~15–20 cm length; ~70–100 g"},
+  kidneys:{name:"Kidneys",latin:"Renes",sys:"Urinary",col:"#4060c8",icon:"🫘",
+    desc:"Retroperitoneal at T12–L3 (right lower due to liver). Filter 180L plasma/day; produce 1–2L urine. Each has ~1 million nephrons.",
+    fn:"Filtration + urine production, BP regulation (RAAS), erythropoietin (EPO), active Vitamin D (1,25-OH₂D₃), acid-base balance",
+    parts:["Renal cortex (glomeruli, PCT, DCT)","Renal medulla + pyramids (loops of Henle, collecting ducts)","Columns of Bertin","Minor → major calyces → renal pelvis → ureter","Nephron (glomerulus + tubules)","Bowman's capsule","PCT → loop of Henle → DCT → collecting duct","Juxtaglomerular apparatus (renin secretion)","Hilum (renal artery, vein, ureter, lymphatics — anterior to posterior: VUA)"],
+    blood:"Renal arteries direct from aorta at L1–L2; receive 25% of cardiac output (1250mL/min)",
+    nerve:"Renal plexus T10–L1; pain referred to groin (T10–L1 dermatomal distribution)",
+    clinical:"AKI/CKD, nephrolithiasis (calcium oxalate most common), UTI/pyelonephritis, renal cell carcinoma (haematuria + flank pain + mass), PCKD, renovascular HTN",size:"~11×6×3 cm; ~150 g each"},
+  bladder:{name:"Urinary Bladder",latin:"Vesica urinaria",sys:"Urinary",col:"#4060c8",icon:"🫘",
+    desc:"Hollow muscular organ behind pubic symphysis. Capacity 400–600 mL; urge to void at ~300 mL.",
+    fn:"Urine storage (storage/filling phase) and controlled micturition (voiding phase)",
+    parts:["Detrusor muscle (smooth — 3 layers)","Trigone (fixed triangle — ureteric orifices + internal urethral orifice)","Internal urethral sphincter (smooth — involuntary — sympathetic L1–L2)","External urethral sphincter (skeletal — voluntary — pudendal nerve S2–S4)","Dome","Neck","Urothelium (transitional epithelium)"],
+    blood:"Superior + inferior vesical arteries (internal iliac)",
+    nerve:"Parasympathetic S2–S4 (detrusor contraction/voiding), sympathetic L1–L2 (storage + IUS), pudendal S2–S4 (EUS)",
+    clinical:"UTI/cystitis, bladder cancer (urothelial TCC #1 — haematuria), overactive bladder, urinary retention, bladder trauma (pelvic fracture)",size:"~400–600 mL capacity; ~8 cm when full"},
+  spleen:{name:"Spleen",latin:"Lien",sys:"Lymphatic",col:"#7040a8",icon:"🔬",
+    desc:"Largest lymphoid organ (~150g). Left hypochondrium, ribs 9–11. Notched anterior border. Not essential for life.",
+    fn:"Blood filtration (removes senescent RBCs + platelets), immune response (IgM opsonins), blood reservoir, fetal haematopoiesis (until 5th month)",
+    parts:["White pulp (lymphoid: B cells in follicles, T cells in PALS)","Red pulp (sinusoids + cords of Billroth — blood filtration)","Marginal zone","Trabecular framework","Splenic capsule (can rupture with blunt trauma)"],
+    blood:"Splenic artery (largest branch of celiac trunk); drains via splenic vein → portal vein",
+    nerve:"Celiac plexus",
+    clinical:"Splenomegaly (malaria, EBV, portal HTN, lymphoma), splenic rupture (trauma — most commonly injured abdominal organ), post-splenectomy sepsis (encapsulated bacteria — pneumococcus, meningococcus, H.influenzae)",size:"~11×7×4 cm; ~150 g"},
+  lymph_nodes:{name:"Lymph Nodes",latin:"Nodi lymphoidei",sys:"Lymphatic",col:"#7040a8",icon:"🔬",
+    desc:"~600 bean-shaped immunological filters along lymphatics. Major groups: cervical, axillary, inguinal, mesenteric, mediastinal, para-aortic.",
+    fn:"Filter lymph fluid, trap pathogens/antigens, B and T cell activation, antibody production",
+    parts:["Cortex (B cell follicles + germinal centres)","Paracortex (T cells + dendritic cells)","Medulla (plasma cells, macrophages, medullary cords/sinuses)","Afferent lymphatics (multiple)","Efferent lymphatic (single, at hilum)","Subcapsular sinus","High endothelial venules (lymphocyte recirculation)"],
+    blood:"Small arterioles via hilum",nerve:"Autonomic fibres",
+    clinical:"Reactive lymphadenopathy (infection), Hodgkin's (Reed-Sternberg cells) vs non-Hodgkin's lymphoma, metastatic nodes (cancer staging — sentinel node biopsy), lymphoedema",size:"2–25 mm; cervical most accessible clinically"},
+  thymus:{name:"Thymus",latin:"Thymus",sys:"Lymphatic",col:"#7040a8",icon:"🔬",
+    desc:"Bilobed lymphoid organ, anterior superior mediastinum. Large in infancy (~30g at puberty), involutes after puberty.",
+    fn:"T-lymphocyte maturation: positive selection (MHC recognition) and negative selection (self-tolerance/clonal deletion)",
+    parts:["Two lobes","Cortex (immature thymocytes — positive selection)","Medulla (mature T cells — negative selection)","Hassall's corpuscles (medulla)","Thymic epithelial cells","Blood–thymus barrier"],
+    blood:"Internal thoracic + inferior thyroid arteries",nerve:"Vagus, phrenic nerves",
+    clinical:"Thymoma (associated with myasthenia gravis, pure red cell aplasia), DiGeorge syndrome (22q11.2 deletion — absent thymus + parathyroids), T cell immunodeficiency, SCID",size:"~30g at puberty; replaced by fat in adults"},
+  deltoid:{name:"Deltoid",latin:"M. deltoideus",sys:"Muscular",col:"#d06060",icon:"💪",
+    desc:"Triangular muscle forming the rounded shoulder contour. Three distinct heads with different actions.",
+    fn:"Middle (acromial): arm abduction 15°–90° (with supraspinatus initiating 0°–15°). Anterior: flexion + medial rotation. Posterior: extension + lateral rotation.",
+    parts:["Anterior/clavicular head","Middle/acromial head","Posterior/spinous head","Deltoid tuberosity (humerus) — insertion","Subdeltoid bursa"],
+    blood:"Anterior circumflex humeral artery, thoracoacromial artery",nerve:"Axillary nerve C5–C6 (via quadrilateral space — accompanied by posterior circumflex humeral artery)",
+    clinical:"Axillary nerve injury → deltoid paralysis + lateral shoulder numbness ('regimental badge' area), IM injection site (middle deltoid), rotator cuff disease",size:"~18 cm wide; key shoulder muscle"},
+  pectoralis_major:{name:"Pectoralis Major",latin:"M. pectoralis major",sys:"Muscular",col:"#d06060",icon:"💪",
+    desc:"Large fan-shaped anterior chest muscle. Two heads converge on bicipital groove.",
+    fn:"Adduction + medial rotation of arm (primary). Clavicular: arm flexion. Sternocostal: arm extension from flexed position. Accessory inspiratory muscle.",
+    parts:["Clavicular head (upper — anterior clavicle)","Sternocostal head (lower — sternum + costal cartilages 1–6)","Abdominal part","Insertion: crest of greater tubercle (intertubercular groove)"],
+    blood:"Pectoral branches of thoracoacromial artery, lateral thoracic artery, anterior intercostal arteries",nerve:"Medial pectoral nerve (sternocostal) + lateral pectoral nerve (clavicular) — C5–T1",
+    clinical:"Rupture in weightlifters (anterior axillary fold gap), radical mastectomy, pectoralis major flap for reconstruction",size:"~20 cm fan-shaped; key pushing/climbing muscle"},
+  biceps_brachii:{name:"Biceps Brachii",latin:"M. biceps brachii",sys:"Muscular",col:"#d06060",icon:"💪",
+    desc:"Two-headed anterior arm muscle crossing both shoulder and elbow joints. Most powerful supinator.",
+    fn:"Forearm supination (strongest — 'turn the corkscrew'), elbow flexion, weak shoulder flexion (long head)",
+    parts:["Long head (supraglenoid tubercle — intraarticular tendon, prone to tenosynovitis)","Short head (coracoid process — with coracobrachialis)","Bicipital aponeurosis (lacertus fibrosus — protects brachial artery)","Radial tuberosity (insertion)"],
+    blood:"Brachial artery branches",nerve:"Musculocutaneous nerve C5–C6",
+    clinical:"Distal biceps tendon rupture → 'Popeye sign' (proximal bunching), bicipital tendinitis, SLAP lesion (long head origin), Speed's test",size:"~14 cm contracted length"},
+  triceps:{name:"Triceps Brachii",latin:"M. triceps brachii",sys:"Muscular",col:"#d06060",icon:"💪",
+    desc:"Three-headed posterior arm muscle. Sole elbow extensor. Long head crosses the glenohumeral joint.",
+    fn:"Elbow extension (primary — all 3 heads). Long head: shoulder extension + adduction.",
+    parts:["Long head (infraglenoid tubercle of scapula)","Lateral head (posterior humerus — above and lateral to radial groove)","Medial head (posterior humerus — below radial groove, deepest)","Olecranon process (insertion)"],
+    blood:"Deep brachial (profunda brachii) artery",nerve:"Radial nerve C6–C8 (all 3 heads; branches given off proximal to spiral groove for medial head and long head)",
+    clinical:"Radial nerve palsy in spiral groove → wrist drop (triceps often spared); triceps tendon rupture (rare, 1% of tendon ruptures); olecranon bursitis",size:"~15 cm length; only elbow extensor"},
+  latissimus_dorsi:{name:"Latissimus Dorsi",latin:"M. latissimus dorsi",sys:"Muscular",col:"#d06060",icon:"💪",
+    desc:"Widest muscle of the back. Broad flat muscle from lower trunk inserting into intertubercular groove of humerus.",
+    fn:"Arm adduction, extension, medial rotation — 'the swimming/climbing muscle'. Accessory expiration. 'Coughing muscle'.",
+    parts:["Vertebral part (T7–T12 spinous processes)","Iliac part (posterior iliac crest)","Costal part (ribs 9–12)","Scapular part (inferior angle)","Intertubercular groove insertion (anterior to teres major — 'Lady Between Two Majors')"],
+    blood:"Thoracodorsal artery (branch of subscapular from axillary artery)",nerve:"Thoracodorsal nerve C6–C8",
+    clinical:"Latissimus dorsi flap (breast reconstruction after mastectomy, mandibular reconstruction), 'swimmer's muscle', key in crutch-walking, shoulder rehabilitation",size:"~40×20 cm; largest back muscle"},
+  quadriceps:{name:"Quadriceps Femoris",latin:"M. quadriceps femoris",sys:"Muscular",col:"#d06060",icon:"💪",
+    desc:"Four anterior thigh muscles converging into quadriceps tendon → patella → patellar ligament → tibial tuberosity. Largest muscle group.",
+    fn:"Knee extension (all 4 heads). Hip flexion (rectus femoris only — only part crossing hip joint).",
+    parts:["Rectus femoris (AIIS — crosses hip joint)","Vastus lateralis (largest head)","Vastus medialis (VMO — oblique fibres stabilise patella)","Vastus intermedius (deepest, under rectus femoris)","Quadriceps tendon","Patellar ligament","Medial + lateral retinacula"],
+    blood:"Femoral artery, lateral circumflex femoral artery (descending branch)",nerve:"Femoral nerve L2–L4",
+    clinical:"Quadriceps tendon rupture (>40yo), patellar tendon rupture (<40yo), patellofemoral syndrome, VMO wasting in knee injury, ACL rehab",size:"Largest muscle group in body; quadriceps to hamstrings ratio ~3:2"},
+  hamstrings:{name:"Hamstrings",latin:"Mm. ischiocruales",sys:"Muscular",col:"#d06060",icon:"💪",
+    desc:"Three posterior thigh muscles from ischial tuberosity (except short head BF from linea aspera). Biarticular (except short head).",
+    fn:"Knee flexion (primary). Hip extension. BF: lateral rotation. ST/SM: medial rotation of knee.",
+    parts:["Biceps femoris — long head (ischial tuberosity)","Biceps femoris — short head (linea aspera) — only uniarticular hamstring","Semitendinosus (long cord-like tendon, part of pes anserinus)","Semimembranosus (flat membranous origin, posteromedial capsule insertion)","Popliteal fossa (diamond-shaped space)"],
+    blood:"Perforating arteries from profunda femoris (femoral artery)",nerve:"Sciatic nerve: tibial division (long head BF, ST, SM) + common peroneal division (short head BF)",
+    clinical:"Most common athletic muscle strain (proximal myotendinous junction), proximal hamstring avulsion (water skiers), posterior knee tightness in low back pain",size:"~35 cm length; 60% of quadriceps strength"},
+  gastrocnemius:{name:"Gastrocnemius",latin:"M. gastrocnemius",sys:"Muscular",col:"#d06060",icon:"💪",
+    desc:"Superficial two-headed calf muscle. Forms the rounded lower leg contour. Part of triceps surae (with soleus).",
+    fn:"Plantarflexion — most powerful when knee extended (biarticular). Weak knee flexion.",
+    parts:["Medial head (larger — medial femoral condyle)","Lateral head (lateral femoral condyle)","Achilles tendon (calcaneal tendon — with soleus) — thickest tendon in body","Calcaneal insertion"],
+    blood:"Sural arteries (from popliteal artery)",nerve:"Tibial nerve S1–S2",
+    clinical:"'Tennis leg' (medial head tear — sudden calf pain), DVT vs muscle tear (ultrasound), Achilles tendinopathy, sural nerve (lateral cutaneous), DVT",size:"~20 cm length; combined calf ~5 cm diameter"},
+  diaphragm:{name:"Diaphragm",latin:"Diaphragma",sys:"Muscular",col:"#d06060",icon:"💪",
+    desc:"Dome-shaped musculotendinous partition separating thorax from abdomen. Primary inspiratory muscle (~75% tidal volume).",
+    fn:"Inspiration (contracts → descends → ↑thoracic volume → ↓pressure → air in). Also increases abdominal pressure for defaecation, micturition, parturition.",
+    parts:["Central tendon (fibrous — no muscle here)","Sternal part (xiphoid process)","Costal part (ribs 7–12, costal cartilages)","Lumbar crura (right + left)","Aortic hiatus T12 (aorta, thoracic duct, azygos vein — 12 letters)","Oesophageal hiatus T10 (oesophagus, vagal trunks — 10 letters)","Caval opening T8 (IVC — 8 letters in 'vena cava')","Left phrenic nerve pierces muscle; right pierces central tendon"],
+    blood:"Superior + inferior phrenic arteries, musculophrenic artery",nerve:"Phrenic nerve C3–C5 (motor + central sensory). 'C3,4,5 keeps the diaphragm alive.' Peripheral sensory: lower intercostals (T6–T11).",
+    clinical:"Hiatus hernia (sliding — GERD; rolling/paraesophageal), congenital diaphragmatic hernia (Bochdalek/Morgagni), hiccups (phrenic irritation), referred shoulder pain C4",size:"~28 cm diameter; dome reaches T8 on right, T9 on left"},
+  eye:{name:"Eye",latin:"Oculus",sys:"Sensory",col:"#40c8c0",icon:"👁️",
+    desc:"Sphere ~24 mm. Contains refracting media and photoreceptor retina (~120M rods, ~6M cones). Protected by orbit, eyelids, tears.",
+    fn:"Focuses light onto retina (cornea ~70%, lens ~30%); rods (low light/monochromatic), cones (colour/acuity); signals via CN II to occipital cortex",
+    parts:["Cornea (refracts ~70% of light, avascular)","Anterior + posterior chambers (aqueous humour)","Iris + ciliary body","Lens (accommodation — CN III)","Vitreous humour (posterior segment)","Retina: macula lutea + fovea centralis (highest acuity)","Optic nerve (CN II)","Choroid (vascular layer)","Sclera (white coat)","Conjunctiva","Extraocular muscles ×6 (CN III/IV/VI)","Lacrimal apparatus"],
+    blood:"Ophthalmic artery (1st branch ICA) → central retinal artery (end artery)",nerve:"CN II (vision), CN III (medial/inferior/superior rectus, IO, levator, pupil constriction), CN IV (SO), CN VI (lateral rectus), CN V1 (corneal sensation — afferent blink reflex), CN VII (orbicularis — efferent blink)",
+    clinical:"Glaucoma (↑IOP), cataract (lens opacity), retinal detachment, AMD, diabetic retinopathy, CRAO (central retinal artery occlusion — painless sudden vision loss), papilloedema",size:"~24 mm AP diameter; IOP normal 10–21 mmHg"},
+  ear:{name:"Ear",latin:"Auris",sys:"Sensory",col:"#40c8c0",icon:"👂",
+    desc:"Organ of hearing + vestibular balance. Three compartments: external, middle, inner.",
+    fn:"Sound: pinna → EAC → tympanic membrane → ossicles → oval window → cochlea → CN VIII → temporal lobe. Balance: semicircular canals + utricle/saccule → vestibular nuclei → cerebellum.",
+    parts:["External: pinna/auricle, EAC (S-shaped), tympanic membrane (cone-shaped, light reflex at 5 o'clock)","Middle: malleus, incus, stapes (ossicles — smallest bones in body), Eustachian tube (equalises pressure, connects to nasopharynx), tensor tympani (CN V3), stapedius (CN VII — protects against loud sounds)","Inner: cochlea (organ of Corti — hair cells), vestibule, 3 semicircular canals (anterior/posterior/lateral), round + oval windows","CN VIII vestibulocochlear"],
+    blood:"External ear: ECA branches. Inner ear: labyrinthine artery (AICA branch — end artery, hence sudden SNHL with AICA infarct).",
+    nerve:"CN VIII (vestibulocochlear), CN V3 (tensor tympani), CN VII (stapedius + chorda tympani), CN X (Arnold's nerve — ear cough reflex), CN IX (Jacobson's nerve)",
+    clinical:"Otitis media (children, Eustachian tube more horizontal), SNHL (noise/age/drugs), Menière's (vertigo+SNHL+tinnitus+aural fullness), vestibular schwannoma (CN VIII), otosclerosis (stapes fixation)",size:"Cochlea ~3 cm diameter; ~2.5 turns; audible range 20–20,000 Hz"},
+  testes:{name:"Testes",latin:"Testes",sys:"Reproductive",col:"#c8b040",icon:"🔬",
+    desc:"Paired male gonads in scrotum (~2–3°C below body temperature for spermatogenesis). Descended by week 28.",
+    fn:"Spermatogenesis (FSH-stimulated, ~1000 sperm/second from puberty). Testosterone production (LH → Leydig cells). Inhibin B (negative feedback on FSH).",
+    parts:["Seminiferous tubules (spermatogenesis — 250–300 lobules)","Sertoli cells (support, blood-testis barrier, AMH, inhibin)","Leydig cells (testosterone — interstitial)","Rete testis","Epididymis (maturation ~12 days, storage)","Vas deferens","Tunica albuginea (fibrous capsule)","Tunica vaginalis"],
+    blood:"Testicular arteries direct from aorta at L2 (hence torsion = ischaemia = surgical emergency within 6 hours)",
+    nerve:"Genitofemoral nerve L1–L2 (cremaster reflex), sympathetic testicular plexus — pain referred to L1 (loin/groin)",
+    clinical:"Testicular torsion (EMERGENCY within 6h — sudden onset, high-riding testis, absent cremasteric reflex), orchitis (mumps), varicocele, hydrocele, testicular germ cell tumours (seminoma vs NSGCT, peak 20–35yo)",size:"~4.5×3×2.5 cm; ~20 g each"},
+  trapezius:{name:"Trapezius",latin:"M. trapezius",sys:"Muscular",col:"#d06060",icon:"💪",
+    desc:"Large flat triangular back muscle covering the posterior neck and thorax. Three functional parts.",
+    fn:"Upper: elevates + upwardly rotates scapula. Middle: retracts scapula. Lower: depresses + upwardly rotates scapula. Together: stabilise scapula.",
+    parts:["Upper part (occipital bone + ligamentum nuchae)","Middle part (C7–T3 spinous processes)","Lower part (T4–T12 spinous processes)","Insertion: lateral 1/3 of clavicle, acromion, spine of scapula"],
+    blood:"Superficial cervical artery, dorsal scapular artery",nerve:"Accessory nerve CN XI (motor) + C3–C4 (proprioception)",
+    clinical:"CN XI palsy → trapezius paralysis + scapular winging (worse with arm abduction, unlike serratus anterior winging), shoulder drop, difficulty shrugging",size:"~40×30 cm; key postural muscle"},
+  gluteus_maximus:{name:"Gluteus Maximus",latin:"M. gluteus maximus",sys:"Muscular",col:"#d06060",icon:"💪",
+    desc:"Largest muscle in the body by volume. Forms the buttock. Most powerful hip extensor.",
+    fn:"Hip extension (primary — critical for stairs, rising from sitting, running). Lateral rotation. Lower fibres: hip adduction. Upper fibres: abduction.",
+    parts:["Origin: ilium (posterior), sacrum, coccyx, sacrotuberous ligament","Insertion: gluteal tuberosity of femur (deep fibres) + iliotibial tract (superficial fibres)","IT band (via tensor fascia lata)"],
+    blood:"Superior + inferior gluteal arteries (internal iliac)",nerve:"Inferior gluteal nerve L5–S2",
+    clinical:"Trendelenburg gait (if gluteus medius also weak), deep gluteal syndrome, piriformis syndrome, superior gluteal nerve injury (gluteus medius paralysis → Trendelenburg)",size:"Largest muscle in body by volume"},
 };
 
-// ═══════════════════════════════════════════════════════
-// SYSTEMS CONFIG
-// ═══════════════════════════════════════════════════════
-const SYSTEMS = {
-  "All":          { color:"#60b3e8" },
-  "Skeletal":     { color:"#b8cfe8" },
-  "Muscular":     { color:"#e88a8a" },
-  "Cardiovascular":{ color:"#e85a5a" },
-  "Respiratory":  { color:"#e8a05a" },
-  "Digestive":    { color:"#c8782a" },
-  "Nervous":      { color:"#d4a0e8" },
-  "Urinary":      { color:"#7a9ee8" },
-  "Endocrine":    { color:"#78d4a0" },
-  "Reproductive": { color:"#d4c878" },
-  "Lymphatic":    { color:"#a078d4" },
-  "Sensory":      { color:"#58d4c8" },
+// ═══════════════════════════════════════════
+// SYSTEMS
+// ═══════════════════════════════════════════
+const SYSCOLS = {
+  All:"#50a0d8",Skeletal:"#90b8d8",Muscular:"#d06060",
+  Cardiovascular:"#d04040",Respiratory:"#c07030",Digestive:"#a86020",
+  Nervous:"#a060c0",Urinary:"#4060c8",Endocrine:"#40b870",
+  Reproductive:"#b0902a",Lymphatic:"#7040a8",Sensory:"#30a8a0"
 };
 
-// ═══════════════════════════════════════════════════════
-// VIEW DEFINITIONS (SVG shapes per view + system)
-// ═══════════════════════════════════════════════════════
-// Each view draws the body outline + placed organs
-// We use a single anterior view with pan/zoom
-
-let currentSystem = "All";
-let currentView = "anterior";
-let selectedPart = null;
-let zoom = 1;
-let panX = 0, panY = 0;
-let isDragging = false, dragStartX, dragStartY;
-let showLabels = true;
-let showLayer = "all"; // all / skeletal / soft / organs
-let layerNames = ["All Layers","Skeletal","Muscular","Organs"];
-let layerKeys  = ["all","skeletal","muscular","organs"];
-let layerIdx   = 0;
-
-// ─── SVG PARTS: path data for anterior view ───────────────
-// Each part: { id, paths:[], cx, cy (label pos), labelText }
-// Coordinates designed for 520×780 viewBox
-
-const ANTERIOR_PARTS = [
-  // ── BODY OUTLINE ────────
-  { id:"__body_outline", system:"",
-    paths:[{d:"M180,30 Q200,20 260,20 Q320,20 340,30 L355,80 Q370,100 375,130 L378,160 Q385,200 382,230 L378,300 Q375,360 370,390 L368,440 Q365,480 360,500 L340,580 Q330,630 325,680 L320,740 310,760 Q295,775 260,775 Q225,775 210,760 L200,740 195,680 Q190,630 180,580 L160,500 Q155,480 152,440 L150,390 Q145,360 142,300 L138,230 Q135,200 142,160 L145,130 Q150,100 165,80 Z", fill:"#0a1628", stroke:"#2a4060", sw:1.5}], cx:260,cy:400,label:"",system:""
-  },
-
-  // ── HEAD/SKULL ────────
-  { id:"skull", system:"Skeletal", layer:"skeletal",
-    paths:[{d:"M220,28 Q260,8 300,28 Q325,45 328,72 Q330,95 315,108 Q290,120 260,122 Q230,120 205,108 Q190,95 192,72 Q195,45 220,28 Z", fill:"#b8cfe8", stroke:"#8ab0cc", sw:1, op:0.7}],
-    cx:260, cy:65, label:"Skull" },
-
-  // ── MANDIBLE ────────
-  { id:"mandible", system:"Skeletal", layer:"skeletal",
-    paths:[{d:"M225,108 Q260,118 295,108 Q305,120 305,130 Q295,145 260,147 Q225,145 215,130 Q215,120 225,108 Z", fill:"#b8cfe8", stroke:"#8ab0cc", sw:0.8, op:0.7}],
-    cx:260, cy:127, label:"Mandible" },
-
-  // ── BRAIN (visible through skull in cutaway) ────────
-  { id:"brain", system:"Nervous", layer:"organs",
-    paths:[{d:"M222,30 Q260,15 298,30 Q318,45 320,68 Q318,90 305,102 Q285,114 260,115 Q235,114 215,102 Q202,90 200,68 Q202,45 222,30 Z", fill:"#d4a0e8", stroke:"#b080cc", sw:0.8, op:0.75}],
-    cx:260, cy:65, label:"Brain" },
-
-  // ── EYES ────────
-  { id:"eye", system:"Sensory", layer:"organs",
-    paths:[
-      {d:"M230,78 Q240,73 250,78 Q240,83 230,78 Z", fill:"#58d4c8", stroke:"#38b4a8", sw:0.6},
-      {d:"M270,78 Q280,73 290,78 Q280,83 270,78 Z", fill:"#58d4c8", stroke:"#38b4a8", sw:0.6},
-    ],
-    cx:260, cy:78, label:"Eye" },
-
-  // ── EAR ────────
-  { id:"ear", system:"Sensory", layer:"organs",
-    paths:[
-      {d:"M195,90 Q188,93 188,100 Q188,107 195,110 Q200,108 202,100 Q200,93 195,90 Z", fill:"#58d4c8", stroke:"#38b4a8", sw:0.6},
-      {d:"M325,90 Q332,93 332,100 Q332,107 325,110 Q320,108 318,100 Q320,93 325,90 Z", fill:"#58d4c8", stroke:"#38b4a8", sw:0.6},
-    ],
-    cx:260, cy:100, label:"Ear" },
-
-  // ── NECK / TRACHEA ────────
-  { id:"trachea", system:"Respiratory", layer:"organs",
-    paths:[{d:"M252,148 Q256,145 268,148 L270,178 Q266,183 260,183 Q254,183 250,178 Z", fill:"#e8a05a", stroke:"#c87030", sw:0.7, op:0.8}],
-    cx:260, cy:163, label:"Trachea" },
-
-  // ── THYROID ────────
-  { id:"thyroid", system:"Endocrine", layer:"organs",
-    paths:[{d:"M240,155 Q250,150 260,152 Q270,150 280,155 Q278,165 268,168 Q260,170 252,168 Q242,165 240,155 Z", fill:"#78d4a0", stroke:"#50b078", sw:0.7, op:0.85}],
-    cx:260, cy:160, label:"Thyroid" },
-
-  // ── CLAVICLE ────────
-  { id:"clavicle", system:"Skeletal", layer:"skeletal",
-    paths:[
-      {d:"M175,148 Q210,138 240,142 Q250,144 252,148 Q240,152 205,155 Q182,155 175,148 Z", fill:"#b8cfe8", stroke:"#8ab0cc", sw:0.8, op:0.7},
-      {d:"M268,148 Q270,144 280,142 Q310,138 345,148 Q338,155 318,155 Q283,152 268,148 Z", fill:"#b8cfe8", stroke:"#8ab0cc", sw:0.8, op:0.7},
-    ],
-    cx:260, cy:148, label:"Clavicle" },
-
-  // ── STERNUM ────────
-  { id:"sternum", system:"Skeletal", layer:"skeletal",
-    paths:[{d:"M248,150 Q260,148 272,150 L274,250 Q265,254 260,254 Q255,254 246,250 Z", fill:"#b8cfe8", stroke:"#8ab0cc", sw:0.8, op:0.65}],
-    cx:260, cy:200, label:"Sternum" },
-
-  // ── RIBS ────────
-  { id:"ribs", system:"Skeletal", layer:"skeletal",
-    paths:[
-      // Right ribs (from viewer's perspective: left side of SVG)
-      {d:"M248,158 Q215,162 185,170 Q182,175 185,178 Q215,172 248,168 Z", fill:"none", stroke:"#b8cfe8", sw:1.2, op:0.7},
-      {d:"M248,168 Q213,174 183,185 Q180,190 183,193 Q213,184 248,178 Z", fill:"none", stroke:"#b8cfe8", sw:1.2, op:0.7},
-      {d:"M248,178 Q210,186 182,200 Q180,206 183,208 Q212,196 248,188 Z", fill:"none", stroke:"#b8cfe8", sw:1.2, op:0.7},
-      {d:"M248,188 Q210,200 184,216 Q182,222 186,224 Q212,210 248,198 Z", fill:"none", stroke:"#b8cfe8", sw:1.2, op:0.7},
-      {d:"M248,198 Q212,212 188,230 Q186,237 190,239 Q215,224 248,210 Z", fill:"none", stroke:"#b8cfe8", sw:1.2, op:0.7},
-      {d:"M248,208 Q215,225 192,244 Q190,251 195,253 Q218,238 248,220 Z", fill:"none", stroke:"#b8cfe8", sw:1.2, op:0.7},
-      {d:"M248,218 Q218,238 198,258 Q196,264 201,266 Q222,252 248,230 Z", fill:"none", stroke:"#b8cfe8", sw:1.2, op:0.7},
-      // Left ribs
-      {d:"M272,158 Q305,162 335,170 Q338,175 335,178 Q305,172 272,168 Z", fill:"none", stroke:"#b8cfe8", sw:1.2, op:0.7},
-      {d:"M272,168 Q307,174 337,185 Q340,190 337,193 Q307,184 272,178 Z", fill:"none", stroke:"#b8cfe8", sw:1.2, op:0.7},
-      {d:"M272,178 Q310,186 338,200 Q340,206 337,208 Q308,196 272,188 Z", fill:"none", stroke:"#b8cfe8", sw:1.2, op:0.7},
-      {d:"M272,188 Q310,200 336,216 Q338,222 334,224 Q308,210 272,198 Z", fill:"none", stroke:"#b8cfe8", sw:1.2, op:0.7},
-      {d:"M272,198 Q308,212 332,230 Q334,237 330,239 Q305,224 272,210 Z", fill:"none", stroke:"#b8cfe8", sw:1.2, op:0.7},
-      {d:"M272,208 Q305,225 328,244 Q330,251 325,253 Q302,238 272,220 Z", fill:"none", stroke:"#b8cfe8", sw:1.2, op:0.7},
-      {d:"M272,218 Q302,238 322,258 Q324,264 319,266 Q298,252 272,230 Z", fill:"none", stroke:"#b8cfe8", sw:1.2, op:0.7},
-    ],
-    cx:208, cy:205, label:"Ribs" },
-
-  // ── SCAPULA (visible from anterior, just shoulder area) ────────
-  { id:"clavicle", system:"Skeletal", layer:"skeletal",
-    paths:[], cx:200,cy:180, label:"" }, // merged above
-
-  // ── LUNGS ────────
-  { id:"lungs", system:"Respiratory", layer:"organs",
-    paths:[
-      {d:"M205,162 Q192,170 186,200 Q182,230 184,265 Q186,285 195,295 Q210,305 225,300 Q240,295 245,280 L248,255 L248,162 Q228,158 205,162 Z", fill:"#e8a05a", stroke:"#c07828", sw:0.8, op:0.65},
-      {d:"M315,162 Q328,170 334,200 Q338,230 336,265 Q334,285 325,295 Q310,305 295,300 Q280,295 275,280 L272,255 L272,162 Q292,158 315,162 Z", fill:"#e8a05a", stroke:"#c07828", sw:0.8, op:0.65},
-    ],
-    cx:260, cy:220, label:"Lungs" },
-
-  // ── HEART ────────
-  { id:"heart", system:"Cardiovascular", layer:"organs",
-    paths:[{d:"M248,175 Q245,172 238,174 Q228,178 226,188 Q224,200 232,210 Q240,220 260,232 Q280,220 288,210 Q296,200 294,188 Q292,178 282,174 Q275,172 272,175 Q268,170 260,170 Q252,170 248,175 Z", fill:"#e85a5a", stroke:"#c03030", sw:1, op:0.85}],
-    cx:260, cy:200, label:"Heart" },
-
-  // ── AORTA ────────
-  { id:"aorta", system:"Cardiovascular", layer:"organs",
-    paths:[{d:"M260,170 Q270,165 280,168 Q280,175 272,180 L272,185 Q278,182 285,185 Q290,195 288,210 Q284,204 272,202 L272,260 L268,275 L260,280 L252,275 L248,260 L248,202 Q236,204 232,210 Q230,195 235,185 Q242,182 248,185 L248,180 Q240,175 240,168 Q250,165 260,170 Z", fill:"#e85a5a", stroke:"#c03030", sw:0.6, op:0.4}],
-    cx:260, cy:235, label:"Aorta" },
-
-  // ── PULMONARY VESSELS ────────
-  { id:"pulmonary_vessels", system:"Cardiovascular", layer:"organs",
-    paths:[
-      {d:"M248,178 Q240,178 228,183 Q224,190 226,196 Q232,195 248,192 Z", fill:"#7a9ee8", stroke:"#4a7ec8", sw:0.7, op:0.7},
-      {d:"M272,178 Q280,178 292,183 Q296,190 294,196 Q288,195 272,192 Z", fill:"#e85a5a", stroke:"#c03030", sw:0.7, op:0.7},
-    ],
-    cx:260, cy:188, label:"Pulm. Vessels" },
-
-  // ── CAROTID ARTERIES ────────
-  { id:"carotid", system:"Cardiovascular", layer:"organs",
-    paths:[
-      {d:"M248,148 L244,172 Q246,175 249,172 L251,148 Z", fill:"#e85a5a", stroke:"#c03030", sw:0.7, op:0.8},
-      {d:"M272,148 L276,172 Q274,175 271,172 L269,148 Z", fill:"#e85a5a", stroke:"#c03030", sw:0.7, op:0.8},
-    ],
-    cx:255, cy:160, label:"Carotid" },
-
-  // ── DIAPHRAGM ────────
-  { id:"diaphragm", system:"Muscular", layer:"muscular",
-    paths:[{d:"M182,295 Q220,310 260,312 Q300,310 338,295 Q335,305 320,315 Q295,325 260,326 Q225,325 200,315 Q185,305 182,295 Z", fill:"#e88a8a", stroke:"#c05050", sw:0.8, op:0.7}],
-    cx:260, cy:308, label:"Diaphragm" },
-
-  // ── DELTOID ────────
-  { id:"deltoid", system:"Muscular", layer:"muscular",
-    paths:[
-      {d:"M158,158 Q145,170 143,195 Q145,215 158,220 Q168,215 178,200 Q182,185 178,165 Q170,155 158,158 Z", fill:"#e88a8a", stroke:"#c05050", sw:0.8, op:0.7},
-      {d:"M362,158 Q375,170 377,195 Q375,215 362,220 Q352,215 342,200 Q338,185 342,165 Q350,155 362,158 Z", fill:"#e88a8a", stroke:"#c05050", sw:0.8, op:0.7},
-    ],
-    cx:165, cy:190, label:"Deltoid" },
-
-  // ── PECTORALIS MAJOR ────────
-  { id:"pectoralis_major", system:"Muscular", layer:"muscular",
-    paths:[
-      {d:"M180,163 Q205,158 248,163 L248,255 Q235,260 215,255 Q195,245 182,230 Q172,215 180,163 Z", fill:"#e88a8a", stroke:"#c05050", sw:0.8, op:0.55},
-      {d:"M340,163 Q315,158 272,163 L272,255 Q285,260 305,255 Q325,245 338,230 Q348,215 340,163 Z", fill:"#e88a8a", stroke:"#c05050", sw:0.8, op:0.55},
-    ],
-    cx:215, cy:210, label:"Pect. Major" },
-
-  // ── BICEPS BRACHII ────────
-  { id:"biceps_brachii", system:"Muscular", layer:"muscular",
-    paths:[
-      {d:"M143,225 Q138,240 138,270 Q140,300 145,315 Q152,318 158,315 Q165,300 166,270 Q165,240 160,225 Q152,218 143,225 Z", fill:"#e88a8a", stroke:"#c05050", sw:0.8, op:0.75},
-      {d:"M377,225 Q382,240 382,270 Q380,300 375,315 Q368,318 362,315 Q355,300 354,270 Q355,240 360,225 Q368,218 377,225 Z", fill:"#e88a8a", stroke:"#c05050", sw:0.8, op:0.75},
-    ],
-    cx:150, cy:270, label:"Biceps" },
-
-  // ── TRICEPS ────────
-  { id:"triceps", system:"Muscular", layer:"muscular",
-    paths:[
-      {d:"M136,230 Q128,248 128,280 Q130,310 136,325 Q140,316 142,280 Q142,248 140,230 Q138,225 136,230 Z", fill:"#e88a8a", stroke:"#c05050", sw:0.7, op:0.5},
-      {d:"M384,230 Q392,248 392,280 Q390,310 384,325 Q380,316 378,280 Q378,248 380,230 Q382,225 384,230 Z", fill:"#e88a8a", stroke:"#c05050", sw:0.7, op:0.5},
-    ],
-    cx:133, cy:277, label:"Triceps" },
-
-  // ── HUMERUS ────────
-  { id:"humerus", system:"Skeletal", layer:"skeletal",
-    paths:[
-      {d:"M152,220 Q146,240 146,290 Q148,330 155,345 Q158,338 160,290 Q160,240 156,220 Z", fill:"#b8cfe8", stroke:"#8ab0cc", sw:0.8, op:0.6},
-      {d:"M368,220 Q374,240 374,290 Q372,330 365,345 Q362,338 360,290 Q360,240 364,220 Z", fill:"#b8cfe8", stroke:"#8ab0cc", sw:0.8, op:0.6},
-    ],
-    cx:150, cy:285, label:"Humerus" },
-
-  // ── RADIUS / ULNA ────────
-  { id:"radius", system:"Skeletal", layer:"skeletal",
-    paths:[
-      {d:"M148,348 L150,440 Q152,442 154,440 L155,348 Q152,344 148,348 Z", fill:"#b8cfe8", stroke:"#8ab0cc", sw:0.7, op:0.65},
-      {d:"M372,348 L370,440 Q368,442 366,440 L365,348 Q368,344 372,348 Z", fill:"#b8cfe8", stroke:"#8ab0cc", sw:0.7, op:0.65},
-    ],
-    cx:150, cy:393, label:"Radius" },
-
-  { id:"ulna", system:"Skeletal", layer:"skeletal",
-    paths:[
-      {d:"M157,345 L158,440 Q161,442 164,440 L164,345 Q161,341 157,345 Z", fill:"#b8cfe8", stroke:"#8ab0cc", sw:0.7, op:0.65},
-      {d:"M363,345 L362,440 Q359,442 356,440 L356,345 Q359,341 363,345 Z", fill:"#b8cfe8", stroke:"#8ab0cc", sw:0.7, op:0.65},
-    ],
-    cx:162, cy:390, label:"Ulna" },
-
-  // ── LIVER ────────
-  { id:"liver", system:"Digestive", layer:"organs",
-    paths:[{d:"M185,300 Q195,296 240,298 Q258,298 265,302 Q272,310 270,335 Q268,355 250,365 Q228,370 205,362 Q185,350 180,328 Q177,312 185,300 Z", fill:"#c8782a", stroke:"#a05010", sw:0.8, op:0.75}],
-    cx:225, cy:335, label:"Liver" },
-
-  // ── STOMACH ────────
-  { id:"stomach", system:"Digestive", layer:"organs",
-    paths:[{d:"M265,302 Q285,296 298,305 Q312,318 310,345 Q308,365 292,372 Q275,376 265,368 Q255,358 255,340 Q255,318 265,302 Z", fill:"#c8782a", stroke:"#a05010", sw:0.8, op:0.75}],
-    cx:284, cy:338, label:"Stomach" },
-
-  // ── SPLEEN ────────
-  { id:"spleen", system:"Lymphatic", layer:"organs",
-    paths:[{d:"M318,310 Q332,308 340,318 Q344,330 340,342 Q334,350 322,348 Q312,342 310,330 Q308,318 318,310 Z", fill:"#a078d4", stroke:"#7850b0", sw:0.8, op:0.75}],
-    cx:327, cy:330, label:"Spleen" },
-
-  // ── PANCREAS ────────
-  { id:"pancreas", system:"Digestive", layer:"organs",
-    paths:[{d:"M230,362 Q248,358 268,360 Q285,362 295,370 Q298,378 290,383 Q272,385 248,382 Q228,378 222,370 Q220,363 230,362 Z", fill:"#c8782a", stroke:"#a05010", sw:0.7, op:0.7}],
-    cx:258, cy:373, label:"Pancreas" },
-
-  // ── SMALL INTESTINE ────────
-  { id:"small_intestine", system:"Digestive", layer:"organs",
-    paths:[{d:"M215,385 Q225,378 240,382 Q248,388 250,408 Q248,430 240,448 Q232,460 220,458 Q208,452 204,438 Q200,420 205,402 Q208,390 215,385 Z", fill:"#c8782a", stroke:"#a05010", sw:0.7, op:0.6},
-           {d:"M250,390 Q262,383 272,388 Q280,395 282,415 Q280,435 272,450 Q262,458 252,455 Q242,448 240,432 Q238,412 244,398 Q246,392 250,390 Z", fill:"#c8782a", stroke:"#a05010", sw:0.7, op:0.6},
-           {d:"M283,392 Q294,387 302,393 Q308,400 308,418 Q306,435 298,447 Q290,454 280,450 Q272,444 272,428 Q272,410 277,399 Q279,394 283,392 Z", fill:"#c8782a", stroke:"#a05010", sw:0.7, op:0.6},
-    ],
-    cx:256, cy:420, label:"Small Int." },
-
-  // ── LARGE INTESTINE ────────
-  { id:"large_intestine", system:"Digestive", layer:"organs",
-    paths:[
-      // Ascending colon
-      {d:"M190,450 Q184,468 184,490 Q186,510 192,520 Q200,524 208,518 Q214,508 214,490 Q213,468 208,450 Q200,444 190,450 Z", fill:"#c8782a", stroke:"#a05010", sw:0.8, op:0.65},
-      // Transverse colon
-      {d:"M208,452 Q232,444 260,442 Q288,444 312,452 Q314,460 310,465 Q286,457 260,455 Q234,457 210,465 Q206,460 208,452 Z", fill:"#c8782a", stroke:"#a05010", sw:0.8, op:0.65},
-      // Descending colon
-      {d:"M310,454 Q316,470 316,492 Q314,512 308,522 Q300,526 292,520 Q286,510 286,490 Q287,470 292,454 Q300,447 310,454 Z", fill:"#c8782a", stroke:"#a05010", sw:0.8, op:0.65},
-      // Sigmoid
-      {d:"M286,520 Q280,535 268,545 Q255,550 245,545 Q235,538 232,525 Q236,520 244,523 Q252,530 262,526 Q272,522 278,516 Z", fill:"#c8782a", stroke:"#a05010", sw:0.8, op:0.65},
-    ],
-    cx:245, cy:480, label:"Large Int." },
-
-  // ── PELVIS ────────
-  { id:"pelvis", system:"Skeletal", layer:"skeletal",
-    paths:[{d:"M178,510 Q195,500 230,496 Q260,493 290,496 Q325,500 342,510 Q350,525 348,545 Q340,565 310,575 Q280,582 260,582 Q240,582 210,575 Q180,565 172,545 Q170,525 178,510 Z", fill:"#b8cfe8", stroke:"#8ab0cc", sw:1, op:0.5}],
-    cx:260, cy:538, label:"Pelvis" },
-
-  // ── KIDNEYS ────────
-  { id:"kidneys", system:"Urinary", layer:"organs",
-    paths:[
-      {d:"M192,370 Q180,375 178,392 Q178,408 190,415 Q202,418 210,410 Q216,400 214,385 Q210,370 192,370 Z", fill:"#7a9ee8", stroke:"#5070c8", sw:0.8, op:0.8},
-      {d:"M328,370 Q340,375 342,392 Q342,408 330,415 Q318,418 310,410 Q304,400 306,385 Q310,370 328,370 Z", fill:"#7a9ee8", stroke:"#5070c8", sw:0.8, op:0.8},
-    ],
-    cx:260, cy:392, label:"Kidneys" },
-
-  // ── ADRENAL GLANDS ────────
-  { id:"adrenal_glands", system:"Endocrine", layer:"organs",
-    paths:[
-      {d:"M186,362 Q192,358 198,362 Q200,370 196,376 Q190,378 186,373 Q184,367 186,362 Z", fill:"#78d4a0", stroke:"#50b078", sw:0.6, op:0.85},
-      {d:"M322,362 Q328,358 334,362 Q336,370 332,376 Q326,378 322,373 Q320,367 322,362 Z", fill:"#78d4a0", stroke:"#50b078", sw:0.6, op:0.85},
-    ],
-    cx:260, cy:368, label:"Adrenal" },
-
-  // ── BLADDER ────────
-  { id:"bladder", system:"Urinary", layer:"organs",
-    paths:[{d:"M242,542 Q248,535 260,534 Q272,535 278,542 Q282,554 278,564 Q270,572 260,572 Q250,572 242,564 Q238,554 242,542 Z", fill:"#7a9ee8", stroke:"#5070c8", sw:0.8, op:0.8}],
-    cx:260, cy:553, label:"Bladder" },
-
-  // ── TESTES ────────
-  { id:"testes", system:"Reproductive", layer:"organs",
-    paths:[
-      {d:"M248,578 Q244,583 244,590 Q244,598 250,600 Q256,602 260,598 Q258,590 256,582 Q253,577 248,578 Z", fill:"#d4c878", stroke:"#a89850", sw:0.6, op:0.75},
-      {d:"M272,578 Q276,583 276,590 Q276,598 270,600 Q264,602 260,598 Q262,590 264,582 Q267,577 272,578 Z", fill:"#d4c878", stroke:"#a89850", sw:0.6, op:0.75},
-    ],
-    cx:260, cy:590, label:"Testes" },
-
-  // ── FEMUR ────────
-  { id:"femur", system:"Skeletal", layer:"skeletal",
-    paths:[
-      {d:"M210,580 Q205,610 205,660 Q206,700 208,720 Q212,725 218,720 Q220,700 220,660 Q219,610 216,580 Z", fill:"#b8cfe8", stroke:"#8ab0cc", sw:0.8, op:0.65},
-      {d:"M310,580 Q315,610 315,660 Q314,700 312,720 Q308,725 302,720 Q300,700 300,660 Q301,610 304,580 Z", fill:"#b8cfe8", stroke:"#8ab0cc", sw:0.8, op:0.65},
-    ],
-    cx:215, cy:650, label:"Femur" },
-
-  // ── QUADRICEPS ────────
-  { id:"quadriceps", system:"Muscular", layer:"muscular",
-    paths:[
-      {d:"M202,582 Q195,610 195,660 Q197,700 202,720 Q208,725 210,720 Q205,700 205,660 Q206,610 207,582 Z", fill:"#e88a8a", stroke:"#c05050", sw:0.7, op:0.6},
-      {d:"M318,582 Q325,610 325,660 Q323,700 318,720 Q312,725 310,720 Q315,700 315,660 Q314,610 313,582 Z", fill:"#e88a8a", stroke:"#c05050", sw:0.7, op:0.6},
-    ],
-    cx:200, cy:645, label:"Quadriceps" },
-
-  // ── PATELLA ────────
-  { id:"patella", system:"Skeletal", layer:"skeletal",
-    paths:[
-      {d:"M206,722 Q212,718 220,722 Q222,730 218,736 Q212,738 207,734 Q204,728 206,722 Z", fill:"#b8cfe8", stroke:"#8ab0cc", sw:0.7, op:0.75},
-      {d:"M300,722 Q306,718 314,722 Q316,730 312,736 Q306,738 301,734 Q298,728 300,722 Z", fill:"#b8cfe8", stroke:"#8ab0cc", sw:0.7, op:0.75},
-    ],
-    cx:213, cy:728, label:"Patella" },
-
-  // ── TIBIA ────────
-  { id:"tibia", system:"Skeletal", layer:"skeletal",
-    paths:[
-      {d:"M208,738 L210,775 Q212,777 215,775 L216,738 Q213,734 208,738 Z", fill:"#b8cfe8", stroke:"#8ab0cc", sw:0.8, op:0.65},
-      {d:"M312,738 L310,775 Q308,777 305,775 L304,738 Q307,734 312,738 Z", fill:"#b8cfe8", stroke:"#8ab0cc", sw:0.8, op:0.65},
-    ],
-    cx:210, cy:756, label:"Tibia" },
-
-  // ── FIBULA ────────
-  { id:"fibula", system:"Skeletal", layer:"skeletal",
-    paths:[
-      {d:"M218,738 L220,775 Q222,777 224,775 L224,738 Q222,734 218,738 Z", fill:"#b8cfe8", stroke:"#8ab0cc", sw:0.6, op:0.55},
-      {d:"M302,738 L300,775 Q298,777 296,775 L296,738 Q298,734 302,738 Z", fill:"#b8cfe8", stroke:"#8ab0cc", sw:0.6, op:0.55},
-    ],
-    cx:222, cy:756, label:"Fibula" },
-
-  // ── GASTROCNEMIUS ────────
-  { id:"gastrocnemius", system:"Muscular", layer:"muscular",
-    paths:[
-      {d:"M202,740 Q196,755 197,765 Q199,774 206,776 Q208,770 208,756 Q208,742 204,738 Z", fill:"#e88a8a", stroke:"#c05050", sw:0.7, op:0.55},
-      {d:"M318,740 Q324,755 323,765 Q321,774 314,776 Q312,770 312,756 Q312,742 316,738 Z", fill:"#e88a8a", stroke:"#c05050", sw:0.7, op:0.55},
-    ],
-    cx:200, cy:758, label:"Gastrocnemius" },
-
-  // ── HAMSTRINGS (visible as posterior, showing shadows) ────────
-  { id:"hamstrings", system:"Muscular", layer:"muscular",
-    paths:[
-      {d:"M194,580 Q188,610 188,660 Q190,700 195,720 Q200,724 202,720 Q197,700 197,660 Q198,610 200,582 Z", fill:"#e88a8a", stroke:"#c05050", sw:0.5, op:0.3},
-      {d:"M326,580 Q332,610 332,660 Q330,700 325,720 Q320,724 318,720 Q323,700 323,660 Q322,610 320,582 Z", fill:"#e88a8a", stroke:"#c05050", sw:0.5, op:0.3},
-    ],
-    cx:192, cy:645, label:"Hamstrings" },
-
-  // ── VERTEBRAL COLUMN ────────
-  { id:"vertebral_column", system:"Skeletal", layer:"skeletal",
-    paths:[
-      // Cervical
-      {d:"M256,148 L264,148 L265,175 L255,175 Z", fill:"#b8cfe8", stroke:"#8ab0cc", sw:0.6, op:0.4},
-      // Thoracic
-      {d:"M255,178 L265,178 L266,295 L254,295 Z", fill:"#b8cfe8", stroke:"#8ab0cc", sw:0.6, op:0.3},
-      // Lumbar
-      {d:"M254,298 L266,298 L267,365 L253,365 Z", fill:"#b8cfe8", stroke:"#8ab0cc", sw:0.6, op:0.35},
-      // Sacrum
-      {d:"M252,368 Q256,365 264,365 Q268,368 268,385 Q264,390 256,390 Q252,390 252,385 Z", fill:"#b8cfe8", stroke:"#8ab0cc", sw:0.6, op:0.4},
-    ],
-    cx:260, cy:260, label:"Vertebral Column" },
-
-  // ── PITUITARY ────────
-  { id:"pituitary", system:"Endocrine", layer:"organs",
-    paths:[{d:"M257,80 Q260,77 263,80 Q265,83 263,86 Q260,88 257,86 Q255,83 257,80 Z", fill:"#78d4a0", stroke:"#50b078", sw:0.5, op:0.9}],
-    cx:260, cy:82, label:"Pituitary" },
-
-  // ── THYMUS ────────
-  { id:"thymus", system:"Lymphatic", layer:"organs",
-    paths:[{d:"M248,155 Q255,150 260,151 Q265,150 272,155 Q270,168 264,172 Q260,174 256,172 Q250,168 248,155 Z", fill:"#a078d4", stroke:"#7050b0", sw:0.7, op:0.7}],
-    cx:260, cy:162, label:"Thymus" },
-
-  // ── LYMPH NODES (cervical, axillary, inguinal) ────────
-  { id:"lymph_nodes", system:"Lymphatic", layer:"organs",
-    paths:[
-      {d:"M242,138 Q238,135 236,138 Q235,143 239,145 Q243,143 242,138 Z", fill:"#a078d4", stroke:"#7050b0", sw:0.5, op:0.7},
-      {d:"M278,138 Q282,135 284,138 Q285,143 281,145 Q277,143 278,138 Z", fill:"#a078d4", stroke:"#7050b0", sw:0.5, op:0.7},
-      {d:"M168,255 Q164,252 163,256 Q163,261 167,262 Q171,260 168,255 Z", fill:"#a078d4", stroke:"#7050b0", sw:0.5, op:0.7},
-      {d:"M352,255 Q356,252 357,256 Q357,261 353,262 Q349,260 352,255 Z", fill:"#a078d4", stroke:"#7050b0", sw:0.5, op:0.7},
-      {d:"M195,520 Q191,517 190,521 Q190,526 194,527 Q198,525 195,520 Z", fill:"#a078d4", stroke:"#7050b0", sw:0.5, op:0.7},
-      {d:"M325,520 Q329,517 330,521 Q330,526 326,527 Q322,525 325,520 Z", fill:"#a078d4", stroke:"#7050b0", sw:0.5, op:0.7},
-    ],
-    cx:242, cy:138, label:"Lymph Nodes" },
-
-  // ── SPINAL CORD ────────
-  { id:"spinal_cord", system:"Nervous", layer:"organs",
-    paths:[
-      {d:"M258,148 L262,148 L263,368 L257,368 Z", fill:"#d4a0e8", stroke:"#b080cc", sw:0.5, op:0.35},
-    ],
-    cx:260, cy:258, label:"Spinal Cord" },
+// ═══════════════════════════════════════════
+// SHAPE DATA — all coordinates 0–1 (fraction of canvas)
+// Body centred in viewing area
+// ═══════════════════════════════════════════
+// ANT = anterior view shapes
+const ANT=[
+  {id:"__bg",sys:"",col:"#0b1628",pts:[[.37,.02],[.42,.01],[.50,.01],[.58,.01],[.63,.02],[.67,.05],[.69,.09],[.70,.14],[.70,.18],[.71,.22],[.71,.30],[.70,.36],[.70,.42],[.69,.48],[.68,.54],[.67,.60],[.66,.68],[.64,.74],[.62,.80],[.60,.87],[.58,.93],[.57,.97],[.50,.985],[.43,.97],[.42,.93],[.40,.87],[.38,.80],[.36,.74],[.34,.68],[.33,.60],[.32,.54],[.31,.48],[.30,.42],[.30,.36],[.29,.30],[.29,.22],[.30,.18],[.30,.14],[.31,.09],[.33,.05]]},
+  {id:"skull",sys:"Skeletal",col:"#90b8d8",cx:.500,cy:.052,pts:[[.43,.02],[.50,.006],[.57,.02],[.605,.05],[.615,.085],[.610,.108],[.500,.125],[.390,.108],[.385,.085],[.395,.05]]},
+  {id:"brain",sys:"Nervous",col:"#c080e0",cx:.500,cy:.052,pts:[[.442,.022],[.500,.008],[.558,.022],[.592,.052],[.598,.084],[.586,.108],[.500,.118],[.414,.108],[.402,.084],[.408,.052]]},
+  {id:"pituitary",sys:"Endocrine",col:"#60d890",cx:.500,cy:.060,pts:[[.488,.056],[.500,.050],[.512,.056],[.510,.066],[.500,.070],[.490,.066]]},
+  {id:"mandible",sys:"Skeletal",col:"#90b8d8",cx:.500,cy:.115,pts:[[.436,.110],[.500,.124],[.564,.110],[.576,.122],[.568,.138],[.500,.146],[.432,.138],[.424,.122]]},
+  {id:"eye",sys:"Sensory",col:"#40c8c0",cx:.465,cy:.074,pts:[[.432,.070],[.465,.064],[.476,.074],[.468,.082],[.435,.078]]},
+  {id:"ear",sys:"Sensory",col:"#40c8c0",cx:.378,cy:.088,pts:[[.372,.080],[.364,.086],[.362,.096],[.366,.104],[.374,.106],[.382,.100],[.382,.088]]},
+  {id:"trachea",sys:"Respiratory",col:"#c07030",cx:.500,cy:.158,pts:[[.487,.145],[.513,.145],[.515,.168],[.513,.178],[.500,.180],[.487,.178],[.485,.168]]},
+  {id:"larynx",sys:"Respiratory",col:"#c07030",cx:.500,cy:.136,pts:[[.478,.126],[.492,.120],[.508,.120],[.522,.126],[.524,.140],[.518,.152],[.500,.156],[.482,.152],[.476,.140]]},
+  {id:"thyroid",sys:"Endocrine",col:"#60d890",cx:.500,cy:.157,pts:[[.466,.148],[.488,.142],[.512,.142],[.534,.148],[.532,.162],[.520,.170],[.500,.172],[.480,.170],[.468,.162]]},
+  {id:"thymus",sys:"Lymphatic",col:"#7040a8",cx:.500,cy:.163,pts:[[.480,.154],[.490,.149],[.510,.149],[.520,.154],[.518,.170],[.510,.176],[.500,.178],[.490,.176],[.482,.170]]},
+  {id:"clavicle",sys:"Skeletal",col:"#90b8d8",cx:.400,cy:.149,pts:[[.345,.148],[.400,.134],[.462,.140],[.488,.148],[.462,.156],[.400,.159],[.348,.155]]},
+  {id:"sternum",sys:"Skeletal",col:"#90b8d8",cx:.500,cy:.210,pts:[[.483,.148],[.517,.148],[.519,.252],[.500,.256],[.481,.252]]},
+  {id:"ribs",sys:"Skeletal",col:"#90b8d8",cx:.375,cy:.206,pts:[[.335,.162],[.370,.158],[.481,.162],[.481,.172],[.370,.168],[.338,.176]]},
+  {id:"vertebral_column",sys:"Skeletal",col:"#a0c0d8",cx:.500,cy:.320,pts:[[.492,.144],[.508,.144],[.510,.542],[.500,.547],[.490,.542]]},
+  {id:"spinal_cord",sys:"Nervous",col:"#c080e0",cx:.500,cy:.295,pts:[[.495,.147],[.505,.147],[.506,.500],[.500,.504],[.494,.500]]},
+  {id:"lungs",sys:"Respiratory",col:"#c07030",cx:.395,cy:.225,pts:[[.358,.162],[.344,.174],[.336,.202],[.335,.238],[.340,.268],[.352,.284],[.370,.292],[.392,.290],[.406,.276],[.481,.272],[.481,.162]]},
+  {id:"heart",sys:"Cardiovascular",col:"#d04040",cx:.476,cy:.203,pts:[[.458,.176],[.447,.173],[.438,.178],[.430,.189],[.430,.204],[.440,.216],[.460,.226],[.482,.232],[.504,.224],[.518,.212],[.516,.197],[.506,.184],[.494,.178],[.484,.174]]},
+  {id:"aorta",sys:"Cardiovascular",col:"#c03030",cx:.510,cy:.240,pts:[[.490,.176],[.500,.170],[.512,.174],[.520,.184],[.522,.202],[.516,.225],[.508,.262],[.502,.278],[.498,.278],[.492,.262],[.486,.240],[.483,.212],[.482,.182]]},
+  {id:"carotid",sys:"Cardiovascular",col:"#c03040",cx:.462,cy:.158,pts:[[.457,.147],[.462,.147],[.467,.178],[.462,.181],[.456,.178]]},
+  {id:"pulmonary_vessels",sys:"Cardiovascular",col:"#5050c8",cx:.448,cy:.194,pts:[[.458,.184],[.440,.188],[.428,.193],[.428,.200],[.438,.202],[.460,.197]]},
+  {id:"diaphragm",sys:"Muscular",col:"#d06060",cx:.500,cy:.300,pts:[[.338,.290],[.382,.307],[.422,.314],[.500,.316],[.578,.314],[.618,.307],[.662,.290],[.655,.305],[.625,.317],[.580,.327],[.500,.329],[.420,.327],[.375,.317],[.345,.305]]},
+  {id:"deltoid",sys:"Muscular",col:"#d06060",cx:.322,cy:.188,pts:[[.300,.153],[.292,.172],[.290,.196],[.296,.218],[.308,.220],[.322,.210],[.332,.194],[.330,.164],[.318,.152]]},
+  {id:"pectoralis_major",sys:"Muscular",col:"#d06060",cx:.394,cy:.214,pts:[[.346,.162],[.398,.157],[.481,.162],[.481,.258],[.454,.263],[.430,.255],[.398,.242],[.368,.226],[.346,.210]]},
+  {id:"biceps_brachii",sys:"Muscular",col:"#d06060",cx:.282,cy:.268,pts:[[.290,.222],[.282,.240],[.277,.272],[.280,.304],[.286,.320],[.298,.322],[.308,.318],[.310,.300],[.307,.268],[.302,.238],[.296,.222]]},
+  {id:"humerus",sys:"Skeletal",col:"#90b8d8",cx:.292,cy:.282,pts:[[.295,.217],[.288,.240],[.284,.280],[.288,.330],[.296,.344],[.304,.342],[.310,.328],[.309,.278],[.306,.238],[.300,.217]]},
+  {id:"triceps",sys:"Muscular",col:"#d06060",cx:.272,cy:.274,pts:[[.278,.228],[.268,.255],[.265,.292],[.268,.320],[.276,.332],[.286,.326],[.282,.290],[.280,.255],[.279,.228]]},
+  {id:"radius",sys:"Skeletal",col:"#90b8d8",cx:.284,cy:.390,pts:[[.284,.344],[.279,.392],[.280,.441],[.286,.445],[.290,.441],[.291,.392],[.288,.344]]},
+  {id:"ulna",sys:"Skeletal",col:"#90b8d8",cx:.296,cy:.387,pts:[[.296,.342],[.292,.388],[.294,.441],[.300,.445],[.303,.441],[.302,.390],[.300,.342]]},
+  {id:"liver",sys:"Digestive",col:"#a06018",cx:.426,cy:.342,pts:[[.356,.294],[.390,.288],[.462,.292],[.512,.298],[.522,.309],[.519,.337],[.511,.356],[.488,.368],[.460,.372],[.430,.367],[.398,.356],[.368,.343],[.350,.326],[.347,.308]]},
+  {id:"stomach",sys:"Digestive",col:"#a06018",cx:.540,cy:.338,pts:[[.512,.297],[.542,.291],[.572,.298],[.590,.313],[.592,.340],[.584,.360],[.566,.370],[.546,.373],[.520,.365],[.510,.350],[.510,.328]]},
+  {id:"spleen",sys:"Lymphatic",col:"#7040a8",cx:.622,cy:.327,pts:[[.600,.306],[.622,.302],[.640,.308],[.646,.322],[.642,.338],[.634,.347],[.620,.350],[.607,.342],[.601,.326],[.602,.314]]},
+  {id:"adrenal_glands",sys:"Endocrine",col:"#60d890",cx:.374,cy:.356,pts:[[.356,.350],[.373,.344],[.384,.350],[.387,.363],[.380,.372],[.367,.374],[.356,.368],[.352,.357]]},
+  {id:"pancreas",sys:"Digestive",col:"#a06018",cx:.500,cy:.373,pts:[[.440,.364],[.468,.359],[.512,.361],[.548,.364],[.566,.373],[.562,.383],[.540,.387],[.506,.385],[.472,.380],[.444,.374]]},
+  {id:"kidneys",sys:"Urinary",col:"#4060c8",cx:.372,cy:.387,pts:[[.350,.366],[.338,.374],[.335,.392],[.338,.410],[.350,.420],[.367,.422],[.380,.414],[.384,.400],[.380,.381],[.367,.368]]},
+  {id:"small_intestine",sys:"Digestive",col:"#a06018",cx:.478,cy:.428,pts:[[.406,.382],[.436,.378],[.582,.380],[.602,.390],[.602,.428],[.596,.466],[.578,.482],[.548,.490],[.488,.492],[.428,.488],[.398,.472],[.394,.445],[.400,.412]]},
+  {id:"large_intestine",sys:"Digestive",col:"#804010",cx:.398,cy:.468,pts:[[.368,.458],[.356,.468],[.352,.490],[.356,.514],[.368,.528],[.386,.532],[.402,.530],[.420,.520],[.602,.518],[.620,.512],[.626,.492],[.620,.470],[.606,.458],[.594,.454],[.578,.458],[.418,.458]]},
+  {id:"pelvis",sys:"Skeletal",col:"#90b8d8",cx:.500,cy:.543,pts:[[.344,.504],[.374,.494],[.420,.490],[.500,.488],[.580,.490],[.626,.494],[.656,.504],[.662,.526],[.656,.550],[.638,.566],[.608,.576],[.568,.582],[.500,.584],[.432,.582],[.392,.576],[.362,.566],[.344,.550],[.338,.526]]},
+  {id:"bladder",sys:"Urinary",col:"#4060c8",cx:.500,cy:.552,pts:[[.468,.538],[.500,.532],[.532,.538],[.540,.555],[.534,.570],[.520,.578],[.500,.580],[.480,.578],[.466,.570],[.460,.555]]},
+  {id:"testes",sys:"Reproductive",col:"#c8b040",cx:.500,cy:.590,pts:[[.462,.578],[.480,.570],[.498,.576],[.498,.594],[.488,.602],[.474,.600],[.464,.590]]},
+  {id:"femur",sys:"Skeletal",col:"#90b8d8",cx:.416,cy:.648,pts:[[.402,.581],[.395,.622],[.393,.670],[.396,.712],[.402,.730],[.410,.733],[.418,.731],[.421,.712],[.420,.670],[.417,.622],[.412,.581]]},
+  {id:"quadriceps",sys:"Muscular",col:"#d06060",cx:.396,cy:.645,pts:[[.384,.582],[.377,.622],[.375,.670],[.379,.712],[.387,.730],[.402,.581]]},
+  {id:"hamstrings",sys:"Muscular",col:"#d06060",cx:.374,cy:.645,pts:[[.370,.582],[.362,.622],[.360,.670],[.364,.712],[.372,.730],[.384,.582]]},
+  {id:"patella",sys:"Skeletal",col:"#90b8d8",cx:.408,cy:.731,pts:[[.396,.727],[.408,.722],[.422,.727],[.426,.737],[.420,.746],[.408,.748],[.397,.744],[.393,.735]]},
+  {id:"tibia",sys:"Skeletal",col:"#90b8d8",cx:.406,cy:.778,pts:[[.396,.747],[.399,.775],[.401,.985],[.409,.990],[.414,.985],[.413,.775],[.410,.747]]},
+  {id:"fibula",sys:"Skeletal",col:"#90b8d8",cx:.424,cy:.774,pts:[[.420,.747],[.422,.775],[.424,.981],[.429,.984],[.432,.981],[.430,.775],[.427,.747]]},
+  {id:"gastrocnemius",sys:"Muscular",col:"#d06060",cx:.390,cy:.768,pts:[[.383,.747],[.378,.770],[.378,.822],[.384,.864],[.392,.878],[.400,.878],[.407,.874],[.410,.860],[.406,.820],[.401,.770],[.397,.747]]},
+  {id:"lymph_nodes",sys:"Lymphatic",col:"#7040a8",cx:.440,cy:.139,pts:[[.432,.133],[.441,.129],[.449,.133],[.449,.141],[.441,.145],[.432,.141]]},
 ];
 
-// ───────────────────────────────────────────────────────
-// POSTERIOR VIEW PARTS (simplified mirror + back-specific)
-// ───────────────────────────────────────────────────────
-const POSTERIOR_PARTS = [
-  { id:"__body_outline", system:"",
-    paths:[{d:"M180,30 Q200,20 260,20 Q320,20 340,30 L355,80 Q370,100 375,130 L378,160 Q385,200 382,230 L378,300 Q375,360 370,390 L368,440 Q365,480 360,500 L340,580 Q330,630 325,680 L320,740 310,760 Q295,775 260,775 Q225,775 210,760 L200,740 195,680 Q190,630 180,580 L160,500 Q155,480 152,440 L150,390 Q145,360 142,300 L138,230 Q135,200 142,160 L145,130 Q150,100 165,80 Z", fill:"#0a1628", stroke:"#2a4060", sw:1.5}], cx:260,cy:400,label:""},
-  },
-  { id:"skull", system:"Skeletal", layer:"skeletal",
-    paths:[{d:"M220,28 Q260,8 300,28 Q325,45 328,72 Q330,95 315,108 Q290,120 260,122 Q230,120 205,108 Q190,95 192,72 Q195,45 220,28 Z", fill:"#b8cfe8", stroke:"#8ab0cc", sw:1, op:0.7}],
-    cx:260, cy:65, label:"Skull (posterior)" },
-  { id:"vertebral_column", system:"Skeletal", layer:"skeletal",
-    paths:[
-      {d:"M253,148 L267,148 L268,180 L252,180 Z", fill:"#b8cfe8", stroke:"#8ab0cc", sw:0.8, op:0.7},
-      {d:"M252,183 L268,183 L268,295 L252,295 Z", fill:"#b8cfe8", stroke:"#8ab0cc", sw:0.8, op:0.7},
-      {d:"M253,298 L267,298 L267,365 L253,365 Z", fill:"#b8cfe8", stroke:"#8ab0cc", sw:0.8, op:0.7},
-      {d:"M251,368 Q260,363 269,368 L269,400 Q260,405 251,400 Z", fill:"#b8cfe8", stroke:"#8ab0cc", sw:0.8, op:0.7},
-    ],
-    cx:260, cy:260, label:"Vertebral Column" },
-  { id:"latissimus_dorsi", system:"Muscular", layer:"muscular",
-    paths:[
-      {d:"M175,200 Q190,190 248,200 L248,310 Q230,325 210,320 Q190,310 175,290 Q162,270 175,200 Z", fill:"#e88a8a", stroke:"#c05050", sw:0.8, op:0.6},
-      {d:"M345,200 Q330,190 272,200 L272,310 Q290,325 310,320 Q330,310 345,290 Q358,270 345,200 Z", fill:"#e88a8a", stroke:"#c05050", sw:0.8, op:0.6},
-    ],
-    cx:210, cy:255, label:"Latissimus Dorsi" },
-  { id:"hamstrings", system:"Muscular", layer:"muscular",
-    paths:[
-      {d:"M192,580 Q185,620 185,680 Q187,720 192,740 Q198,745 205,740 Q210,720 210,680 Q209,620 205,580 Q200,574 192,580 Z", fill:"#e88a8a", stroke:"#c05050", sw:0.8, op:0.75},
-      {d:"M328,580 Q335,620 335,680 Q333,720 328,740 Q322,745 315,740 Q310,720 310,680 Q311,620 315,580 Q320,574 328,580 Z", fill:"#e88a8a", stroke:"#c05050", sw:0.8, op:0.75},
-    ],
-    cx:195, cy:655, label:"Hamstrings" },
-  { id:"gastrocnemius", system:"Muscular", layer:"muscular",
-    paths:[
-      {d:"M192,745 Q186,762 187,772 Q190,778 198,778 Q204,772 204,758 Q204,745 200,742 Z", fill:"#e88a8a", stroke:"#c05050", sw:0.8, op:0.75},
-      {d:"M328,745 Q334,762 333,772 Q330,778 322,778 Q316,772 316,758 Q316,745 320,742 Z", fill:"#e88a8a", stroke:"#c05050", sw:0.8, op:0.75},
-    ],
-    cx:195, cy:762, label:"Gastrocnemius" },
-  { id:"triceps", system:"Muscular", layer:"muscular",
-    paths:[
-      {d:"M135,225 Q128,248 128,285 Q130,315 137,330 Q142,325 143,285 Q143,248 142,225 Q139,220 135,225 Z", fill:"#e88a8a", stroke:"#c05050", sw:0.8, op:0.75},
-      {d:"M385,225 Q392,248 392,285 Q390,315 383,330 Q378,325 377,285 Q377,248 378,225 Q381,220 385,225 Z", fill:"#e88a8a", stroke:"#c05050", sw:0.8, op:0.75},
-    ],
-    cx:132, cy:275, label:"Triceps Brachii" },
-  { id:"kidneys", system:"Urinary", layer:"organs",
-    paths:[
-      {d:"M190,340 Q178,346 176,363 Q176,380 188,387 Q200,390 208,382 Q214,372 212,356 Q208,340 190,340 Z", fill:"#7a9ee8", stroke:"#5070c8", sw:0.8, op:0.8},
-      {d:"M330,340 Q342,346 344,363 Q344,380 332,387 Q320,390 312,382 Q306,372 308,356 Q312,340 330,340 Z", fill:"#7a9ee8", stroke:"#5070c8", sw:0.8, op:0.8},
-    ],
-    cx:260, cy:363, label:"Kidneys (posterior)" },
+const POST=[
+  {id:"__bg",sys:"",col:"#0b1628",pts:[[.37,.02],[.42,.01],[.50,.01],[.58,.01],[.63,.02],[.67,.05],[.69,.09],[.70,.14],[.70,.18],[.71,.22],[.71,.30],[.70,.36],[.70,.42],[.69,.48],[.68,.54],[.67,.60],[.66,.68],[.64,.74],[.62,.80],[.60,.87],[.58,.93],[.57,.97],[.50,.985],[.43,.97],[.42,.93],[.40,.87],[.38,.80],[.36,.74],[.34,.68],[.33,.60],[.32,.54],[.31,.48],[.30,.42],[.30,.36],[.29,.30],[.29,.22],[.30,.18],[.30,.14],[.31,.09],[.33,.05]]},
+  {id:"skull",sys:"Skeletal",col:"#90b8d8",cx:.500,cy:.052,pts:[[.43,.02],[.50,.006],[.57,.02],[.605,.05],[.612,.088],[.600,.112],[.500,.126],[.400,.112],[.388,.088],[.395,.05]]},
+  {id:"brain",sys:"Nervous",col:"#c080e0",cx:.500,cy:.052,pts:[[.442,.022],[.500,.008],[.558,.022],[.595,.052],[.600,.086],[.588,.110],[.500,.120],[.412,.110],[.400,.086],[.405,.052]]},
+  {id:"vertebral_column",sys:"Skeletal",col:"#a0c0d8",cx:.500,cy:.320,pts:[[.486,.134],[.514,.134],[.516,.546],[.500,.552],[.484,.546]]},
+  {id:"spinal_cord",sys:"Nervous",col:"#c080e0",cx:.500,cy:.295,pts:[[.493,.137],[.507,.137],[.508,.501],[.500,.505],[.492,.501]]},
+  {id:"trapezius",sys:"Muscular",col:"#d06060",cx:.500,cy:.170,pts:[[.448,.145],[.500,.128],[.552,.145],[.572,.168],[.556,.190],[.513,.196],[.487,.196],[.444,.190],[.428,.168]]},
+  {id:"latissimus_dorsi",sys:"Muscular",col:"#d06060",cx:.406,cy:.255,pts:[[.350,.198],[.382,.187],[.487,.197],[.487,.308],[.466,.320],[.438,.325],[.408,.320],[.380,.308],[.354,.290],[.340,.268],[.340,.233]]},
+  {id:"gluteus_maximus",sys:"Muscular",col:"#d06060",cx:.428,cy:.553,pts:[[.358,.503],[.402,.493],[.458,.490],[.490,.493],[.490,.542],[.478,.567],[.458,.580],[.428,.584],[.398,.580],[.368,.567],[.350,.543],[.348,.518]]},
+  {id:"kidneys",sys:"Urinary",col:"#4060c8",cx:.378,cy:.364,pts:[[.348,.339],[.336,.347],[.333,.368],[.337,.388],[.350,.398],[.366,.400],[.378,.392],[.382,.374],[.378,.354],[.365,.341]]},
+  {id:"adrenal_glands",sys:"Endocrine",col:"#60d890",cx:.350,cy:.330,pts:[[.333,.325],[.350,.318],[.362,.325],[.365,.337],[.358,.346],[.344,.348],[.333,.340]]},
+  {id:"hamstrings",sys:"Muscular",col:"#d06060",cx:.406,cy:.648,pts:[[.388,.580],[.380,.622],[.378,.670],[.382,.712],[.392,.732],[.406,.734],[.418,.732],[.422,.712],[.420,.670],[.416,.622],[.408,.580]]},
+  {id:"gastrocnemius",sys:"Muscular",col:"#d06060",cx:.398,cy:.768,pts:[[.384,.747],[.374,.772],[.372,.834],[.378,.876],[.392,.886],[.408,.884],[.420,.872],[.424,.832],[.418,.772],[.410,.747]]},
+  {id:"triceps",sys:"Muscular",col:"#d06060",cx:.278,cy:.273,pts:[[.278,.224],[.268,.250],[.265,.288],[.268,.320],[.277,.334],[.290,.330],[.297,.316],[.294,.280],[.290,.248],[.284,.224]]},
+  {id:"femur",sys:"Skeletal",col:"#90b8d8",cx:.416,cy:.648,pts:[[.402,.582],[.395,.622],[.393,.670],[.396,.712],[.402,.730],[.410,.733],[.418,.731],[.421,.712],[.420,.670],[.417,.622],[.412,.582]]},
+  {id:"tibia",sys:"Skeletal",col:"#90b8d8",cx:.406,cy:.778,pts:[[.398,.747],[.400,.775],[.402,.985],[.410,.990],[.414,.985],[.413,.775],[.408,.747]]},
+  {id:"fibula",sys:"Skeletal",col:"#90b8d8",cx:.424,cy:.774,pts:[[.420,.747],[.422,.775],[.424,.981],[.429,.984],[.432,.981],[.430,.775],[.427,.747]]},
 ];
 
-// ───────────────────────────────────────────────────────
-// LATERAL RIGHT VIEW
-// ───────────────────────────────────────────────────────
-const LATERAL_R_PARTS = [
-  { id:"__body_outline", system:"",
-    paths:[{d:"M220,30 Q250,15 280,25 Q300,40 305,70 L308,130 Q315,165 318,200 L316,260 Q318,320 316,380 L312,440 Q308,490 305,520 L298,580 Q290,640 288,700 L285,760 Q278,775 260,775 Q246,775 242,760 L240,700 Q238,640 228,580 L218,520 Q214,490 210,440 L206,380 Q204,320 204,260 L202,200 Q205,165 212,130 L215,70 Q218,40 220,30 Z", fill:"#0a1628", stroke:"#2a4060", sw:1.5}],
-    cx:260, cy:400, label:"" },
-  { id:"skull", system:"Skeletal", layer:"skeletal",
-    paths:[{d:"M218,28 Q255,10 290,28 Q310,48 312,75 Q308,100 292,114 Q270,126 252,124 Q230,120 215,105 Q205,90 207,68 Q210,45 218,28 Z", fill:"#b8cfe8", stroke:"#8ab0cc", sw:1, op:0.7}],
-    cx:258, cy:67, label:"Skull" },
-  { id:"brain", system:"Nervous", layer:"organs",
-    paths:[{d:"M220,30 Q255,15 288,30 Q306,48 308,72 Q306,95 292,108 Q270,120 252,118 Q232,115 218,102 Q208,88 210,66 Q213,44 220,30 Z", fill:"#d4a0e8", stroke:"#b080cc", sw:0.8, op:0.7}],
-    cx:258, cy:67, label:"Brain" },
-  { id:"ear", system:"Sensory", layer:"organs",
-    paths:[{d:"M302,88 Q310,92 312,100 Q312,108 304,112 Q297,110 295,102 Q295,94 302,88 Z", fill:"#58d4c8", stroke:"#38b4a8", sw:0.6}],
-    cx:303, cy:100, label:"Ear" },
-  { id:"larynx", system:"Respiratory", layer:"organs",
-    paths:[{d:"M250,126 Q258,122 268,126 L272,150 Q266,156 258,157 Q250,156 248,150 Z", fill:"#e8a05a", stroke:"#c07828", sw:0.7, op:0.8}],
-    cx:258, cy:140, label:"Larynx" },
-  { id:"vertebral_column", system:"Skeletal", layer:"skeletal",
-    paths:[
-      {d:"M242,126 Q248,122 254,126 L256,395 Q250,400 243,395 Z", fill:"#b8cfe8", stroke:"#8ab0cc", sw:0.8, op:0.6},
-    ],
-    cx:248, cy:260, label:"Vertebral Column" },
-  { id:"heart", system:"Cardiovascular", layer:"organs",
-    paths:[{d:"M240,180 Q236,176 230,178 Q220,183 219,194 Q218,206 226,216 Q240,226 255,220 Q268,212 270,200 Q270,188 262,182 Q255,178 248,180 Q245,176 240,180 Z", fill:"#e85a5a", stroke:"#c03030", sw:1, op:0.85}],
-    cx:244, cy:198, label:"Heart" },
-  { id:"lungs", system:"Respiratory", layer:"organs",
-    paths:[{d:"M265,162 Q278,158 290,168 Q300,182 300,215 Q298,250 286,268 Q272,278 258,272 Q248,264 248,248 L255,168 Z", fill:"#e8a05a", stroke:"#c07828", sw:0.8, op:0.65}],
-    cx:272, cy:218, label:"Lung" },
-  { id:"liver", system:"Digestive", layer:"organs",
-    paths:[{d:"M254,295 Q268,290 280,296 Q290,305 290,330 Q288,350 274,360 Q258,365 246,356 Q234,344 234,320 Q236,300 254,295 Z", fill:"#c8782a", stroke:"#a05010", sw:0.8, op:0.75}],
-    cx:262, cy:327, label:"Liver" },
-  { id:"stomach", system:"Digestive", layer:"organs",
-    paths:[{d:"M230,298 Q246,292 252,300 Q256,312 254,338 Q250,355 238,360 Q225,362 218,350 Q212,336 215,315 Q220,300 230,298 Z", fill:"#c8782a", stroke:"#a05010", sw:0.8, op:0.7}],
-    cx:232, cy:328, label:"Stomach" },
-  { id:"kidneys", system:"Urinary", layer:"organs",
-    paths:[{d:"M244,350 Q252,344 262,348 Q270,356 268,374 Q264,388 252,390 Q240,390 234,378 Q230,364 238,354 Z", fill:"#7a9ee8", stroke:"#5070c8", sw:0.8, op:0.8}],
-    cx:250, cy:367, label:"Kidney" },
-  { id:"femur", system:"Skeletal", layer:"skeletal",
-    paths:[{d:"M245,530 Q240,570 240,630 Q242,670 246,690 Q250,695 256,690 Q260,670 260,630 Q258,570 254,530 Z", fill:"#b8cfe8", stroke:"#8ab0cc", sw:0.8, op:0.65}],
-    cx:248, cy:610, label:"Femur" },
-  { id:"tibia", system:"Skeletal", layer:"skeletal",
-    paths:[{d:"M244,698 L246,775 Q249,777 252,775 L254,698 Z", fill:"#b8cfe8", stroke:"#8ab0cc", sw:0.8, op:0.65}],
-    cx:249, cy:736, label:"Tibia" },
+const LATR=[
+  {id:"__bg",sys:"",col:"#0b1628",pts:[[.38,.02],[.44,.008],[.54,.012],[.60,.03],[.64,.07],[.65,.13],[.64,.18],[.62,.24],[.61,.32],[.60,.42],[.60,.52],[.59,.62],[.58,.70],[.57,.78],[.56,.86],[.55,.93],[.52,.98],[.48,.98],[.45,.93],[.44,.86],[.43,.78],[.42,.70],[.41,.62],[.40,.52],[.39,.42],[.38,.32],[.37,.24],[.36,.18],[.35,.13],[.36,.07]]},
+  {id:"skull",sys:"Skeletal",col:"#90b8d8",cx:.508,cy:.055,pts:[[.418,.027],[.448,.009],[.508,.005],[.568,.011],[.610,.037],[.626,.067],[.618,.097],[.592,.115],[.558,.125],[.518,.128],[.478,.121],[.438,.107],[.412,.083],[.408,.058]]},
+  {id:"brain",sys:"Nervous",col:"#c080e0",cx:.508,cy:.055,pts:[[.424,.029],[.454,.011],[.508,.007],[.562,.013],[.602,.039],[.618,.067],[.610,.095],[.586,.111],[.556,.121],[.518,.124],[.480,.117],[.442,.105],[.418,.081],[.414,.061]]},
+  {id:"ear",sys:"Sensory",col:"#40c8c0",cx:.620,cy:.090,pts:[[.612,.079],[.626,.074],[.635,.080],[.638,.092],[.634,.104],[.623,.108],[.612,.100],[.609,.088]]},
+  {id:"larynx",sys:"Respiratory",col:"#c07030",cx:.480,cy:.142,pts:[[.458,.128],[.474,.122],[.492,.126],[.498,.142],[.494,.157],[.479,.163],[.463,.157],[.456,.143]]},
+  {id:"trachea",sys:"Respiratory",col:"#c07030",cx:.474,cy:.168,pts:[[.466,.162],[.482,.158],[.490,.163],[.490,.180],[.480,.183],[.468,.180],[.465,.163]]},
+  {id:"thyroid",sys:"Endocrine",col:"#60d890",cx:.488,cy:.155,pts:[[.466,.147],[.486,.141],[.508,.145],[.518,.156],[.514,.168],[.499,.174],[.482,.169],[.470,.160]]},
+  {id:"vertebral_column",sys:"Skeletal",col:"#a0c0d8",cx:.416,cy:.320,pts:[[.408,.127],[.426,.127],[.428,.548],[.416,.552],[.406,.548]]},
+  {id:"spinal_cord",sys:"Nervous",col:"#c080e0",cx:.414,cy:.295,pts:[[.410,.130],[.422,.130],[.423,.502],[.416,.506],[.410,.502]]},
+  {id:"heart",sys:"Cardiovascular",col:"#d04040",cx:.500,cy:.204,pts:[[.478,.182],[.465,.179],[.452,.184],[.444,.196],[.445,.211],[.458,.224],[.477,.232],[.499,.236],[.522,.226],[.532,.212],[.530,.197],[.518,.185],[.502,.180]]},
+  {id:"lungs",sys:"Respiratory",col:"#c07030",cx:.530,cy:.224,pts:[[.498,.167],[.518,.161],[.546,.167],[.567,.184],[.574,.215],[.570,.253],[.556,.273],[.535,.282],[.510,.273],[.495,.255],[.491,.224],[.494,.194]]},
+  {id:"liver",sys:"Digestive",col:"#a06018",cx:.488,cy:.330,pts:[[.453,.293],[.490,.284],[.536,.292],[.559,.307],[.562,.332],[.554,.356],[.534,.369],[.507,.373],[.479,.362],[.456,.344],[.443,.317]]},
+  {id:"stomach",sys:"Digestive",col:"#a06018",cx:.448,cy:.328,pts:[[.432,.293],[.456,.286],[.476,.296],[.481,.320],[.477,.348],[.460,.363],[.437,.367],[.416,.354],[.408,.330],[.413,.307]]},
+  {id:"kidneys",sys:"Urinary",col:"#4060c8",cx:.413,cy:.368,pts:[[.396,.346],[.410,.338],[.432,.342],[.444,.357],[.441,.376],[.429,.388],[.411,.390],[.396,.380],[.390,.363]]},
+  {id:"adrenal_glands",sys:"Endocrine",col:"#60d890",cx:.404,cy:.336,pts:[[.392,.330],[.406,.323],[.418,.330],[.420,.342],[.413,.350],[.398,.352],[.388,.343]]},
+  {id:"femur",sys:"Skeletal",col:"#90b8d8",cx:.480,cy:.648,pts:[[.472,.581],[.464,.622],[.461,.670],[.464,.712],[.470,.730],[.480,.733],[.490,.730],[.492,.712],[.491,.670],[.488,.622],[.484,.581]]},
+  {id:"patella",sys:"Skeletal",col:"#90b8d8",cx:.478,cy:.730,pts:[[.466,.726],[.478,.721],[.490,.726],[.494,.736],[.488,.745],[.478,.747],[.467,.743],[.463,.734]]},
+  {id:"tibia",sys:"Skeletal",col:"#90b8d8",cx:.476,cy:.778,pts:[[.469,.747],[.470,.775],[.472,.985],[.480,.990],[.484,.985],[.483,.775],[.479,.747]]},
+  {id:"gastrocnemius",sys:"Muscular",col:"#d06060",cx:.492,cy:.768,pts:[[.484,.747],[.475,.774],[.473,.836],[.479,.880],[.492,.888],[.506,.882],[.512,.862],[.508,.822],[.499,.774],[.492,.747]]},
+  {id:"quadriceps",sys:"Muscular",col:"#d06060",cx:.462,cy:.645,pts:[[.454,.582],[.446,.622],[.444,.670],[.448,.712],[.456,.730],[.472,.581]]},
+  {id:"hamstrings",sys:"Muscular",col:"#d06060",cx:.496,cy:.645,pts:[[.490,.582],[.498,.622],[.500,.670],[.496,.712],[.490,.730],[.480,.733],[.490,.580]]},
 ];
 
-// ═══════════════════════════════════════════════════════
-// STATE + RENDER
-// ═══════════════════════════════════════════════════════
-let viewParts = { anterior: ANTERIOR_PARTS, posterior: POSTERIOR_PARTS, 'lateral-r': LATERAL_R_PARTS, 'lateral-l': LATERAL_R_PARTS, superior: ANTERIOR_PARTS };
+// Mirror LATR for left lateral
+const LATL=LATR.map(r=>({...r,pts:r.pts.map(([x,y])=>[1-x,y]),cx:r.cx!==undefined?1-r.cx:undefined}));
 
-function getVisibleParts() {
-  const parts = viewParts[currentView] || ANTERIOR_PARTS;
-  return parts.filter(p => {
-    if (currentSystem !== "All" && p.system && p.system !== currentSystem) return false;
-    if (showLayer !== "all" && p.layer && p.layer !== showLayer && p.id !== "__body_outline") return false;
-    return true;
-  });
-}
+const SUP=[
+  {id:"__bg",sys:"",col:"#0b1628",pts:[[.20,.20],[.50,.10],[.80,.20],[.88,.50],[.80,.80],[.50,.90],[.20,.80],[.12,.50]]},
+  {id:"skull",sys:"Skeletal",col:"#90b8d8",cx:.500,cy:.500,pts:[[.25,.25],[.50,.13],[.75,.25],[.82,.50],[.75,.75],[.50,.87],[.25,.75],[.18,.50]]},
+  {id:"brain",sys:"Nervous",col:"#c080e0",cx:.500,cy:.500,pts:[[.28,.28],[.50,.17],[.72,.28],[.78,.50],[.72,.72],[.50,.83],[.28,.72],[.22,.50]]},
+  {id:"eye",sys:"Sensory",col:"#40c8c0",cx:.396,cy:.378,pts:[[.368,.363],[.398,.350],[.428,.363],[.426,.380],[.398,.388],[.370,.380]]},
+  {id:"ear",sys:"Sensory",col:"#40c8c0",cx:.204,cy:.500,pts:[[.183,.468],[.175,.500],[.183,.532],[.204,.540],[.215,.532],[.215,.468]]},
+  {id:"pituitary",sys:"Endocrine",col:"#60d890",cx:.500,cy:.500,pts:[[.488,.488],[.500,.480],[.512,.488],[.512,.512],[.500,.520],[.488,.512]]},
+];
 
-function renderSVG() {
-  const svg = document.getElementById("anatomy-svg");
-  svg.innerHTML = "";
+const VIEWS={ant:ANT,pos:POST,latr:LATR,latl:LATL,sup:SUP};
 
-  // Transform group for zoom/pan
-  const g = document.createElementNS("http://www.w3.org/2000/svg","g");
-  g.setAttribute("transform",`translate(${panX},${panY}) scale(${zoom})`);
+// ═══════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════
+let curView='ant',curSys='All',selId=null;
+let zoom=1,panX=0,panY=0;
+let drag=false,dragX=0,dragY=0;
+let showLabels=true,layerIdx=0;
+const LAYER_KEYS=['all','skeletal','muscular','organs'];
+const LAYER_LABELS=['All Layers','Skeletal','Muscular','Organs'];
+const LAYER_SYS={skeletal:['Skeletal'],muscular:['Muscular'],organs:['Cardiovascular','Respiratory','Digestive','Nervous','Urinary','Endocrine','Reproductive','Lymphatic','Sensory'],all:null};
 
-  const parts = getVisibleParts();
+// ═══════════════════════════════════════════
+// CANVAS
+// ═══════════════════════════════════════════
+const canvas=document.getElementById('c');
+const ctx=canvas.getContext('2d');
 
-  parts.forEach(part => {
-    if (!part.paths || part.paths.length === 0) return;
-    const sys = ANATOMY_DB[part.id];
-    const isSelected = selectedPart === part.id;
-    const isInteractive = !!sys;
+function resize(){canvas.width=canvas.offsetWidth;canvas.height=canvas.offsetHeight;draw();}
+window.addEventListener('resize',resize);
 
-    part.paths.forEach(path => {
-      const el = document.createElementNS("http://www.w3.org/2000/svg","path");
-      el.setAttribute("d", path.d);
-
-      let fill = path.fill || "#1e3a5a";
-      let stroke = path.stroke || "#2a6496";
-      let opacity = path.op || 1;
-
-      if (isSelected && isInteractive) {
-        fill = lighten(fill, 1.5);
-        stroke = "#60b3e8";
-        opacity = Math.min(opacity + 0.2, 1);
-      }
-
-      el.setAttribute("fill", fill);
-      el.setAttribute("stroke", stroke);
-      el.setAttribute("stroke-width", (path.sw || 1) / zoom);
-      el.setAttribute("opacity", opacity);
-
-      if (isInteractive) {
-        el.style.cursor = "pointer";
-        el.classList.add("anatomy-part");
-        if (isSelected) el.classList.add("highlighted");
-
-        el.addEventListener("mouseenter", (e) => {
-          showTooltip(e, sys.name);
-          if (!isSelected) el.setAttribute("opacity", Math.min(opacity + 0.25, 1));
-        });
-        el.addEventListener("mouseleave", () => {
-          hideTooltip();
-          if (!isSelected) el.setAttribute("opacity", opacity);
-        });
-        el.addEventListener("mousemove", moveTooltip);
-        el.addEventListener("click", (e) => {
-          e.stopPropagation();
-          selectPart(part.id);
-        });
-      }
-
-      g.appendChild(el);
-    });
-
-    // Label
-    if (showLabels && isInteractive && sys && part.cx && part.label) {
-      drawLabel(g, part.cx, part.cy - 10, part.label, sys.color || "#60b3e8");
+// ═══════════════════════════════════════════
+// DRAW
+// ═══════════════════════════════════════════
+function draw(){
+  const W=canvas.width,H=canvas.height;
+  ctx.clearRect(0,0,W,H);
+  ctx.fillStyle='#060a14';ctx.fillRect(0,0,W,H);
+  ctx.save();
+  ctx.translate(W/2+panX,H/2+panY);ctx.scale(zoom,zoom);ctx.translate(-W/2,-H/2);
+  const parts=VIEWS[curView]||ANT;
+  const lk=LAYER_KEYS[layerIdx];
+  const allowedSys=LAYER_SYS[lk];
+  parts.forEach(part=>{
+    if(!part.pts||part.pts.length<3)return;
+    if(part.id!=='__bg'){
+      if(curSys!=='All'&&part.sys!==curSys)return;
+      if(allowedSys&&!allowedSys.includes(part.sys))return;
+    }
+    const pts=part.pts.map(([x,y])=>[x*W,y*H]);
+    ctx.beginPath();ctx.moveTo(pts[0][0],pts[0][1]);
+    for(let i=1;i<pts.length;i++)ctx.lineTo(pts[i][0],pts[i][1]);
+    ctx.closePath();
+    if(part.id==='__bg'){ctx.fillStyle='#0c1830';ctx.strokeStyle='#1e3050';ctx.lineWidth=1.5;ctx.fill();ctx.stroke();return;}
+    const isSel=selId===part.id;
+    ctx.globalAlpha=isSel?1.0:0.75;
+    ctx.fillStyle=part.col||'#4a7a9a';
+    ctx.strokeStyle=isSel?'#70d0ff':lighten(part.col||'#4a7a9a',0.5);
+    ctx.lineWidth=(isSel?2:0.8)/zoom;
+    ctx.fill();ctx.stroke();
+    if(isSel){
+      ctx.save();ctx.beginPath();
+      pts.forEach(([x,y],i)=>i===0?ctx.moveTo(x,y):ctx.lineTo(x,y));
+      ctx.closePath();ctx.strokeStyle='#80e0ff';ctx.lineWidth=3/zoom;ctx.globalAlpha=0.45;ctx.stroke();ctx.restore();
+    }
+    ctx.globalAlpha=1;
+    if(showLabels&&DB[part.id]&&part.cx!==undefined&&part.id!=='__bg'){
+      const lx=part.cx*W,ly=part.cy*H;
+      const fs=Math.max(7,Math.min(11,10/zoom));
+      const nm=DB[part.id].name;
+      const txt=nm.length>16?nm.split(' ')[0]:nm;
+      ctx.font=`700 ${fs}px Segoe UI,sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';
+      const tw=ctx.measureText(txt).width;
+      ctx.fillStyle='rgba(5,9,18,0.78)';ctx.fillRect(lx-tw/2-2,ly-fs/2-2,tw+4,fs+4);
+      ctx.fillStyle=isSel?'#80e0ff':(part.col||'#80b0d0');ctx.fillText(txt,lx,ly);
     }
   });
-
-  svg.appendChild(g);
+  ctx.restore();
 }
 
-function lighten(hex, factor) {
-  try {
-    const r = parseInt(hex.slice(1,3),16);
-    const gr = parseInt(hex.slice(3,5),16);
-    const b = parseInt(hex.slice(5,7),16);
-    const lr = Math.min(255, Math.round(r * factor));
-    const lg = Math.min(255, Math.round(gr * factor));
-    const lb = Math.min(255, Math.round(b * factor));
-    return `#${lr.toString(16).padStart(2,'0')}${lg.toString(16).padStart(2,'0')}${lb.toString(16).padStart(2,'0')}`;
-  } catch(e) { return hex; }
+function lighten(hex,amt){
+  try{const r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);return `#${Math.min(255,Math.round(r+(255-r)*amt)).toString(16).padStart(2,'0')}${Math.min(255,Math.round(g+(255-g)*amt)).toString(16).padStart(2,'0')}${Math.min(255,Math.round(b+(255-b)*amt)).toString(16).padStart(2,'0')}`;}catch{return hex;}
 }
 
-function drawLabel(g, x, y, text, color) {
-  const t = document.createElementNS("http://www.w3.org/2000/svg","text");
-  t.setAttribute("x", x);
-  t.setAttribute("y", y);
-  t.setAttribute("text-anchor","middle");
-  t.setAttribute("font-size", Math.round(9 / zoom));
-  t.setAttribute("font-family","'Segoe UI',sans-serif");
-  t.setAttribute("font-weight","600");
-  t.setAttribute("fill", color || "#a0bcd4");
-  t.setAttribute("paint-order","stroke");
-  t.setAttribute("stroke","#060912");
-  t.setAttribute("stroke-width", 2 / zoom);
-  t.textContent = text;
-  g.appendChild(t);
-}
+// ═══════════════════════════════════════════
+// HIT TEST
+// ═══════════════════════════════════════════
+function worldXY(cx,cy){const W=canvas.width,H=canvas.height;return[(cx-W/2-panX)/zoom+W/2,(cy-H/2-panY)/zoom+H/2];}
 
-// ─── TOOLTIP ────────────────────────────────────────────
-const tooltip = document.getElementById("tooltip");
-function showTooltip(e, name) { tooltip.textContent = name; tooltip.style.display = "block"; moveTooltip(e); }
-function hideTooltip() { tooltip.style.display = "none"; }
-function moveTooltip(e) {
-  const viewer = document.getElementById("viewer");
-  const rect = viewer.getBoundingClientRect();
-  let x = e.clientX - rect.left + 14;
-  let y = e.clientY - rect.top - 30;
-  if (x + 180 > rect.width) x = e.clientX - rect.left - 180;
-  tooltip.style.left = x+"px";
-  tooltip.style.top  = y+"px";
-}
-
-// ─── SELECT PART ────────────────────────────────────────
-function selectPart(id) {
-  selectedPart = id;
-  highlightList(id);
-  showDetail(id);
-  renderSVG();
-}
-
-function highlightList(id) {
-  document.querySelectorAll(".part-item").forEach(el => {
-    el.classList.toggle("selected", el.dataset.id === id);
-    if (el.dataset.id === id) el.scrollIntoView({behavior:"smooth",block:"nearest"});
-  });
-}
-
-function showDetail(id) {
-  const d = ANATOMY_DB[id];
-  if (!d) return;
-
-  document.getElementById("detail-icon").textContent = d.icon || "🔬";
-  document.getElementById("detail-name").textContent = d.name;
-  document.getElementById("detail-latin").textContent = d.latin;
-  document.getElementById("detail-empty").style.display = "none";
-
-  const content = document.getElementById("detail-content");
-  content.style.display = "block";
-
-  const comps = (d.components || []).map(c => `<span class="detail-tag">${c}</span>`).join("");
-  const clinTags = (d.clinical || "").split(",").map(c => `<span class="detail-tag" style="background:#200a0a;border-color:#5a1010;color:#e88080;">${c.trim()}</span>`).join("");
-
-  content.innerHTML = `
-    <div class="detail-section">
-      <h4>Overview</h4>
-      <p>${d.desc}</p>
-    </div>
-    <div class="detail-section">
-      <h4>Function</h4>
-      <p>${d.function}</p>
-    </div>
-    <div class="detail-section">
-      <h4>Key Components</h4>
-      <div>${comps}</div>
-    </div>
-    <div class="detail-section">
-      <div class="detail-row"><span>System</span><span>${d.system}</span></div>
-      <div class="detail-row"><span>Size / Weight</span><span>${d.size || 'Variable'}</span></div>
-      <div class="detail-row"><span>Blood Supply</span><span style="font-size:10px;max-width:160px;text-align:right;line-height:1.4;">${d.blood_supply || '—'}</span></div>
-      <div class="detail-row"><span>Innervation</span><span style="font-size:10px;max-width:160px;text-align:right;line-height:1.4;">${d.innervation || '—'}</span></div>
-    </div>
-    <div class="detail-section">
-      <h4>Clinical Relevance</h4>
-      <div>${clinTags}</div>
-    </div>
-  `;
-}
-
-// ═══════════════════════════════════════════════════════
-// CONTROLS
-// ═══════════════════════════════════════════════════════
-function setView(v) {
-  currentView = v;
-  selectedPart = null;
-  document.querySelectorAll(".orient-btn").forEach(b => {
-    b.classList.toggle("active", b.textContent.toLowerCase().replace(" ","").includes(v.replace("-","").toLowerCase().substring(0,3)));
-  });
-  renderSVG();
-}
-
-function adjustZoom(delta) {
-  zoom = Math.max(0.4, Math.min(3.5, zoom + delta));
-  document.getElementById("zoom-val").textContent = Math.round(zoom*100)+"%";
-  renderSVG();
-}
-
-function resetView() {
-  zoom = 1; panX = 0; panY = 0;
-  document.getElementById("zoom-val").textContent = "100%";
-  renderSVG();
-}
-
-function toggleLabels() {
-  showLabels = !showLabels;
-  const btn = document.getElementById("lbl-btn");
-  btn.textContent = showLabels ? "Labels ON" : "Labels OFF";
-  btn.classList.toggle("active", showLabels);
-  renderSVG();
-}
-
-function cycleLayer() {
-  layerIdx = (layerIdx + 1) % layerKeys.length;
-  showLayer = layerKeys[layerIdx];
-  const btn = document.getElementById("layers-btn");
-  btn.textContent = layerNames[layerIdx];
-  btn.classList.toggle("active", showLayer !== "all");
-  renderSVG();
-}
-
-// ─── PAN ────────────────────────────────────────────────
-const svgEl = document.getElementById("anatomy-svg");
-svgEl.addEventListener("mousedown", e => { isDragging = true; dragStartX = e.clientX - panX; dragStartY = e.clientY - panY; });
-window.addEventListener("mousemove", e => { if (isDragging) { panX = e.clientX - dragStartX; panY = e.clientY - dragStartY; renderSVG(); }});
-window.addEventListener("mouseup", () => { isDragging = false; });
-svgEl.addEventListener("wheel", e => { e.preventDefault(); adjustZoom(e.deltaY < 0 ? 0.12 : -0.12); }, {passive:false});
-svgEl.addEventListener("click", e => {
-  if (e.target === svgEl || e.target.closest("g") === svgEl.querySelector("g")) { /* clicking body outline — deselect */ }
-});
-
-// ─── TOUCH ──────────────────────────────────────────────
-let lastTouchDist = null;
-svgEl.addEventListener("touchstart", e => {
-  if (e.touches.length === 1) { isDragging = true; dragStartX = e.touches[0].clientX - panX; dragStartY = e.touches[0].clientY - panY; }
-  if (e.touches.length === 2) { lastTouchDist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY); }
-}, {passive:true});
-svgEl.addEventListener("touchmove", e => {
-  if (e.touches.length === 1 && isDragging) { panX = e.touches[0].clientX - dragStartX; panY = e.touches[0].clientY - dragStartY; renderSVG(); }
-  if (e.touches.length === 2 && lastTouchDist) {
-    const dist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
-    adjustZoom((dist - lastTouchDist) * 0.005);
-    lastTouchDist = dist;
+function pip(px,py,pts,W,H){
+  let inside=false;
+  for(let i=0,j=pts.length-1;i<pts.length;j=i++){
+    const xi=pts[i][0]*W,yi=pts[i][1]*H,xj=pts[j][0]*W,yj=pts[j][1]*H;
+    if(((yi>py)!==(yj>py))&&(px<(xj-xi)*(py-yi)/(yj-yi)+xi))inside=!inside;
   }
-}, {passive:true});
-svgEl.addEventListener("touchend", () => { isDragging = false; lastTouchDist = null; });
-
-// ═══════════════════════════════════════════════════════
-// BUILD LEFT PANEL
-// ═══════════════════════════════════════════════════════
-function buildSystemTabs() {
-  const container = document.getElementById("system-tabs");
-  Object.keys(SYSTEMS).forEach(sys => {
-    const btn = document.createElement("button");
-    btn.className = "sys-btn" + (sys === currentSystem ? " active" : "");
-    btn.textContent = sys === "All" ? "All" : sys.substring(0,4);
-    btn.title = sys;
-    btn.onclick = () => {
-      currentSystem = sys;
-      document.querySelectorAll(".sys-btn").forEach(b => b.classList.toggle("active", b.title === sys));
-      buildPartList();
-      renderSVG();
-    };
-    container.appendChild(btn);
-  });
+  return inside;
 }
 
-function buildPartList() {
-  const container = document.getElementById("part-list");
-  container.innerHTML = "";
-  const filtered = Object.entries(ANATOMY_DB).filter(([id, d]) => currentSystem === "All" || d.system === currentSystem);
-  filtered.sort((a,b) => a[1].system.localeCompare(b[1].system) || a[1].name.localeCompare(b[1].name));
-
-  let lastSys = "";
-  filtered.forEach(([id, d]) => {
-    if (d.system !== lastSys) {
-      const header = document.createElement("div");
-      header.style.cssText = "font-size:9px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#2a6496;padding:8px 8px 4px;";
-      header.textContent = d.system;
-      container.appendChild(header);
-      lastSys = d.system;
-    }
-    const item = document.createElement("div");
-    item.className = "part-item" + (selectedPart === id ? " selected" : "");
-    item.dataset.id = id;
-    const dot = document.createElement("div");
-    dot.className = "part-dot";
-    dot.style.background = d.color || SYSTEMS[d.system]?.color || "#60b3e8";
-    item.appendChild(dot);
-    const label = document.createElement("span");
-    label.textContent = d.name;
-    item.appendChild(label);
-    item.addEventListener("click", () => selectPart(id));
-    container.appendChild(item);
-  });
+function hitTest(cx,cy){
+  const [wx,wy]=worldXY(cx,cy);
+  const W=canvas.width,H=canvas.height;
+  const parts=VIEWS[curView]||ANT;
+  const lk=LAYER_KEYS[layerIdx];
+  const allowedSys=LAYER_SYS[lk];
+  for(let i=parts.length-1;i>=0;i--){
+    const p=parts[i];
+    if(!p.pts||p.id==='__bg'||!DB[p.id])continue;
+    if(curSys!=='All'&&p.sys!==curSys)continue;
+    if(allowedSys&&!allowedSys.includes(p.sys))continue;
+    if(pip(wx,wy,p.pts,W,H))return p.id;
+  }
+  return null;
 }
 
-// ═══════════════════════════════════════════════════════
-// INIT
-// ═══════════════════════════════════════════════════════
-buildSystemTabs();
-buildPartList();
-renderSVG();
-
-// keyboard shortcuts
-document.addEventListener("keydown", e => {
-  if (e.key === "+" || e.key === "=") adjustZoom(0.12);
-  if (e.key === "-") adjustZoom(-0.12);
-  if (e.key === "r" || e.key === "R") resetView();
-  if (e.key === "l" || e.key === "L") toggleLabels();
-  if (e.key === "1") setView("anterior");
-  if (e.key === "2") setView("posterior");
-  if (e.key === "3") setView("lateral-r");
-  if (e.key === "4") setView("lateral-l");
+// ═══════════════════════════════════════════
+// POINTER EVENTS
+// ═══════════════════════════════════════════
+const tip=document.getElementById('tip');
+canvas.addEventListener('mousemove',e=>{
+  const r=canvas.getBoundingClientRect();
+  const cx=e.clientX-r.left,cy=e.clientY-r.top;
+  if(drag){panX+=e.movementX;panY+=e.movementY;draw();return;}
+  const id=hitTest(cx,cy);
+  if(id&&DB[id]){
+    canvas.style.cursor='pointer';
+    tip.style.display='block';tip.textContent=DB[id].name;
+    let tx=cx+14,ty=cy-28;
+    if(tx+180>canvas.offsetWidth)tx=cx-180;
+    tip.style.left=tx+'px';tip.style.top=ty+'px';
+  }else{canvas.style.cursor='default';tip.style.display='none';}
 });
+canvas.addEventListener('mouseleave',()=>{tip.style.display='none';drag=false;});
+canvas.addEventListener('mousedown',e=>{drag=true;dragX=e.clientX;dragY=e.clientY;});
+canvas.addEventListener('mouseup',e=>{
+  if(Math.abs(e.clientX-dragX)<4&&Math.abs(e.clientY-dragY)<4){
+    const r=canvas.getBoundingClientRect();
+    const id=hitTest(e.clientX-r.left,e.clientY-r.top);
+    if(id&&DB[id]){selId=id;showDetail(id);highlightList(id);draw();}
+    else{selId=null;clearDetail();draw();}
+  }
+  drag=false;
+});
+canvas.addEventListener('wheel',e=>{e.preventDefault();zoom=Math.max(.35,Math.min(4,zoom*(e.deltaY<0?1.1:0.9)));document.getElementById('zval').textContent=Math.round(zoom*100)+'%';draw();},{passive:false});
+
+// Touch
+let lastDist=null,touchStartX=0,touchStartY=0;
+canvas.addEventListener('touchstart',e=>{if(e.touches.length===1){drag=true;touchStartX=dragX=e.touches[0].clientX;touchStartY=dragY=e.touches[0].clientY;}if(e.touches.length===2)lastDist=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);},{passive:true});
+canvas.addEventListener('touchmove',e=>{if(e.touches.length===1&&drag){panX+=e.touches[0].clientX-dragX;panY+=e.touches[0].clientY-dragY;dragX=e.touches[0].clientX;dragY=e.touches[0].clientY;draw();}if(e.touches.length===2&&lastDist){const d=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);zoom=Math.max(.35,Math.min(4,zoom*(d/lastDist)));lastDist=d;document.getElementById('zval').textContent=Math.round(zoom*100)+'%';draw();}},{passive:true});
+canvas.addEventListener('touchend',e=>{if(e.changedTouches.length===1){const t=e.changedTouches[0];if(Math.abs(t.clientX-touchStartX)<8&&Math.abs(t.clientY-touchStartY)<8){const r=canvas.getBoundingClientRect();const id=hitTest(t.clientX-r.left,t.clientY-r.top);if(id&&DB[id]){selId=id;showDetail(id);highlightList(id);draw();}}}drag=false;lastDist=null;});
+
+// ═══════════════════════════════════════════
+// CONTROLS
+// ═══════════════════════════════════════════
+document.querySelectorAll('.vbtn').forEach(b=>b.addEventListener('click',()=>{
+  curView=b.dataset.v;document.querySelectorAll('.vbtn').forEach(x=>x.classList.remove('on'));b.classList.add('on');selId=null;clearDetail();draw();
+}));
+document.getElementById('zplus').addEventListener('click',()=>{zoom=Math.min(4,zoom*1.2);document.getElementById('zval').textContent=Math.round(zoom*100)+'%';draw();});
+document.getElementById('zminus').addEventListener('click',()=>{zoom=Math.max(.35,zoom/1.2);document.getElementById('zval').textContent=Math.round(zoom*100)+'%';draw();});
+document.getElementById('zreset').addEventListener('click',()=>{zoom=1;panX=0;panY=0;document.getElementById('zval').textContent='100%';draw();});
+document.getElementById('lblbtn').addEventListener('click',function(){showLabels=!showLabels;this.textContent=showLabels?'Labels ON':'Labels OFF';this.classList.toggle('on',showLabels);draw();});
+document.getElementById('laybtn').addEventListener('click',function(){layerIdx=(layerIdx+1)%LAYER_KEYS.length;this.textContent=LAYER_LABELS[layerIdx];this.classList.toggle('on',layerIdx===0);draw();});
+document.addEventListener('keydown',e=>{
+  if(e.key==='1')document.querySelector('[data-v="ant"]').click();
+  if(e.key==='2')document.querySelector('[data-v="pos"]').click();
+  if(e.key==='3')document.querySelector('[data-v="latr"]').click();
+  if(e.key==='4')document.querySelector('[data-v="latl"]').click();
+  if(e.key==='+'||e.key==='=')document.getElementById('zplus').click();
+  if(e.key==='-')document.getElementById('zminus').click();
+  if(e.key==='r'||e.key==='R')document.getElementById('zreset').click();
+  if(e.key==='l'||e.key==='L')document.getElementById('lblbtn').click();
+});
+
+// ═══════════════════════════════════════════
+// LEFT PANEL
+// ═══════════════════════════════════════════
+function buildSysTabs(){
+  const c=document.getElementById('sys-tabs');c.innerHTML='';
+  Object.keys(SYSCOLS).forEach(s=>{
+    const b=document.createElement('button');b.className='stab'+(s===curSys?' on':'');b.title=s;b.textContent=s==='All'?'All':s.substring(0,4);
+    b.addEventListener('click',()=>{curSys=s;document.querySelectorAll('.stab').forEach(x=>x.classList.toggle('on',x.title===s));buildPartList();draw();});
+    c.appendChild(b);
+  });
+}
+function buildPartList(){
+  const c=document.getElementById('part-list');c.innerHTML='';
+  const entries=Object.entries(DB).filter(([,d])=>curSys==='All'||d.sys===curSys);
+  entries.sort((a,b)=>a[1].sys.localeCompare(b[1].sys)||a[1].name.localeCompare(b[1].name));
+  let lastSys='';
+  entries.forEach(([id,d])=>{
+    if(d.sys!==lastSys){const g=document.createElement('div');g.className='pgrp';g.textContent=d.sys;c.appendChild(g);lastSys=d.sys;}
+    const item=document.createElement('div');item.className='pitem'+(selId===id?' sel':'');item.dataset.id=id;
+    const dot=document.createElement('div');dot.className='pdot';dot.style.background=d.col||SYSCOLS[d.sys]||'#508080';item.appendChild(dot);
+    const lbl=document.createElement('span');lbl.textContent=d.name;item.appendChild(lbl);
+    item.addEventListener('click',()=>{selId=id;showDetail(id);highlightList(id);draw();});
+    c.appendChild(item);
+  });
+}
+function highlightList(id){document.querySelectorAll('.pitem').forEach(el=>{el.classList.toggle('sel',el.dataset.id===id);if(el.dataset.id===id)el.scrollIntoView({behavior:'smooth',block:'nearest'});});}
+
+// ═══════════════════════════════════════════
+// DETAIL PANEL
+// ═══════════════════════════════════════════
+function showDetail(id){
+  const d=DB[id];if(!d)return;
+  document.getElementById('dicon').textContent=d.icon||'🔬';
+  document.getElementById('dname').textContent=d.name;
+  document.getElementById('dlatin').textContent=d.latin;
+  document.getElementById('dempty').style.display='none';
+  const cont=document.getElementById('dcontent');cont.style.display='block';
+  const comps=(d.parts||[]).map(p=>`<span class="dtag">${p}</span>`).join('');
+  const clin=(d.clinical||'').split(',').map(c=>`<span class="ctag">${c.trim()}</span>`).join('');
+  cont.innerHTML=`
+    <div class="dsec"><h4>Overview</h4><p>${d.desc}</p></div>
+    <div class="dsec"><h4>Function</h4><p>${d.fn}</p></div>
+    <div class="dsec"><h4>Key Components</h4><div>${comps}</div></div>
+    <div class="dsec">
+      <div class="drow"><span>System</span><span>${d.sys}</span></div>
+      <div class="drow"><span>Size / Weight</span><span>${d.size||'Variable'}</span></div>
+      <div class="drow"><span>Blood Supply</span><span>${d.blood||'—'}</span></div>
+      <div class="drow"><span>Innervation</span><span>${d.nerve||'—'}</span></div>
+    </div>
+    <div class="dsec"><h4>Clinical Relevance</h4><div>${clin}</div></div>`;
+}
+function clearDetail(){
+  document.getElementById('dname').textContent='Select a structure';
+  document.getElementById('dlatin').textContent='Click any part to explore';
+  document.getElementById('dempty').style.display='flex';
+  document.getElementById('dcontent').style.display='none';
+}
+
+// ═══════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════
+buildSysTabs();buildPartList();
+setTimeout(resize,60);
 </script>
 </body>
-</html>
-"""
+</html>"""
 
 
 def anatomy_3d_page(theme):
     st.markdown(
         f"<h2 style='color:{theme['text']};font-family:\"Bricolage Grotesque\",sans-serif;"
         f"font-size:1.6rem;font-weight:900;margin-bottom:0.3rem;'>🫁 3D Anatomy Atlas</h2>",
-        unsafe_allow_html=True
+        unsafe_allow_html=True,
     )
     st.markdown(
         f"<p style='color:{theme['subtext']};font-size:0.85rem;margin-bottom:1rem;'>"
-        "Interactive atlas · All body systems · Click any structure for details</p>",
-        unsafe_allow_html=True
+        "Interactive atlas · 45+ structures · 11 body systems · Click any part for full details</p>",
+        unsafe_allow_html=True,
     )
-
-    st.markdown("""
-    <style>
-    .stApp iframe { border-radius: 16px; border: 1px solid rgba(42,100,150,0.3); }
-    </style>
-    """, unsafe_allow_html=True)
-
-    components.html(ANATOMY_HTML, height=700, scrolling=False)
-
+    components.html(ANATOMY_HTML, height=720, scrolling=False)
     with st.expander("⌨️ Keyboard Shortcuts & Controls"):
         c1, c2, c3 = st.columns(3)
         with c1:
-            st.markdown("**Views**\n\n`1` Anterior · `2` Posterior · `3` Right Lateral · `4` Left")
+            st.markdown("`1` Anterior · `2` Posterior · `3` Right Lateral · `4` Left Lateral")
         with c2:
-            st.markdown("**Zoom**\n\n`+` Zoom in · `-` Zoom out · `R` Reset view")
+            st.markdown("`+` Zoom in · `-` Zoom out · `R` Reset view")
         with c3:
-            st.markdown("**Display**\n\n`L` Toggle labels · Mouse drag to pan · Scroll to zoom")
+            st.markdown("`L` Toggle labels · Drag to pan · Scroll wheel to zoom")
