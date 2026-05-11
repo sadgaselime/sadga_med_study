@@ -124,20 +124,20 @@ TRANSLATIONS = {
 
 
 PRO_NAV_ITEMS = [
-    ("dashboard", "dashboard", "⌂"),
-    ("knowledge_library", "subjects", "▦"),
-    ("question_bank", "mcq_quiz", "?"),
-    ("flashcard_vault", "flashcards", "▤"),
-    ("ai_study_tutor", "ai_tutor", "AI"),
-    ("performance_insights", "analytics", "↗"),
-    ("focus_mode", "pomodoro", "◷"),
-    ("clinical_skills_lab", "osce_timer", "✚"),
-    ("study_notes", "shared_notes", "✎"),
-    ("medical_references", "resources", "⌘"),
-    ("ai_mnemonics_studio", "ai_mnemonics", "M"),
-    ("az_hub", "az_hub", "A-Z"),
-    ("settings", "settings", "⚙"),
-    ("user_profile", "profile", "◎"),
+    ("dashboard", "dashboard", "⌂", "Home", "الرئيسية", "#8b5cf6"),
+    ("user_profile", "profile", "👤", "Profile", "الملف", "#0ea5e9"),
+    ("az_hub", "az_hub", "🧠", "Med Hub", "المركز", "#10b981"),
+    ("knowledge_library", "subjects", "📚", "Library", "المكتبة", "#14b8a6"),
+    ("question_bank", "mcq_quiz", "📝", "Q Bank", "الأسئلة", "#f97316"),
+    ("flashcard_vault", "flashcards", "💎", "Cards", "البطاقات", "#ec4899"),
+    ("ai_study_tutor", "ai_tutor", "🤖", "AI Tutor", "المعلم", "#6366f1"),
+    ("ai_mnemonics_studio", "ai_mnemonics", "💡", "Mnemonics", "الحفظ", "#eab308"),
+    ("clinical_skills_lab", "osce_timer", "🩺", "OSCE", "الأوسكي", "#ef4444"),
+    ("focus_mode", "pomodoro", "⏱", "Focus", "التركيز", "#06b6d4"),
+    ("performance_insights", "analytics", "📊", "Insights", "الأداء", "#22c55e"),
+    ("medical_references", "resources", "📖", "Refs", "المراجع", "#a855f7"),
+    ("study_notes", "shared_notes", "✍️", "Notes", "الملاحظات", "#f59e0b"),
+    ("settings", "settings", "⚙️", "Settings", "الإعدادات", "#64748b"),
 ]
 
 
@@ -442,29 +442,62 @@ def inject_premium_css(theme):
             white-space:nowrap;
         }}
         .student-nav-grid div[data-testid="stHorizontalBlock"] {{
-            gap: 12px !important;
+            gap: 0 !important;
+            align-items: stretch !important;
         }}
-        .student-nav-grid .stButton > button {{
-            min-height: 58px !important;
-            border-radius: 18px !important;
-            justify-content: center !important;
-            background: var(--glass) !important;
-            border: 1px solid var(--line) !important;
-            color: var(--ink) !important;
+        .student-nav-grid {{
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            flex-wrap: wrap;
+            background: rgba(255,255,255,0.91);
+            border: 1px solid rgba(255,255,255,0.84);
+            border-radius: 16px;
+            padding: 8px 10px;
+            box-shadow: 0 16px 42px rgba(31,41,55,0.10);
+            backdrop-filter: blur(18px);
+            margin-bottom: 18px;
+            overflow-x: auto;
+            scrollbar-width: none;
+        }}
+        .student-nav-grid::-webkit-scrollbar {{
+            display: none;
+        }}
+        .student-nav-link {{
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            min-height: 38px;
+            padding: 0 12px;
+            border-radius: 10px;
+            border: 1px solid transparent;
+            color: {theme["text_muted"]} !important;
+            text-decoration: none !important;
             font-weight: 850 !important;
             letter-spacing: 0 !important;
-            box-shadow: 0 12px 30px rgba(0,0,0,0.18) !important;
+            white-space: nowrap;
+            transition: all 0.18s ease;
+            font-size: 0.86rem;
         }}
-        .student-nav-grid .stButton > button:hover {{
-            background: linear-gradient(135deg, rgba(56,213,255,0.94), rgba(46,229,157,0.94)) !important;
-            color: #03111d !important;
-            transform: translateY(-2px) !important;
-            box-shadow: 0 20px 46px rgba(56,213,255,0.18) !important;
+        .student-nav-link:hover {{
+            background: {theme["hover_bg"]} !important;
+            border-color: {theme["card_border"]} !important;
+            color: {theme["text"]} !important;
+            transform: translateY(-1px) !important;
+            box-shadow: 0 10px 24px rgba(31,41,55,0.08) !important;
         }}
-        .student-nav-grid .stButton > button[kind="primary"] {{
-            background: linear-gradient(135deg, var(--cyan), var(--emerald)) !important;
-            color: #03111d !important;
-            border-color: rgba(255,255,255,0.20) !important;
+        .student-nav-link.active {{
+            background: linear-gradient(135deg, #9a3412, #c2410c) !important;
+            color: #fff7ed !important;
+            border-color: rgba(154,52,18,0.32) !important;
+            box-shadow: 0 12px 28px rgba(154,52,18,0.22) !important;
+        }}
+        .student-nav-icon {{
+            display:inline-flex;
+            align-items:center;
+            justify-content:center;
+            font-size: 0.9rem;
+            line-height: 1;
         }}
         .section-title {{
             color:var(--ink) !important;
@@ -588,6 +621,16 @@ def render_topbar(theme, themes):
 
 
 def render_sidebar():
+    current_page = st.session_state.get("page", "dashboard")
+    language = st.session_state.get("language", "en")
+    nav_links = []
+    for _, page_id, icon, label_en, label_ar, _ in PRO_NAV_ITEMS:
+        label = label_ar if language == "ar" else label_en
+        active = " active" if current_page == page_id else ""
+        nav_links.append(
+            f'<a class="student-nav-link{active}" href="?page={page_id}">'
+            f'<span class="student-nav-icon">{icon}</span><span>{label}</span></a>'
+        )
     st.markdown(
         f"""
         <div class="student-workspace">
@@ -599,20 +642,11 @@ def render_sidebar():
             <div class="student-badge">SQU-COM · OMSB · USMLE</div>
         </div>
         <div class="student-nav-grid">
+            {"".join(nav_links)}
+        </div>
         """,
         unsafe_allow_html=True,
     )
-    rows = [PRO_NAV_ITEMS[i:i + 4] for i in range(0, len(PRO_NAV_ITEMS), 4)]
-    for row_index, row in enumerate(rows):
-        cols = st.columns(len(row))
-        for col, (label_key, page_id, icon) in zip(cols, row):
-            with col:
-                active = st.session_state.get("page") == page_id
-                label = get_translation(label_key)
-                if st.button(f"{icon} {label}", key=f"premium_nav_{row_index}_{page_id}", type="primary" if active else "secondary", use_container_width=True):
-                    st.session_state.page = page_id
-                    st.rerun()
-    st.markdown("</div>", unsafe_allow_html=True)
 
 
 def render_hero():
