@@ -1,0 +1,7 @@
+__pycache__/
+*.py[cod]
+.DS_Store
+venv/
+.venv/
+medstudy_oman.db
+.streamlit/secrets.toml

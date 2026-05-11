@@ -173,6 +173,16 @@ def _plotly_config() -> dict:
     )
 
 
+def _plotly_alpha(color: str, alpha: float) -> str:
+    """Convert hex theme colors to Plotly-safe rgba strings."""
+    if isinstance(color, str) and color.startswith("#") and len(color) == 7:
+        r = int(color[1:3], 16)
+        g = int(color[3:5], 16)
+        b = int(color[5:7], 16)
+        return f"rgba({r},{g},{b},{alpha})"
+    return color
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # MAIN ENTRY
 # ─────────────────────────────────────────────────────────────────────────────
@@ -399,7 +409,7 @@ def _render_study_trend(theme: dict, stats: dict):
     colors = []
     for m in minutes:
         if m == 0:      colors.append(theme["card_border"])
-        elif m < 60:    colors.append(theme["primary"] + "80")
+        elif m < 60:    colors.append(_plotly_alpha(theme["primary"], 0.50))
         else:           colors.append(theme["primary"])
 
     fig = go.Figure(go.Bar(
@@ -414,7 +424,7 @@ def _render_study_trend(theme: dict, stats: dict):
     fig.add_hline(
         y              = 60,
         line_dash      = "dot",
-        line_color     = theme["primary"] + "60",
+        line_color     = _plotly_alpha(theme["primary"], 0.38),
         annotation_text= "60 min goal",
         annotation_font_color = theme["subtext"],
         annotation_font_size  = 10,
@@ -500,7 +510,7 @@ def _render_mcq_accuracy(theme: dict, stats: dict):
         x              = dates,
         y              = counts,
         name           = "Questions",
-        marker_color   = theme["primary"] + "25",
+        marker_color   = _plotly_alpha(theme["primary"], 0.15),
         marker_line_width = 0,
         yaxis          = "y2",
         hovertemplate  = "<b>%{x}</b><br>%{y} questions<extra></extra>",
@@ -517,13 +527,13 @@ def _render_mcq_accuracy(theme: dict, stats: dict):
         marker         = dict(size=4, color=theme["primary"],
                               line=dict(width=1.5, color=theme["surface"])),
         fill           = "tozeroy",
-        fillcolor      = theme["primary"] + "12",
+        fillcolor      = _plotly_alpha(theme["primary"], 0.07),
         hovertemplate  = "<b>%{x}</b><br>Accuracy: %{y:.1f}%<extra></extra>",
     ))
 
     # 70% target line
     fig.add_hline(
-        y=70, line_dash="dot", line_color=theme["success"] + "60",
+        y=70, line_dash="dot", line_color=_plotly_alpha(theme["success"], 0.38),
         annotation_text="70% target",
         annotation_font_color=theme["subtext"],
         annotation_font_size=10,
@@ -570,7 +580,7 @@ def _render_subject_radar(theme: dict, stats: dict):
         r           = scores_c,
         theta       = subjects_c,
         fill        = "toself",
-        fillcolor   = theme["primary"] + "22",
+        fillcolor   = _plotly_alpha(theme["primary"], 0.13),
         line        = dict(color=theme["primary"], width=2),
         mode        = "lines+markers",
         marker      = dict(size=5, color=theme["primary"]),
@@ -583,7 +593,7 @@ def _render_subject_radar(theme: dict, stats: dict):
         r         = target_scores,
         theta     = subjects_c,
         mode      = "lines",
-        line      = dict(color=theme["success"] + "60", width=1.5, dash="dot"),
+        line      = dict(color=_plotly_alpha(theme["success"], 0.38), width=1.5, dash="dot"),
         hoverinfo = "skip",
     ))
 
@@ -641,7 +651,7 @@ def _render_score_progression(theme: dict, stats: dict):
         textposition = "top center",
         textfont     = dict(size=9, color=theme["text_muted"]),
         fill         = "tozeroy",
-        fillcolor    = theme["primary"] + "10",
+        fillcolor    = _plotly_alpha(theme["primary"], 0.06),
         hovertemplate= "<b>%{x}</b><br>Score: %{y:.1f}%<extra></extra>",
     ))
 
@@ -659,7 +669,7 @@ def _render_score_progression(theme: dict, stats: dict):
     fig.add_hline(
         y=60,
         line_dash="dot",
-        line_color=theme["warning"] + "80",
+        line_color=_plotly_alpha(theme["warning"], 0.50),
         annotation_text="Pass 60%",
         annotation_font_color=theme["subtext"],
         annotation_font_size=10,
