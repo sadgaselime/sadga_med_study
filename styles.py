@@ -81,6 +81,7 @@ html,body {{ background:var(--bg) !important; color:var(--text) !important; }}
         linear-gradient(180deg, rgba(255,255,255,0.10), rgba(255,255,255,0)),
         var(--hero-gradient) !important;
 }}
+
 .main,.main .block-container,[data-testid="stAppViewContainer"],[data-testid="stAppViewContainer"] > .main,[data-testid="stMain"],[data-testid="stVerticalBlock"],[data-testid="column"],.element-container {{ background:transparent !important; color:var(--text) !important; }}
 p,li,span,label,td,th,.stMarkdown,.stMarkdown *,[data-testid="stMarkdownContainer"],[data-testid="stMarkdownContainer"] * {{ color:var(--text) !important; }}
 small,.stCaption {{ color:var(--subtext) !important; }}
@@ -156,6 +157,47 @@ html body [data-testid="stSidebar"] .stButton > button:hover {{
 
 /* ── Block container ─────────────────────────────────────────── */
 .block-container {{ padding-top:1.25rem !important; padding-bottom:3rem !important; max-width:1380px !important; }}
+
+/* ── World-class product shell polish ─────────────────────────── */
+.block-container {{
+    padding-left: clamp(0.8rem, 2vw, 2.1rem) !important;
+    padding-right: clamp(0.8rem, 2vw, 2.1rem) !important;
+}}
+[data-testid="stHorizontalBlock"] {{
+    row-gap: 0.65rem !important;
+}}
+.stMetric, [data-testid="metric-container"] {{
+    background: var(--card-bg) !important;
+    border: 1px solid var(--card-border) !important;
+    border-radius: 8px !important;
+    padding: 0.85rem !important;
+    box-shadow: var(--shadow-sm) !important;
+}}
+hr {{
+    border-color: var(--card-border) !important;
+}}
+.stAlert {{
+    border-radius: 8px !important;
+    border: 1px solid var(--card-border) !important;
+}}
+[data-testid="stDataFrame"], [data-testid="stTable"] {{
+    border: 1px solid var(--card-border) !important;
+    border-radius: 8px !important;
+    overflow: hidden !important;
+}}
+.stDownloadButton > button, .stLinkButton > a {{
+    border-radius: 8px !important;
+    font-weight: 800 !important;
+}}
+@media (max-width: 1100px) {{
+    .block-container {{ padding-top: 0.8rem !important; }}
+    div[data-testid="column"] {{ min-width: 0 !important; }}
+}}
+@media (max-width: 760px) {{
+    .stButton > button {{ min-height: 46px !important; font-size: 0.82rem !important; }}
+    div[data-testid="stHorizontalBlock"] {{ gap: 0.45rem !important; }}
+}}
+
 
 /* ── Inputs ──────────────────────────────────────────────────── */
 .stTextInput > div > div > input,.stTextArea > div > div > textarea,.stNumberInput > div > div > input {{ background:var(--glass-bg) !important; color:var(--text) !important; border:1px solid var(--card-border) !important; border-radius:8px !important; font-size:16px !important; box-shadow:var(--shadow-sm) !important; }}
