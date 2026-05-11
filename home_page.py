@@ -60,6 +60,8 @@ def _inject_home_css(t: dict):
             radial-gradient(circle at 12% 88%, #10b98120, transparent 28%),
             linear-gradient(135deg, {t["primary"]}14, transparent 45%),
             linear-gradient(160deg, {t["surface"]}, {t["surface_raised"]});
+        background-size: 120% 120%, 115% 115%, 220% 220%, 100% 100%;
+        animation: hero-video-light 18s ease-in-out infinite alternate;
         border: 1px solid {t["card_border"]};
         border-radius: 8px;
         padding: clamp(1.15rem, 3vw, 2.4rem);
@@ -179,7 +181,7 @@ def _inject_home_css(t: dict):
     }}
     .medical-stage {{
         position: relative;
-        min-height: 360px;
+        min-height: 380px;
         border-radius: 8px;
         border: 1px solid {t["card_border"]};
         background:
@@ -188,6 +190,103 @@ def _inject_home_css(t: dict):
         box-shadow: inset 0 0 48px {t["primary"]}10, {t["shadow_sm"]};
         overflow: hidden;
     }}
+    .medical-stage::before {{
+        content: "";
+        position: absolute;
+        inset: 0;
+        background:
+            linear-gradient({t["card_border"]}24 1px, transparent 1px),
+            linear-gradient(90deg, {t["card_border"]}24 1px, transparent 1px),
+            radial-gradient(circle at 30% 20%, {t["primary"]}24, transparent 28%),
+            radial-gradient(circle at 76% 74%, #10b98124, transparent 30%);
+        background-size: 34px 34px, 34px 34px, 100% 100%, 100% 100%;
+        animation: clinical-grid-drift 16s linear infinite;
+        opacity: .88;
+    }}
+    .instrument-field {{
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        z-index: 2;
+    }}
+    .instrument {{
+        position: absolute;
+        width: 48px;
+        height: 48px;
+        display: grid;
+        place-items: center;
+        border-radius: 8px;
+        border: 1px solid {t["card_border"]};
+        background: {t["card_bg"]};
+        box-shadow: {t["shadow_sm"]}, 0 0 22px {t["primary"]}16;
+        font-size: 1.35rem;
+        animation: instrument-drift 8s ease-in-out infinite;
+        backdrop-filter: blur(12px);
+    }}
+    .instrument::after {{
+        content: "";
+        position: absolute;
+        inset: -7px;
+        border: 1px solid {t["primary"]}20;
+        border-radius: 10px;
+        animation: instrument-pulse 2.8s ease-in-out infinite;
+    }}
+    .inst-syringe {{ left: 5%; top: 46%; animation-delay: -1s; }}
+    .inst-micro {{ right: 5%; top: 38%; animation-delay: -3.5s; }}
+    .inst-dna {{ left: 43%; top: 4%; animation-delay: -5s; }}
+    .inst-thermo {{ right: 20%; bottom: 5%; animation-delay: -2.1s; }}
+    .inst-scalpel {{ left: 38%; bottom: 4%; animation-delay: -6.3s; }}
+    .inst-vial {{ right: 35%; top: 15%; animation-delay: -4.4s; }}
+    .instrument-rail {{
+        position: absolute;
+        left: 8%;
+        right: 8%;
+        bottom: 19px;
+        height: 42px;
+        border: 1px solid {t["card_border"]};
+        border-radius: 8px;
+        background: {t["glass_bg"]};
+        overflow: hidden;
+        z-index: 1;
+    }}
+    .instrument-rail::before {{
+        content: "🩺  💉  🔬  🧬  💊  🌡️  🩻  🧪  🩹  ⚕️  🫀  🫁";
+        position: absolute;
+        left: 0;
+        top: 50%;
+        transform: translateY(-50%);
+        white-space: nowrap;
+        font-size: 1.1rem;
+        letter-spacing: 1.2rem;
+        opacity: .78;
+        animation: instrument-ticker 18s linear infinite;
+    }}
+    .dna-helix {{
+        position: absolute;
+        right: 10%;
+        top: 10%;
+        width: 82px;
+        height: 210px;
+        opacity: .55;
+        z-index: 1;
+        animation: helix-sway 7s ease-in-out infinite;
+    }}
+    .dna-helix span {{
+        position: absolute;
+        left: 50%;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: {t["primary"]};
+        box-shadow: 28px 0 0 #10b981, 0 0 18px {t["primary"]};
+        transform: translateX(-50%);
+    }}
+    .dna-helix span:nth-child(1) {{ top: 8%; }}
+    .dna-helix span:nth-child(2) {{ top: 23%; transform: translateX(-50%) translateX(12px); }}
+    .dna-helix span:nth-child(3) {{ top: 38%; transform: translateX(-50%) translateX(-10px); }}
+    .dna-helix span:nth-child(4) {{ top: 53%; transform: translateX(-50%) translateX(14px); }}
+    .dna-helix span:nth-child(5) {{ top: 68%; transform: translateX(-50%) translateX(-12px); }}
+    .dna-helix span:nth-child(6) {{ top: 83%; }}
     .medical-orbit {{
         position: absolute;
         inset: 34px;
@@ -406,6 +505,11 @@ def _inject_home_css(t: dict):
         transform: translateY(-3px) !important;
         box-shadow: 0 6px 20px {t["primary"]}18 !important;
     }}
+    @keyframes hero-video-light {{
+        0% {{ background-position: 0% 0%, 100% 100%, 0% 50%, 0% 0%; }}
+        50% {{ background-position: 12% 8%, 88% 92%, 70% 50%, 0% 0%; }}
+        100% {{ background-position: 4% 14%, 80% 88%, 100% 50%, 0% 0%; }}
+    }}
     @keyframes med-spin {{
         from {{ transform: rotate(0deg); }}
         to {{ transform: rotate(360deg); }}
@@ -426,6 +530,26 @@ def _inject_home_css(t: dict):
     @keyframes clinical-float {{
         0%, 100% {{ transform: translateY(0) rotate(0deg); }}
         50% {{ transform: translateY(-14px) rotate(3deg); }}
+    }}
+    @keyframes clinical-grid-drift {{
+        from {{ background-position: 0 0, 0 0, 0 0, 0 0; }}
+        to {{ background-position: 34px 34px, -34px 34px, 0 0, 0 0; }}
+    }}
+    @keyframes instrument-drift {{
+        0%, 100% {{ transform: translate3d(0,0,0) rotate(-4deg); }}
+        50% {{ transform: translate3d(0,-18px,0) rotate(5deg); }}
+    }}
+    @keyframes instrument-pulse {{
+        0%, 100% {{ opacity: .2; transform: scale(.92); }}
+        50% {{ opacity: .72; transform: scale(1.08); }}
+    }}
+    @keyframes instrument-ticker {{
+        from {{ transform: translate3d(0,-50%,0); }}
+        to {{ transform: translate3d(-50%,-50%,0); }}
+    }}
+    @keyframes helix-sway {{
+        0%, 100% {{ transform: translateY(0) rotate(-8deg); }}
+        50% {{ transform: translateY(14px) rotate(8deg); }}
     }}
     @media (max-width: 768px) {{
         .home-hero {{
@@ -450,11 +574,17 @@ def _inject_home_css(t: dict):
         }}
     }}
     @media (prefers-reduced-motion: reduce) {{
+        .home-hero,
         .home-hero::after,
         .medical-orbit,
         .ecg-svg,
         .scan-light,
         .float-chip,
+        .instrument,
+        .instrument::after,
+        .instrument-rail::before,
+        .dna-helix,
+        .medical-stage::before,
         .home-stat-card {{
             animation: none !important;
         }}
@@ -484,7 +614,6 @@ def _hero(t: dict):
         f'<span class="home-tag">{tag}</span>'
         for tag in ["🇴🇲 SQU-COM", "🏛 OMSB", "🌍 WFME", "📋 USMLE", "🩺 PLAB"]
     )
-
     metrics_html = "".join(
         f'<div class="home-hero-metric"><b>{value}</b><small>{label}</small></div>'
         for value, label in [
@@ -493,58 +622,48 @@ def _hero(t: dict):
             ("12", "OSCE station modes"),
         ]
     )
+    ecg_points_a = "0,86 72,86 94,70 116,98 138,86 224,86 248,26 276,138 310,86 426,86 452,76 478,100 506,86 620,86 642,62 664,92 690,86 760,86 784,38 814,130 846,86 900,86"
+    ecg_points_b = "900,86 972,86 994,70 1016,98 1038,86 1124,86 1148,26 1176,138 1210,86 1326,86 1352,76 1378,100 1406,86 1520,86 1542,62 1564,92 1590,86 1660,86 1684,38 1714,130 1746,86 1800,86"
 
-    st.markdown(
-        f"""
-        <section class="home-hero">
-            <div class="home-hero-copy">
-                <div class="home-eyebrow">
-                    {ico} {greet}, Dr. {first}
-                    <span class="home-eyebrow-sep">·</span>
-                    {date}
-                </div>
-                <div class="home-title">
-                    A living clinical cockpit for <span>medical mastery</span>.
-                </div>
-                <div class="home-subtitle">
-                    Practice questions, flashcards, timers, AI tutoring, OSCE prep,
-                    analytics, and local Oman medical resources in one focused workspace
-                    with momentum built into every session.
-                </div>
-                <div class="home-tags">{tags_html}</div>
-                <div class="home-hero-metrics">{metrics_html}</div>
-            </div>
-
-            <div class="medical-stage" aria-label="Animated clinical vitals monitor">
-                <div class="medical-orbit"></div>
-                <div class="float-chip chip-heart">❤️</div>
-                <div class="float-chip chip-lung">🫁</div>
-                <div class="float-chip chip-pill">💊</div>
-                <div class="float-chip chip-cross">⚕️</div>
-
-                <div class="vitals-card">
-                    <div class="vitals-top">
-                        <span>MedStudy Live Simulator</span>
-                        <span class="status-dot"></span>
-                    </div>
-                    <div class="vitals-screen">
-                        <svg class="ecg-svg" viewBox="0 0 900 160" preserveAspectRatio="none" aria-hidden="true">
-                            <polyline points="0,86 72,86 94,70 116,98 138,86 224,86 248,26 276,138 310,86 426,86 452,76 478,100 506,86 620,86 642,62 664,92 690,86 760,86 784,38 814,130 846,86 900,86" />
-                            <polyline points="900,86 972,86 994,70 1016,98 1038,86 1124,86 1148,26 1176,138 1210,86 1326,86 1352,76 1378,100 1406,86 1520,86 1542,62 1564,92 1590,86 1660,86 1684,38 1714,130 1746,86 1800,86" />
-                        </svg>
-                        <div class="scan-light"></div>
-                    </div>
-                    <div class="vitals-grid">
-                        <div class="vital-stat"><span>HR</span><strong>72 bpm</strong></div>
-                        <div class="vital-stat"><span>SpO2</span><strong>99%</strong></div>
-                        <div class="vital-stat"><span>Focus</span><strong>Deep</strong></div>
-                    </div>
-                </div>
-            </div>
-        </section>
-        """,
-        unsafe_allow_html=True,
+    html = (
+        '<div class="home-hero">'
+        '<div class="home-hero-copy">'
+        f'<div class="home-eyebrow">{ico} {greet}, Dr. {first}<span class="home-eyebrow-sep">·</span>{date}</div>'
+        '<div class="home-title">A living clinical cockpit for <span>medical mastery</span>.</div>'
+        '<div class="home-subtitle">Practice questions, flashcards, timers, AI tutoring, OSCE prep, analytics, and local Oman medical resources in one focused workspace with momentum built into every session.</div>'
+        f'<div class="home-tags">{tags_html}</div>'
+        f'<div class="home-hero-metrics">{metrics_html}</div>'
+        '</div>'
+        '<div class="medical-stage" aria-label="Animated clinical vitals monitor">'
+        '<div class="medical-orbit"></div>'
+        '<div class="dna-helix"><span></span><span></span><span></span><span></span><span></span><span></span></div>'
+        '<div class="instrument-rail"></div>'
+        '<div class="instrument-field">'
+        '<div class="instrument inst-syringe">💉</div>'
+        '<div class="instrument inst-micro">🔬</div>'
+        '<div class="instrument inst-dna">🧬</div>'
+        '<div class="instrument inst-thermo">🌡️</div>'
+        '<div class="instrument inst-scalpel">🔪</div>'
+        '<div class="instrument inst-vial">🧪</div>'
+        '</div>'
+        '<div class="float-chip chip-heart">❤️</div>'
+        '<div class="float-chip chip-lung">🫁</div>'
+        '<div class="float-chip chip-pill">💊</div>'
+        '<div class="float-chip chip-cross">⚕️</div>'
+        '<div class="vitals-card">'
+        '<div class="vitals-top"><span>MedStudy Live Simulator</span><span class="status-dot"></span></div>'
+        '<div class="vitals-screen">'
+        '<svg class="ecg-svg" viewBox="0 0 900 160" preserveAspectRatio="none" aria-hidden="true">'
+        f'<polyline points="{ecg_points_a}" />'
+        f'<polyline points="{ecg_points_b}" />'
+        '</svg><div class="scan-light"></div></div>'
+        '<div class="vitals-grid">'
+        '<div class="vital-stat"><span>HR</span><strong>72 bpm</strong></div>'
+        '<div class="vital-stat"><span>SpO2</span><strong>99%</strong></div>'
+        '<div class="vital-stat"><span>Focus</span><strong>Deep</strong></div>'
+        '</div></div></div></div>'
     )
+    st.markdown(html, unsafe_allow_html=True)
 
 
 def _stats(t: dict):
