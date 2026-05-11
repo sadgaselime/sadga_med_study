@@ -215,6 +215,15 @@ def _inject_dashboard_css(t: dict):
         border-radius: 3px;
         margin: 1px;
     }}
+    .goal-row {{ margin-bottom: 1rem; }}
+    .goal-row-top {{ display:flex;justify-content:space-between;font-size:0.82rem;font-weight:700;gap:10px; }}
+    .goal-track {{ height:7px;background:{t["card_border"]};border-radius:999px;overflow:hidden;margin-top:6px; }}
+    .goal-track > div {{ height:100%;border-radius:999px; }}
+    .activity-row {{ display:flex;align-items:flex-start;gap:10px;padding:0.65rem 0; }}
+    .activity-icon {{ width:32px;height:32px;border-radius:8px;display:grid;place-items:center;flex:0 0 auto; }}
+    .activity-text {{ font-size:0.82rem;font-weight:700;color:{t["text"]}; }}
+    .activity-time {{ font-size:0.7rem;color:{t["subtext"]}; }}
+    .activity-badge {{ font-size:0.68rem;font-weight:700;border-radius:6px;padding:2px 7px;white-space:nowrap; }}
     </style>
     """, unsafe_allow_html=True)
 
@@ -340,18 +349,14 @@ def _render_weekly_goals(theme: dict, stats: dict):
 
     rows = ""
     for goal in stats["goals"]:
-        pct = min(100, goal["current"] / goal["target"] * 100)
-        rows += f"""
-        <div style="margin-bottom:1rem;">
-            <div style="display:flex;justify-content:space-between;font-size:0.82rem;font-weight:700;">
-                <span>{goal['icon']} {goal['label']}</span>
-                <span style="color:{goal['color']};">{goal['current']}{goal['unit']} / {goal['target']}{goal['unit']}</span>
-            </div>
-            <div style="height:7px;background:{theme['card_border']};border-radius:999px;overflow:hidden;margin-top:6px;">
-                <div style="height:100%;width:{pct:.1f}%;background:{goal['color']};"></div>
-            </div>
-        </div>
-        """
+        pct = min(100, goal["current"] / goal["target"] * 100) if goal["target"] else 0
+        rows += (
+            '<div class="goal-row">'
+            f'<div class="goal-row-top"><span>{goal["icon"]} {goal["label"]}</span>'
+            f'<span style="color:{goal["color"]};">{goal["current"]}{goal["unit"]} / {goal["target"]}{goal["unit"]}</span></div>'
+            f'<div class="goal-track"><div style="width:{pct:.1f}%;background:{goal["color"]};"></div></div>'
+            '</div>'
+        )
 
     st.markdown(f'<div class="dash-card">{rows}</div>', unsafe_allow_html=True)
 
@@ -455,27 +460,16 @@ def _render_activity_feed(theme: dict, stats: dict):
 
     rows = ""
     for activity in stats["activities"]:
-        rows += f"""
-        <div style="display:flex;align-items:flex-start;gap:10px;padding:0.65rem 0;
-                    border-bottom:1px solid {theme['card_border']};">
-            <div style="width:32px;height:32px;border-radius:8px;background:{theme['glass_bg']};
-                        border:1px solid {theme['card_border']};display:grid;place-items:center;">
-                {activity['icon']}
-            </div>
-            <div style="flex:1;">
-                <div style="font-size:0.82rem;font-weight:700;color:{theme['text']};">
-                    {activity['text']}
-                </div>
-                <div style="font-size:0.7rem;color:{theme['subtext']};">
-                    {activity['time']}
-                </div>
-            </div>
-            <span style="font-size:0.68rem;font-weight:700;background:{activity['badge_color']}18;
-                         color:{activity['badge_color']};border-radius:6px;padding:2px 7px;">
-                {activity['badge']}
-            </span>
-        </div>
-        """
+        rows += (
+            f'<div class="activity-row" style="border-bottom:1px solid {theme["card_border"]};">'
+            f'<div class="activity-icon" style="background:{theme["glass_bg"]};border:1px solid {theme["card_border"]};">{activity["icon"]}</div>'
+            '<div style="flex:1;">'
+            f'<div class="activity-text">{activity["text"]}</div>'
+            f'<div class="activity-time">{activity["time"]}</div>'
+            '</div>'
+            f'<span class="activity-badge" style="background:{activity["badge_color"]}18;color:{activity["badge_color"]};">{activity["badge"]}</span>'
+            '</div>'
+        )
 
     st.markdown(f'<div class="dash-card">{rows}</div>', unsafe_allow_html=True)
 
