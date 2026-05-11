@@ -263,9 +263,36 @@ section[data-testid="stSidebar"],
 }}
 
 /* ── Scrollbar ───────────────────────────────────────────────── */
-::-webkit-scrollbar {{ width:5px; height:5px; }}
-::-webkit-scrollbar-track {{ background:transparent; }}
-::-webkit-scrollbar-thumb {{ background:var(--primary); border-radius:999px; opacity:.6; }}
+html {{
+    scrollbar-width: thin;
+    scrollbar-color: var(--primary) transparent;
+}}
+body,
+[data-testid="stAppViewContainer"],
+[data-testid="stMain"],
+[data-testid="stSidebar"],
+[data-testid="stSidebarContent"] {{
+    scrollbar-width: thin;
+    scrollbar-color: var(--primary) transparent;
+}}
+::-webkit-scrollbar {{
+    width: 10px;
+    height: 10px;
+}}
+::-webkit-scrollbar-track {{
+    background: transparent;
+}}
+::-webkit-scrollbar-thumb {{
+    background: linear-gradient(180deg, var(--primary), var(--secondary));
+    border: 2px solid transparent;
+    border-radius: 999px;
+    background-clip: padding-box;
+}}
+::-webkit-scrollbar-thumb:hover {{
+    background: var(--primary);
+    border: 2px solid transparent;
+    background-clip: padding-box;
+}}
 
 /* ── Animations ──────────────────────────────────────────────── */
 @keyframes fadeUp {{ from {{ opacity:0; transform:translateY(20px); }} to {{ opacity:1; transform:translateY(0); }} }}
