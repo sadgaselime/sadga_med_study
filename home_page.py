@@ -49,17 +49,133 @@ def home_page(theme: dict, tr, motivational_quotes: list):
 def _inject_home_css(t: dict):
     st.markdown(f"""
     <style>
+    .home-hero {{
+        background:
+            linear-gradient(135deg, {t["primary"]}16, transparent 42%),
+            linear-gradient(160deg, {t["surface"]}, {t["surface_raised"]});
+        border: 1px solid {t["card_border"]};
+        border-radius: 8px;
+        padding: 2rem;
+        margin-bottom: 1rem;
+        box-shadow: {t["shadow_md"]};
+        position: relative;
+        overflow: hidden;
+    }}
+    .home-hero::after {{
+        content: "";
+        position: absolute;
+        inset: auto -80px -90px auto;
+        width: 280px;
+        height: 180px;
+        border: 1px solid {t["primary"]}35;
+        transform: rotate(-12deg);
+        border-radius: 8px;
+    }}
+    .home-eyebrow {{
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 5px 10px;
+        border: 1px solid {t["primary"]}40;
+        border-radius: 8px;
+        background: {t["primary_glow"]};
+        color: {t["primary"]} !important;
+        font-size: 0.68rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0;
+        margin-bottom: 0.85rem;
+    }}
+    .home-title {{
+        font-family: Syne, sans-serif;
+        font-size: clamp(2rem, 4vw, 3.15rem);
+        line-height: 1.04;
+        font-weight: 900;
+        color: {t["text"]};
+        letter-spacing: 0;
+        max-width: 720px;
+        margin-bottom: 0.8rem;
+    }}
+    .home-subtitle {{
+        max-width: 680px;
+        color: {t["text_muted"]};
+        font-size: 1rem;
+        line-height: 1.7;
+        margin-bottom: 1.25rem;
+    }}
+    .home-tags {{
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+    }}
+    .home-tag {{
+        border: 1px solid {t["card_border"]};
+        background: {t["glass_bg"]};
+        border-radius: 8px;
+        padding: 6px 10px;
+        color: {t["text_muted"]};
+        font-size: 0.74rem;
+        font-weight: 700;
+    }}
+    .home-section-title {{
+        font-family: Syne, sans-serif;
+        font-size: 1rem;
+        font-weight: 900;
+        color: {t["text"]};
+        margin: 1rem 0 0.55rem;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        letter-spacing: 0;
+    }}
+    .home-section-title::after {{
+        content: "";
+        flex: 1;
+        height: 1px;
+        background: {t["card_border"]};
+    }}
+    .home-stat-card {{
+        background: {t["card_bg"]};
+        border: 1px solid {t["card_border"]};
+        border-radius: 8px;
+        padding: 0.85rem 0.7rem;
+        text-align: left;
+        min-height: 96px;
+        box-shadow: {t["shadow_sm"]};
+    }}
+    .home-stat-icon {{
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 0.45rem;
+    }}
+    .home-stat-number {{
+        font-family: Syne, sans-serif;
+        font-size: 1.45rem;
+        line-height: 1;
+        font-weight: 900;
+        letter-spacing: 0;
+    }}
+    .home-stat-label {{
+        margin-top: 0.25rem;
+        font-size: 0.72rem;
+        color: {t["subtext"]};
+        font-weight: 700;
+    }}
     div[data-testid="stHorizontalBlock"] .stButton > button {{
         background:    {t["card_bg"]} !important;
         border:        1.5px solid {t["card_border"]} !important;
-        border-radius: 16px !important;
-        padding:       0.9rem 0.5rem 0.8rem !important;
+        border-radius: 8px !important;
+        padding:       0.65rem 0.45rem !important;
         font-weight:   700 !important;
-        font-size:     0.78rem !important;
+        font-size:     0.82rem !important;
         color:         {t["text"]} !important;
         text-align:    center !important;
         white-space:   pre-wrap !important;
-        min-height:    74px !important;
+        min-height:    54px !important;
         line-height:   1.4 !important;
         transition:    all 0.2s ease !important;
         backdrop-filter: blur(8px);
@@ -70,6 +186,11 @@ def _inject_home_css(t: dict):
         color:         {t["primary"]} !important;
         transform:     translateY(-3px) !important;
         box-shadow:    0 6px 20px {t["primary"]}18 !important;
+    }}
+    @media (max-width: 768px) {{
+        .home-hero {{ padding: 1.35rem; }}
+        .home-title {{ font-size: 2rem; }}
+        .home-subtitle {{ font-size: 0.9rem; }}
     }}
     </style>
     """, unsafe_allow_html=True)
@@ -86,46 +207,19 @@ def _hero(t: dict):
     user  = st.session_state.get("user") or {}
     first = (user.get("name") or "Doctor").split()[0]
     date  = now.strftime("%A, %d %B %Y")
-    p     = t["primary"]
-    op    = "0.07" if t["family"] != "dark" else "0.11"
-
-    steth = f'<svg width="90" height="90" viewBox="0 0 24 24" fill="none" stroke="{p}" stroke-width="1.1" opacity="{op}"><path d="M4.8 2.3A.3.3 0 104.5 2v5a3 3 0 006 0v-5"/><path d="M7.5 7A6 6 0 0013.5 13v4.5a3.5 3.5 0 007 0V14"/><circle cx="20.5" cy="12" r="1.5"/></svg>'
-    cap   = f'<svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="{p}" stroke-width="1.1" opacity="{op}"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>'
-    ecg   = f'<svg width="130" height="48" viewBox="0 0 130 48" fill="none" stroke="{p}" stroke-width="1.4" opacity="{op}"><polyline points="0,24 22,24 30,6 40,42 48,14 57,24 80,24 88,5 97,43 106,20 115,24 130,24" stroke-linecap="round"/></svg>'
-    cross = f'<svg width="44" height="44" viewBox="0 0 24 24" fill="{p}" opacity="{op}"><path d="M9 2h6v6h6v6h-6v8H9v-8H3V8h6z"/></svg>'
-
     tags_html = "".join(
-        f'<span style="background:{t["glass_bg"]};border:1px solid {t["glass_border"]};'
-        f'border-radius:999px;padding:4px 12px;font-size:0.73rem;font-weight:600;'
-        f'color:{t["subtext"]};">{tag}</span>'
+        f'<span class="home-tag">{tag}</span>'
         for tag in ["🇴🇲 SQU-COM","🏛 OMSB","🌍 WFME","📋 USMLE","🩺 PLAB"]
     )
 
     st.markdown(
-        f'<div style="background:{t["gradient"]};border:1px solid {t["card_border"]};'
-        f'border-radius:24px;padding:2.6rem 3rem 2.2rem;margin-bottom:1rem;'
-        f'position:relative;overflow:hidden;">'
-        f'<div style="position:absolute;top:-10px;right:30px;pointer-events:none;">{steth}</div>'
-        f'<div style="position:absolute;top:15px;right:130px;pointer-events:none;">{cap}</div>'
-        f'<div style="position:absolute;bottom:20px;right:50px;pointer-events:none;">{ecg}</div>'
-        f'<div style="position:absolute;top:20px;right:240px;pointer-events:none;">{cross}</div>'
-        f'<div style="position:absolute;top:-40px;right:-40px;width:160px;height:160px;'
-        f'border-radius:50%;background:radial-gradient(circle,{t["primary"]}18,transparent 70%);'
-        f'pointer-events:none;"></div>'
+        f'<section class="home-hero">'
         f'<div style="position:relative;z-index:1;">'
-        f'<div style="display:inline-flex;align-items:center;gap:7px;padding:4px 14px;'
-        f'background:{t["primary_glow"]};border:1px solid {t["primary"]}40;'
-        f'border-radius:999px;font-size:0.7rem;font-weight:700;color:{t["primary"]};'
-        f'letter-spacing:0.10em;text-transform:uppercase;margin-bottom:1rem;">'
-        f'{ico} {greet}, Dr. {first}<span style="opacity:0.4;margin:0 3px;">·</span>{date}</div>'
-        f'<div style="font-family:\'Bricolage Grotesque\', sans-serif;font-size:clamp(1.9rem,3.5vw,2.8rem);'
-        f'font-weight:900;color:{t["text"]};letter-spacing:-0.04em;line-height:1.1;margin-bottom:0.8rem;">'
-        f'Study Medicine the <span style="color:{t["primary"]};">Smart Way 🎓</span></div>'
-        f'<div style="font-size:0.92rem;color:{t["subtext"]};max-width:480px;'
-        f'line-height:1.7;margin-bottom:1.5rem;">'
-        f'AI-powered clinical education for Omani medical students — OMSB · USMLE · PLAB · SQU-COM aligned.</div>'
-        f'<div style="display:flex;gap:6px;flex-wrap:wrap;">{tags_html}</div>'
-        f'</div></div>',
+        f'<div class="home-eyebrow">{ico} {greet}, Dr. {first}<span style="opacity:0.45;">·</span>{date}</div>'
+        f'<div class="home-title">Your command center for medical school in Oman.</div>'
+        f'<div class="home-subtitle">Practice questions, flashcards, timers, AI tutoring, OSCE prep, analytics, and local Oman medical resources in one focused workspace.</div>'
+        f'<div class="home-tags">{tags_html}</div>'
+        f'</div></section>',
         unsafe_allow_html=True,
     )
 
@@ -142,15 +236,10 @@ def _stats(t: dict):
     for col, (ico, num, lbl, clr) in zip(cols, items):
         with col:
             st.markdown(
-                f'<div style="background:{t["card_bg"]};border:1px solid {t["card_border"]};'
-                f'border-top:3px solid {clr};border-radius:14px;'
-                f'padding:0.8rem 0.5rem;text-align:center;margin-bottom:0.5rem;'
-                f'backdrop-filter:blur(10px);">'
-                f'<div style="font-size:1.1rem;margin-bottom:2px;">{ico}</div>'
-                f'<div style="font-family:\'Bricolage Grotesque\', sans-serif;font-size:1.4rem;'
-                f'font-weight:900;color:{clr};line-height:1;">{num}</div>'
-                f'<div style="font-size:0.65rem;color:{t["subtext"]};'
-                f'font-weight:600;margin-top:2px;">{lbl}</div>'
+                f'<div class="home-stat-card">'
+                f'<div class="home-stat-icon" style="background:{clr}18;color:{clr};">{ico}</div>'
+                f'<div class="home-stat-number" style="color:{clr};">{num}</div>'
+                f'<div class="home-stat-label">{lbl}</div>'
                 f'</div>',
                 unsafe_allow_html=True,
             )
@@ -175,12 +264,7 @@ def _cta_buttons():
 
 def _module_grid(t: dict):
     st.markdown(
-        f'<div style="font-family:\'Bricolage Grotesque\', sans-serif;font-size:1rem;font-weight:900;'
-        f'color:{t["text"]};margin:0.9rem 0 0.5rem;display:flex;align-items:center;gap:10px;">'
-        f'🧩 All Modules'
-        f'<div style="flex:1;height:1.5px;background:{t["card_border"]};border-radius:999px;"></div>'
-        f'<span style="font-size:0.66rem;font-weight:500;color:{t["subtext"]};">{len(ALL_MODULES)} modules</span>'
-        f'</div>',
+        f'<div class="home-section-title">All Modules <span style="font-size:0.68rem;font-family:DM Sans,sans-serif;font-weight:700;color:{t["subtext"]};">{len(ALL_MODULES)} tools</span></div>',
         unsafe_allow_html=True,
     )
     rows = [ALL_MODULES[i:i+6] for i in range(0, len(ALL_MODULES), 6)]
@@ -207,11 +291,7 @@ def _module_grid(t: dict):
 
 def _subject_strip(t: dict):
     st.markdown(
-        f'<div style="font-family:\'Bricolage Grotesque\', sans-serif;font-size:1rem;font-weight:900;'
-        f'color:{t["text"]};margin-bottom:0.5rem;display:flex;align-items:center;gap:10px;">'
-        f'⚡ Quick Subject Access'
-        f'<div style="flex:1;height:1.5px;background:{t["card_border"]};border-radius:999px;"></div>'
-        f'</div>',
+        f'<div class="home-section-title">Quick Subject Access</div>',
         unsafe_allow_html=True,
     )
     cols = st.columns(len(FEATURED_SUBJECTS))
