@@ -41,8 +41,8 @@ FEATURED_SUBJECTS = [
 def home_page(theme: dict, tr, motivational_quotes: list):
     _inject_home_css(theme)
     _hero(theme)
-    _stats(theme)
     _cta_buttons()
+    _stats(theme)
     _module_grid(theme)
     _subject_strip(theme)
 
@@ -52,24 +52,22 @@ def _inject_home_css(t: dict):
     <style>
     .home-hero {{
         display: grid;
-        grid-template-columns: minmax(0, 1.05fr) minmax(320px, 0.95fr);
+        grid-template-columns: minmax(0, 1.1fr) minmax(300px, 0.72fr);
         align-items: center;
-        gap: 1.5rem;
+        gap: 1.15rem;
         background:
-            radial-gradient(circle at 82% 18%, {t["primary"]}28, transparent 30%),
-            radial-gradient(circle at 12% 88%, #10b98120, transparent 28%),
-            linear-gradient(135deg, {t["primary"]}14, transparent 45%),
+            linear-gradient(135deg, {t["primary"]}10, transparent 48%),
             linear-gradient(160deg, {t["surface"]}, {t["surface_raised"]});
-        background-size: 120% 120%, 115% 115%, 220% 220%, 100% 100%;
+        background-size: 220% 220%, 100% 100%;
         animation: hero-video-light 18s ease-in-out infinite alternate;
         border: 1px solid {t["card_border"]};
         border-radius: 8px;
-        padding: clamp(1.15rem, 3vw, 2.4rem);
-        margin-bottom: 1rem;
+        padding: clamp(1.1rem, 2.4vw, 1.9rem);
+        margin-bottom: 0.8rem;
         box-shadow: {t["shadow_md"]};
         position: relative;
         overflow: hidden;
-        min-height: 430px;
+        min-height: 340px;
         isolation: isolate;
     }}
     .home-hero::before {{
@@ -84,7 +82,7 @@ def _inject_home_css(t: dict):
         z-index: -2;
     }}
     .home-hero::after {{
-        content: "";
+        content: none;
         position: absolute;
         width: 420px;
         height: 420px;
@@ -120,22 +118,22 @@ def _inject_home_css(t: dict):
     }}
     .home-title {{
         font-family: Syne, sans-serif;
-        font-size: clamp(2.15rem, 4.7vw, 4.35rem);
-        line-height: 1.04;
+        font-size: clamp(2rem, 4vw, 3.45rem);
+        line-height: 1.06;
         font-weight: 900;
         color: {t["text"]};
-        max-width: 760px;
-        margin-bottom: 0.8rem;
+        max-width: 700px;
+        margin-bottom: 0.7rem;
     }}
     .home-title span {{
         color: {t["primary"]} !important;
     }}
     .home-subtitle {{
-        max-width: 680px;
+        max-width: 640px;
         color: {t["text_muted"]};
-        font-size: 1.02rem;
-        line-height: 1.7;
-        margin-bottom: 1.25rem;
+        font-size: 0.98rem;
+        line-height: 1.65;
+        margin-bottom: 1rem;
     }}
     .home-tags {{
         display: flex;
@@ -155,15 +153,15 @@ def _inject_home_css(t: dict):
         display: grid;
         grid-template-columns: repeat(3, minmax(0, 1fr));
         gap: 0.55rem;
-        max-width: 620px;
-        margin-top: 1.15rem;
+        max-width: 560px;
+        margin-top: 0.95rem;
     }}
     .home-hero-metric {{
         background: {t["glass_bg"]};
         border: 1px solid {t["card_border"]};
         border-radius: 8px;
-        padding: 0.7rem;
-        min-height: 74px;
+        padding: 0.65rem;
+        min-height: 68px;
         backdrop-filter: blur(12px);
     }}
     .home-hero-metric b {{
@@ -181,7 +179,7 @@ def _inject_home_css(t: dict):
     }}
     .medical-stage {{
         position: relative;
-        min-height: 380px;
+        min-height: 300px;
         border-radius: 8px;
         border: 1px solid {t["card_border"]};
         background:
@@ -204,10 +202,7 @@ def _inject_home_css(t: dict):
         opacity: .88;
     }}
     .instrument-field {{
-        position: absolute;
-        inset: 0;
-        pointer-events: none;
-        z-index: 2;
+        display: none;
     }}
     .instrument {{
         position: absolute;
@@ -238,6 +233,7 @@ def _inject_home_css(t: dict):
     .inst-scalpel {{ left: 38%; bottom: 4%; animation-delay: -6.3s; }}
     .inst-vial {{ right: 35%; top: 15%; animation-delay: -4.4s; }}
     .instrument-rail {{
+        display: none;
         position: absolute;
         left: 8%;
         right: 8%;
@@ -262,6 +258,7 @@ def _inject_home_css(t: dict):
         animation: instrument-ticker 18s linear infinite;
     }}
     .dna-helix {{
+        display: none;
         position: absolute;
         right: 10%;
         top: 10%;
@@ -288,6 +285,7 @@ def _inject_home_css(t: dict):
     .dna-helix span:nth-child(5) {{ top: 68%; transform: translateX(-50%) translateX(-12px); }}
     .dna-helix span:nth-child(6) {{ top: 83%; }}
     .medical-orbit {{
+        display: none;
         position: absolute;
         inset: 34px;
         border: 1px dashed {t["primary"]}42;
@@ -316,8 +314,8 @@ def _inject_home_css(t: dict):
     }}
     .vitals-card {{
         position: absolute;
-        left: 9%;
-        right: 9%;
+        left: 8%;
+        right: 8%;
         top: 50%;
         transform: translateY(-50%);
         border: 1px solid {t["card_border"]};
@@ -347,7 +345,7 @@ def _inject_home_css(t: dict):
     }}
     .vitals-screen {{
         position: relative;
-        height: 158px;
+        height: 136px;
         background:
             linear-gradient({t["card_border"]}35 1px, transparent 1px),
             linear-gradient(90deg, {t["card_border"]}35 1px, transparent 1px),
@@ -403,6 +401,7 @@ def _inject_home_css(t: dict):
         color: {t["text"]} !important;
     }}
     .float-chip {{
+        display: none;
         position: absolute;
         display: grid;
         place-items: center;
@@ -439,7 +438,7 @@ def _inject_home_css(t: dict):
         font-size: 1rem;
         font-weight: 900;
         color: {t["text"]};
-        margin: 1rem 0 0.55rem;
+        margin: 1.15rem 0 0.55rem;
         display: flex;
         align-items: center;
         gap: 10px;
@@ -454,8 +453,8 @@ def _inject_home_css(t: dict):
         background: {t["card_bg"]};
         border: 1px solid {t["card_border"]};
         border-radius: 8px;
-        padding: 0.85rem 0.7rem;
-        min-height: 96px;
+        padding: 0.8rem 0.7rem;
+        min-height: 88px;
         box-shadow: {t["shadow_sm"]};
         transition: all 0.2s ease;
     }}
@@ -475,7 +474,7 @@ def _inject_home_css(t: dict):
     }}
     .home-stat-number {{
         font-family: Syne, sans-serif;
-        font-size: 1.45rem;
+        font-size: 1.25rem;
         font-weight: 900;
     }}
     .home-stat-label {{
@@ -488,13 +487,13 @@ def _inject_home_css(t: dict):
         background: {t["card_bg"]} !important;
         border: 1.5px solid {t["card_border"]} !important;
         border-radius: 8px !important;
-        padding: 0.65rem 0.45rem !important;
+        padding: 0.58rem 0.45rem !important;
         font-weight: 700 !important;
-        font-size: 0.82rem !important;
+        font-size: 0.78rem !important;
         color: {t["text"]} !important;
         text-align: center !important;
         white-space: pre-wrap !important;
-        min-height: 54px !important;
+        min-height: 48px !important;
         line-height: 1.4 !important;
         transition: all 0.2s ease !important;
     }}
@@ -570,7 +569,7 @@ def _inject_home_css(t: dict):
             grid-template-columns: 1fr;
         }}
         .medical-stage {{
-            min-height: 310px;
+            min-height: 255px;
         }}
     }}
     @media (prefers-reduced-motion: reduce) {{
@@ -670,12 +669,11 @@ def _stats(t: dict):
     items = [
         ("📚", "37", "Medical Subjects", t["primary"]),
         ("📝", "500+", "Practice MCQs", "#10b981"),
-        ("🤖", "8", "AI Tools", "#8b5cf6"),
         ("🃏", "200+", "Flashcards", "#f59e0b"),
         ("🩺", "12+", "OSCE Stations", "#ef4444"),
     ]
 
-    cols = st.columns(5)
+    cols = st.columns(len(items))
     for col, (ico, num, label, color) in zip(cols, items):
         with col:
             st.markdown(
@@ -691,7 +689,8 @@ def _stats(t: dict):
 
 
 def _cta_buttons():
-    c1, c2, c3, _ = st.columns([2, 2, 2, 1])
+    st.markdown('<div class="home-section-title">Start Studying</div>', unsafe_allow_html=True)
+    c1, c2, c3 = st.columns(3)
 
     with c1:
         if st.button("📚  Browse Subjects", type="primary", use_container_width=True, key="cta_subj"):
@@ -710,48 +709,97 @@ def _cta_buttons():
 
 
 def _module_grid(t: dict):
+    primary_modules = [
+        item
+        for item in ALL_MODULES
+        if item[1] in {"subjects", "flashcards", "mcq_quiz", "ai_tutor", "pomodoro", "osce_timer"}
+    ]
+    secondary_modules = [item for item in ALL_MODULES if item not in primary_modules]
+
     st.markdown(
         f"""
         <div class="home-section-title">
-            All Modules
+            Core Tools
             <span style="font-size:0.68rem;font-family:DM Sans,sans-serif;font-weight:700;color:{t["subtext"]};">
-                {len(ALL_MODULES)} tools
+                most used
             </span>
         </div>
         """,
         unsafe_allow_html=True,
     )
 
-    rows = [ALL_MODULES[i:i + 6] for i in range(0, len(ALL_MODULES), 6)]
-    for row_index, row in enumerate(rows):
-        cols = st.columns(6)
+    cols = st.columns(3)
+    for index, (icon, page_id, name, desc, color) in enumerate(primary_modules):
+        with cols[index % 3]:
+            if st.button(
+                f"{icon}  {name}\n{desc}",
+                key=f"core_mod_{page_id}",
+                use_container_width=True,
+            ):
+                st.session_state.page = page_id
+                st.rerun()
 
-        for col, (icon, page_id, name, desc, color) in zip(cols, row):
-            with col:
-                st.markdown(
-                    f"""
-                    <div style="height:3px;background:{color};border-radius:4px 4px 0 0;
-                                margin-bottom:-3px;position:relative;z-index:1;"></div>
-                    """,
-                    unsafe_allow_html=True,
-                )
+    if "home_show_more_tools" not in st.session_state:
+        st.session_state.home_show_more_tools = False
 
-                if st.button(
-                    f"{icon}\n{name}",
-                    key=f"mod_{page_id}_{row_index}",
-                    use_container_width=True,
-                ):
-                    st.session_state.page = page_id
-                    st.rerun()
+    more_label = "Hide more tools" if st.session_state.home_show_more_tools else f"Show more tools ({len(secondary_modules)})"
+    if st.button(more_label, use_container_width=True, key="home_toggle_more_tools"):
+        st.session_state.home_show_more_tools = not st.session_state.home_show_more_tools
+        st.rerun()
+
+    if st.session_state.home_show_more_tools:
+        rows = [secondary_modules[i:i + 4] for i in range(0, len(secondary_modules), 4)]
+        for row_index, row in enumerate(rows):
+            cols = st.columns(4)
+
+            for col, (icon, page_id, name, desc, color) in zip(cols, row):
+                with col:
+                    st.markdown(
+                        f"""
+                        <div style="height:3px;background:{color};border-radius:4px 4px 0 0;
+                                    margin-bottom:-3px;position:relative;z-index:1;"></div>
+                        """,
+                        unsafe_allow_html=True,
+                    )
+
+                    if st.button(
+                        f"{icon}\n{name}",
+                        key=f"mod_{page_id}_{row_index}",
+                        use_container_width=True,
+                    ):
+                        st.session_state.page = page_id
+                        st.rerun()
 
 
 def _subject_strip(t: dict):
-    st.markdown('<div class="home-section-title">Quick Subject Access</div>', unsafe_allow_html=True)
+    st.markdown('<div class="home-section-title">Popular Subjects</div>', unsafe_allow_html=True)
 
-    cols = st.columns(len(FEATURED_SUBJECTS))
-    for col, (icon, name) in zip(cols, FEATURED_SUBJECTS):
+    visible_subjects = FEATURED_SUBJECTS[:6]
+    cols = st.columns(3)
+    for index, (icon, name) in enumerate(visible_subjects):
+        col = cols[index % 3]
         with col:
             if st.button(f"{icon} {name}", key=f"subj_{name}", use_container_width=True):
                 st.session_state.page = "subjects"
                 st.session_state.selected_subject = name
                 st.rerun()
+
+    if "home_show_more_subjects" not in st.session_state:
+        st.session_state.home_show_more_subjects = False
+
+    more_label = "Hide more subjects" if st.session_state.home_show_more_subjects else "Show more subjects"
+    if st.button(more_label, use_container_width=True, key="home_toggle_more_subjects"):
+        st.session_state.home_show_more_subjects = not st.session_state.home_show_more_subjects
+        st.rerun()
+
+    if st.session_state.home_show_more_subjects:
+        extra_subjects = FEATURED_SUBJECTS[6:]
+        rows = [extra_subjects[i:i + 3] for i in range(0, len(extra_subjects), 3)]
+        for row_index, row in enumerate(rows):
+            cols = st.columns(3)
+            for col, (icon, name) in zip(cols, row):
+                with col:
+                    if st.button(f"{icon} {name}", key=f"subj_more_{row_index}_{name}", use_container_width=True):
+                        st.session_state.page = "subjects"
+                        st.session_state.selected_subject = name
+                        st.rerun()
