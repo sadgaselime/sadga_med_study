@@ -139,6 +139,9 @@ def tr(key: str) -> str:
     return TRANSLATIONS[st.session_state.language].get(key, key)
 
 
+if st.session_state.theme not in THEMES:
+    st.session_state.theme = "🩺 Clinical Snow"
+
 theme_manager = ThemeManager(st.session_state.theme)
 theme = THEMES.get(st.session_state.theme, list(THEMES.values())[0])
 
@@ -227,12 +230,13 @@ with auth_col:
 
 NAV_ITEMS = [
     ("🏠", "home", "Home"),
-    ("📚", "subjects", "Subjects"),
-    ("📝", "mcq_quiz", "Quiz"),
+    ("📚", "subjects", "Library"),
+    ("📝", "mcq_quiz", "MCQ"),
     ("🃏", "flashcards", "Cards"),
     ("🤖", "ai_tutor", "AI"),
-    ("📊", "dashboard", "Dash"),
-    ("⏱️", "pomodoro", "Timer"),
+    ("📊", "dashboard", "Analytics"),
+    ("⏱️", "pomodoro", "Focus"),
+    ("🩺", "osce_timer", "OSCE"),
     ("💡", "mnemonics", "Memos"),
     ("📖", "resources", "Refs"),
 ]
