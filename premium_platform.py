@@ -168,32 +168,74 @@ def apply_rtl_if_arabic():
 
 
 def inject_premium_css(theme):
+    is_dark = theme.get("family") == "dark"
+    shell_text = "#f8fbff" if is_dark else theme["text"]
+    shell_muted = "#b7c9d8" if is_dark else theme["text_muted"]
+    card_text = "#071827" if is_dark else theme["text"]
+    card_body = "#40586b" if is_dark else theme["text_muted"]
+    topbar_bg = (
+        "linear-gradient(135deg, rgba(255,255,255,0.14), rgba(255,255,255,0.06))"
+        if is_dark else
+        "linear-gradient(135deg, rgba(255,255,255,0.82), rgba(255,255,255,0.58))"
+    )
+    soft_shadow = "0 18px 48px rgba(3,18,34,0.18)" if is_dark else theme["shadow_md"]
+    nav_shadow = "0 24px 80px rgba(0,0,0,0.36)" if is_dark else theme["shadow_lg"]
     st.markdown(
         f"""
         <style>
         :root {{
-            --midnight: #06111f;
-            --midnight-2: #0a1b2f;
-            --panel: rgba(255,255,255,0.92);
-            --glass: rgba(255,255,255,0.10);
-            --glass-strong: rgba(255,255,255,0.16);
-            --line: rgba(177, 230, 255, 0.18);
-            --cyan: #38d5ff;
-            --emerald: #2ee59d;
-            --ink: #eaf7ff;
-            --muted: #9bb3c8;
-            --navy-shadow: 0 24px 80px rgba(0,0,0,0.36);
-            --soft-shadow: 0 18px 48px rgba(3, 18, 34, 0.18);
+            --cyan: {theme["primary"]};
+            --emerald: {theme["secondary"]};
+            --line: {theme["card_border"]};
+            --panel: {theme["card_bg"]};
+            --glass: {theme["glass_bg"]};
+            --glass-strong: {theme["glass_border"]};
+            --ink: {shell_text};
+            --muted: {shell_muted};
+            --premium-card-text: {card_text};
+            --premium-card-body: {card_body};
+            --navy-shadow: {nav_shadow};
+            --soft-shadow: {soft_shadow};
         }}
         html, body, .stApp {{
             background:
-                radial-gradient(circle at 12% 8%, rgba(56,213,255,0.17), transparent 30%),
-                radial-gradient(circle at 88% 12%, rgba(46,229,157,0.13), transparent 28%),
-                linear-gradient(145deg, #04101f 0%, #07182b 48%, #0a1422 100%) !important;
+                radial-gradient(circle at 12% 8%, {theme["primary_glow"]}, transparent 30%),
+                radial-gradient(circle at 88% 12%, {theme["hover_bg"]}, transparent 28%),
+                {theme["hero_gradient"]} !important;
         }}
         .block-container {{
             max-width: 1500px !important;
             padding-top: 1.1rem !important;
+        }}
+        .medical-animation-layer {{
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            overflow: hidden;
+            z-index: 0;
+        }}
+        .medical-float {{
+            position: absolute;
+            color: {theme["primary"]} !important;
+            opacity: {"0.16" if is_dark else "0.13"};
+            font-weight: 900;
+            filter: drop-shadow(0 10px 24px {theme["primary_glow"]});
+            animation: medFloat 13s ease-in-out infinite;
+        }}
+        .medical-float:nth-child(1) {{ top: 12%; left: 5%; font-size: 2rem; animation-delay: 0s; }}
+        .medical-float:nth-child(2) {{ top: 20%; right: 9%; font-size: 2.4rem; animation-delay: -3s; }}
+        .medical-float:nth-child(3) {{ top: 55%; left: 8%; font-size: 1.7rem; animation-delay: -6s; }}
+        .medical-float:nth-child(4) {{ top: 64%; right: 12%; font-size: 2rem; animation-delay: -2s; }}
+        .medical-float:nth-child(5) {{ top: 38%; left: 46%; font-size: 1.55rem; animation-delay: -8s; }}
+        .medical-float:nth-child(6) {{ bottom: 8%; left: 28%; font-size: 1.8rem; animation-delay: -5s; }}
+        @keyframes medFloat {{
+            0%, 100% {{ transform: translate3d(0,0,0) rotate(0deg); }}
+            35% {{ transform: translate3d(14px,-18px,0) rotate(5deg); }}
+            70% {{ transform: translate3d(-12px,10px,0) rotate(-4deg); }}
+        }}
+        .stApp > *:not(.medical-animation-layer) {{
+            position: relative;
+            z-index: 1;
         }}
         .med-topbar {{
             position: sticky;
@@ -207,7 +249,7 @@ def inject_premium_css(theme):
             margin-bottom: 18px;
             border: 1px solid var(--line);
             border-radius: 24px;
-            background: linear-gradient(135deg, rgba(255,255,255,0.14), rgba(255,255,255,0.06));
+            background: {topbar_bg};
             box-shadow: var(--navy-shadow);
             backdrop-filter: blur(26px);
         }}
@@ -224,12 +266,12 @@ def inject_premium_css(theme):
             place-items:center;
             border-radius:18px;
             background: linear-gradient(135deg, var(--cyan), var(--emerald));
-            color:#03111d !important;
+            color:{theme["text_inverse"]} !important;
             font-weight:900;
             box-shadow: 0 14px 36px rgba(56,213,255,0.22);
         }}
         .brand-title {{
-            color: #ffffff !important;
+            color: var(--ink) !important;
             font-weight: 900;
             font-size: 1.02rem;
             line-height: 1.05;
@@ -244,7 +286,7 @@ def inject_premium_css(theme):
             min-height:46px;
             border:1px solid var(--line);
             border-radius: 16px;
-            background: rgba(255,255,255,0.08);
+            background: var(--glass);
             color: var(--muted) !important;
             display:flex;
             align-items:center;
@@ -255,8 +297,8 @@ def inject_premium_css(theme):
             width:46px;height:46px;border-radius:16px;
             border:1px solid var(--line);
             display:grid;place-items:center;
-            background:rgba(255,255,255,0.08);
-            color:#fff !important;
+            background:var(--glass);
+            color:var(--ink) !important;
         }}
         .language-chip {{
             display:flex;
@@ -264,15 +306,15 @@ def inject_premium_css(theme):
             padding:4px;
             border-radius: 999px;
             border:1px solid var(--line);
-            background:rgba(255,255,255,0.08);
+            background:var(--glass);
         }}
         .hero-panel {{
             border: 1px solid rgba(146, 224, 255, .22);
             border-radius: 28px;
             padding: clamp(1.5rem, 3vw, 3.2rem);
             background:
-                linear-gradient(120deg, rgba(255,255,255,0.16), rgba(255,255,255,0.06)),
-                radial-gradient(circle at 82% 20%, rgba(46,229,157,0.18), transparent 34%);
+                linear-gradient(120deg, var(--glass), rgba(255,255,255,0.08)),
+                radial-gradient(circle at 82% 20%, {theme["primary_glow"]}, transparent 34%);
             box-shadow: var(--navy-shadow);
             overflow:hidden;
             position:relative;
@@ -290,9 +332,9 @@ def inject_premium_css(theme):
         }}
         .eyebrow {{
             display:inline-flex;
-            color:#bcefff !important;
-            border:1px solid rgba(56,213,255,0.26);
-            background:rgba(56,213,255,0.10);
+            color:var(--ink) !important;
+            border:1px solid var(--line);
+            background:var(--glass);
             border-radius:999px;
             padding:7px 11px;
             font-size:.78rem;
@@ -300,7 +342,7 @@ def inject_premium_css(theme):
             margin-bottom:18px;
         }}
         .hero-title {{
-            color:#ffffff !important;
+            color:var(--ink) !important;
             font-size: clamp(2.25rem, 5vw, 5.2rem);
             line-height:.98;
             max-width: 980px;
@@ -309,7 +351,7 @@ def inject_premium_css(theme):
             margin:0;
         }}
         .hero-subtitle {{
-            color:#c7ddec !important;
+            color:var(--muted) !important;
             max-width:760px;
             font-size:1.08rem;
             line-height:1.7;
@@ -317,9 +359,9 @@ def inject_premium_css(theme):
         }}
         .badge-row {{ display:flex; flex-wrap:wrap; gap:10px; margin-top:24px; }}
         .exam-badge {{
-            color:#eaffff !important;
-            border:1px solid rgba(255,255,255,.18);
-            background:rgba(255,255,255,.08);
+            color:var(--ink) !important;
+            border:1px solid var(--line);
+            background:var(--glass);
             border-radius:999px;
             padding:8px 13px;
             font-weight:800;
@@ -332,23 +374,23 @@ def inject_premium_css(theme):
             margin: 18px 0;
         }}
         .lux-card, .module-card {{
-            border:1px solid rgba(185,232,255,0.18);
+            border:1px solid var(--line);
             border-radius:24px;
-            background:linear-gradient(145deg, rgba(255,255,255,0.93), rgba(235,249,255,0.86));
+            background:{theme["card_gradient"]};
             box-shadow: var(--soft-shadow);
             padding:18px;
             min-height:136px;
             transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
-            color:#071827 !important;
+            color:var(--premium-card-text) !important;
         }}
         .module-card:hover, .lux-card:hover {{
             transform: translateY(-3px);
             border-color: rgba(56,213,255,0.42);
             box-shadow: 0 24px 70px rgba(2,18,34,.25), 0 0 0 1px rgba(46,229,157,.12);
         }}
-        .card-kicker {{ color:#527086 !important; font-size:.72rem; font-weight:900; text-transform:uppercase; letter-spacing:.08em; }}
-        .card-title {{ color:#06111f !important; font-size:1.05rem; font-weight:900; margin:.25rem 0 .4rem; }}
-        .card-body {{ color:#40586b !important; font-size:.88rem; line-height:1.5; }}
+        .card-kicker {{ color:var(--muted) !important; font-size:.72rem; font-weight:900; text-transform:uppercase; letter-spacing:.08em; }}
+        .card-title {{ color:var(--premium-card-text) !important; font-size:1.05rem; font-weight:900; margin:.25rem 0 .4rem; }}
+        .card-body {{ color:var(--premium-card-body) !important; font-size:.88rem; line-height:1.5; }}
         .progress-line {{ height:8px; background:#dbeaf2; border-radius:999px; overflow:hidden; margin-top:14px; }}
         .progress-line span {{ display:block; height:100%; background:linear-gradient(90deg, var(--cyan), var(--emerald)); border-radius:999px; }}
         .student-workspace {{
@@ -359,11 +401,11 @@ def inject_premium_css(theme):
             margin: 18px 0 14px;
             padding: 16px;
             border-radius: 24px;
-            border: 1px solid rgba(185,232,255,0.22);
+            border: 1px solid var(--line);
             background:
-                linear-gradient(135deg, rgba(255,255,255,0.13), rgba(255,255,255,0.06)),
-                radial-gradient(circle at 94% 18%, rgba(46,229,157,0.16), transparent 34%);
-            box-shadow: 0 18px 46px rgba(0,0,0,0.26);
+                linear-gradient(135deg, var(--glass), rgba(255,255,255,0.08)),
+                radial-gradient(circle at 94% 18%, {theme["primary_glow"]}, transparent 34%);
+            box-shadow: var(--soft-shadow);
             backdrop-filter: blur(22px);
         }}
         .student-symbol {{
@@ -373,26 +415,26 @@ def inject_premium_css(theme):
             display:grid;
             place-items:center;
             background: linear-gradient(135deg, var(--cyan), var(--emerald));
-            color:#03111d !important;
+            color:{theme["text_inverse"]} !important;
             font-size:1.35rem;
             font-weight: 900;
             box-shadow: 0 16px 34px rgba(56,213,255,0.20);
         }}
         .student-workspace-title {{
-            color:#f6fbff !important;
+            color:var(--ink) !important;
             font-weight: 900;
             font-size: 1.18rem;
             line-height: 1.15;
         }}
         .student-workspace-sub {{
-            color:#a9c4d7 !important;
+            color:var(--muted) !important;
             font-size:.82rem;
             margin-top:4px;
         }}
         .student-badge {{
-            border:1px solid rgba(255,255,255,0.16);
-            background:rgba(255,255,255,0.08);
-            color:#dff9ff !important;
+            border:1px solid var(--line);
+            background:var(--glass);
+            color:var(--ink) !important;
             border-radius:999px;
             padding:8px 12px;
             font-size:.72rem;
@@ -406,9 +448,9 @@ def inject_premium_css(theme):
             min-height: 58px !important;
             border-radius: 18px !important;
             justify-content: center !important;
-            background: linear-gradient(145deg, rgba(255,255,255,0.12), rgba(255,255,255,0.055)) !important;
-            border: 1px solid rgba(185,232,255,0.17) !important;
-            color: #edfaff !important;
+            background: var(--glass) !important;
+            border: 1px solid var(--line) !important;
+            color: var(--ink) !important;
             font-weight: 850 !important;
             letter-spacing: 0 !important;
             box-shadow: 0 12px 30px rgba(0,0,0,0.18) !important;
@@ -425,7 +467,7 @@ def inject_premium_css(theme):
             border-color: rgba(255,255,255,0.20) !important;
         }}
         .section-title {{
-            color:#f6fbff !important;
+            color:var(--ink) !important;
             font-weight:900;
             font-size:1.25rem;
             margin: 1.3rem 0 .75rem;
@@ -435,17 +477,17 @@ def inject_premium_css(theme):
             margin: 0 8px 8px 0;
             padding:8px 12px;
             border-radius:999px;
-            background:rgba(255,255,255,0.10);
-            border:1px solid rgba(255,255,255,0.14);
-            color:#e6f8ff !important;
+            background:var(--glass);
+            border:1px solid var(--line);
+            color:var(--ink) !important;
             font-weight:800;
             font-size:.78rem;
         }}
         .disclaimer {{
             margin-top: 22px;
-            color:#acc4d5 !important;
+            color:var(--muted) !important;
             font-size:.82rem;
-            border-top:1px solid rgba(255,255,255,.12);
+            border-top:1px solid var(--line);
             padding-top:14px;
         }}
         @media (max-width: 1100px) {{
@@ -460,6 +502,19 @@ def inject_premium_css(theme):
             .student-badge {{ display:none; }}
         }}
         </style>
+        """,
+        unsafe_allow_html=True,
+    )
+    st.markdown(
+        """
+        <div class="medical-animation-layer">
+            <span class="medical-float">✚</span>
+            <span class="medical-float">⚕</span>
+            <span class="medical-float">ECG</span>
+            <span class="medical-float">DNA</span>
+            <span class="medical-float">Rx</span>
+            <span class="medical-float">OSCE</span>
+        </div>
         """,
         unsafe_allow_html=True,
     )
@@ -621,13 +676,40 @@ def render_module_card(icon, title, description, progress, page_id, cta="Open"):
 
 def render_dashboard(stats):
     render_hero()
+    st.markdown(
+        """
+        <div class="lux-grid">
+            <div class="lux-card">
+                <div class="card-kicker">✚ Start Here</div>
+                <div class="card-title">Pick one clinical goal</div>
+                <div class="card-body">Choose a topic, practice questions, review flashcards, or rehearse an OSCE station.</div>
+            </div>
+            <div class="lux-card">
+                <div class="card-kicker">◇ Study Flow</div>
+                <div class="card-title">Learn → Recall → Test</div>
+                <div class="card-body">Read high-yield notes, generate a mnemonic, then finish with MCQs for feedback.</div>
+            </div>
+            <div class="lux-card">
+                <div class="card-kicker">⚕ Clinical Mode</div>
+                <div class="card-title">Think like a doctor</div>
+                <div class="card-body">Every subject links facts to symptoms, investigations, management, and OSCE skills.</div>
+            </div>
+            <div class="lux-card">
+                <div class="card-kicker">↗ Exam Ready</div>
+                <div class="card-title">Track your weak spots</div>
+                <div class="card-body">Use analytics, bookmarks, and progress history to decide what to study next.</div>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
     render_stat_cards(stats)
     st.markdown(f'<div class="section-title">{get_translation("quick_actions")}</div>', unsafe_allow_html=True)
     modules = [
         ("▦", get_translation("az_hub"), "Chapter notes, clinical correlations, exam tables, OSCE links.", 64, "az_hub"),
         ("?", get_translation("question_bank"), "Practice exam-style MCQs and preserve attempt history.", 48, "mcq_quiz"),
         ("M", get_translation("ai_mnemonics_studio"), "Generate English and Arabic memory systems with recall quizzes.", 38, "ai_mnemonics"),
-        ("+", get_translation("clinical_skills_lab"), "Time OSCE stations and rehearse structured clinical skills.", 52, "osce_timer"),
+        ("✚", get_translation("clinical_skills_lab"), "Time OSCE stations and rehearse structured clinical skills.", 52, "osce_timer"),
     ]
     cols = st.columns(4)
     for col, module in zip(cols, modules):
@@ -669,7 +751,7 @@ def render_subject_page():
     subject = st.selectbox(get_translation("subject"), SUBJECT_ORDER, key="az_subject_select")
     data = AZ_MEDICAL_KNOWLEDGE[subject]
     st.markdown(f"### {subject}")
-    tabs = st.tabs(["Notes", "High-Yield", "Clinical", "Diseases & Drugs", "Practice", "Resources"])
+    tabs = st.tabs(["✎ Notes", "◆ High-Yield", "⚕ Clinical", "Rx Diseases & Drugs", "? Practice", "⌘ Resources"])
     with tabs[0]:
         for index, chapter in enumerate(data["chapters"], 1):
             with st.expander(f"Chapter {index}: {chapter}", expanded=index == 1):

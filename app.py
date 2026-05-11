@@ -76,7 +76,7 @@ _optional_import("resources_page", "resources_page")
 
 def init_session():
     defaults = {
-        "theme": "💎 MedStudy Midnight",
+        "theme": "🌸 Light Lavender",
         "language": "en",
         "logged_in": False,
         "user": None,
@@ -134,10 +134,10 @@ init_session()
 _load_profile_preferences_once()
 
 if st.session_state.theme not in THEMES:
-    st.session_state.theme = "💎 MedStudy Midnight"
+    st.session_state.theme = "🌸 Light Lavender"
 
 theme_manager = ThemeManager(st.session_state.theme)
-theme = THEMES.get(st.session_state.theme, THEMES["💎 MedStudy Midnight"])
+theme = THEMES.get(st.session_state.theme, THEMES["🌸 Light Lavender"])
 
 st.markdown(theme_manager.inject(), unsafe_allow_html=True)
 inject_mobile(theme)
