@@ -126,6 +126,7 @@ def init_session():
         "vault_items": [],
         "pomo_start_time": None,
         "pomo_last_mode": None,
+        "show_more_nav": False,
     }
     for key, value in defaults.items():
         if key not in st.session_state:
@@ -234,26 +235,61 @@ NAV_ITEMS = [
     ("📝", "mcq_quiz", "MCQ"),
     ("🃏", "flashcards", "Cards"),
     ("🤖", "ai_tutor", "AI"),
-    ("📊", "dashboard", "Analytics"),
     ("⏱️", "pomodoro", "Focus"),
+]
+
+MORE_NAV_ITEMS = [
+    ("📊", "dashboard", "Analytics"),
     ("🩺", "osce_timer", "OSCE"),
     ("💡", "mnemonics", "Memos"),
     ("📖", "resources", "Refs"),
+    ("🎤", "voice_ai", "Voice"),
+    ("🧪", "lab_game", "Lab"),
+    ("🫁", "anatomy_3d", "Anatomy"),
+    ("👥", "study_groups", "Groups"),
+    ("💬", "discussion", "Forums"),
+    ("🏆", "leaderboards", "Ranks"),
+    ("🏅", "about", "About"),
 ]
 
-nav_cols = st.columns(len(NAV_ITEMS))
 
-for col, (icon, page_id, label) in zip(nav_cols, NAV_ITEMS):
-    with col:
-        active = st.session_state.page == page_id
-        if st.button(
-            f"{icon} {label}",
-            key=f"topnav_{page_id}",
-            use_container_width=True,
-            type="primary" if active else "secondary",
-        ):
-            st.session_state.page = page_id
-            st.rerun()
+def _render_nav_row(items, key_prefix: str):
+    nav_cols = st.columns(len(items))
+    for col, (icon, page_id, label) in zip(nav_cols, items):
+        with col:
+            active = st.session_state.page == page_id
+            if st.button(
+                f"{icon} {label}",
+                key=f"{key_prefix}_{page_id}",
+                use_container_width=True,
+                type="primary" if active else "secondary",
+            ):
+                st.session_state.page = page_id
+                st.rerun()
+
+
+_render_nav_row(NAV_ITEMS, "topnav")
+
+more_active = any(st.session_state.page == page_id for _, page_id, _ in MORE_NAV_ITEMS)
+more_cols = st.columns([1, 5])
+with more_cols[0]:
+    if st.button(
+        "Hide More" if st.session_state.show_more_nav else "More",
+        key="topnav_more_toggle",
+        use_container_width=True,
+        type="primary" if more_active else "secondary",
+    ):
+        st.session_state.show_more_nav = not st.session_state.show_more_nav
+        st.rerun()
+
+with more_cols[1]:
+    st.markdown(
+        f"<div style='height:1px;background:{theme['card_border']};margin:1.25rem 0 0;'></div>",
+        unsafe_allow_html=True,
+    )
+
+if st.session_state.show_more_nav or more_active:
+    _render_nav_row(MORE_NAV_ITEMS, "topnav_more")
 
 st.markdown(
     f"<div style='height:1px;background:{theme['card_border']};margin:0.5rem 0 1.2rem;'></div>",
