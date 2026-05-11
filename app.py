@@ -28,6 +28,7 @@ from premium_platform import (
     apply_rtl_if_arabic,
     get_translation,
     inject_premium_css,
+    render_cinematic_page_banner,
     render_bookmarks,
     render_dashboard,
     render_profile_dashboard,
@@ -159,6 +160,9 @@ if st.session_state.page != "auth":
     render_sidebar()
 
 page = st.session_state.page
+
+if page != "auth":
+    render_cinematic_page_banner(page)
 
 if page == "auth":
     auth_page(theme, login_user, signup_user)

@@ -222,20 +222,129 @@ def inject_premium_css(theme):
             filter: drop-shadow(0 10px 24px {theme["primary_glow"]});
             animation: medFloat 13s ease-in-out infinite;
         }}
-        .medical-float:nth-child(1) {{ top: 12%; left: 5%; font-size: 2rem; animation-delay: 0s; }}
-        .medical-float:nth-child(2) {{ top: 20%; right: 9%; font-size: 2.4rem; animation-delay: -3s; }}
-        .medical-float:nth-child(3) {{ top: 55%; left: 8%; font-size: 1.7rem; animation-delay: -6s; }}
-        .medical-float:nth-child(4) {{ top: 64%; right: 12%; font-size: 2rem; animation-delay: -2s; }}
-        .medical-float:nth-child(5) {{ top: 38%; left: 46%; font-size: 1.55rem; animation-delay: -8s; }}
-        .medical-float:nth-child(6) {{ bottom: 8%; left: 28%; font-size: 1.8rem; animation-delay: -5s; }}
+        .medical-float.instrument {{
+            opacity: {"0.20" if is_dark else "0.16"};
+            font-size: 1.6rem;
+            animation: medDrift 18s ease-in-out infinite;
+        }}
+        .medical-float.wordmark {{
+            font-size: 1.4rem;
+            letter-spacing: 0.05em;
+            opacity: {"0.14" if is_dark else "0.11"};
+        }}
+        .medical-float:nth-child(1) {{ top: 10%; left: 5%; font-size: 2rem; animation-delay: 0s; }}
+        .medical-float:nth-child(2) {{ top: 16%; right: 9%; font-size: 2.4rem; animation-delay: -3s; }}
+        .medical-float:nth-child(3) {{ top: 52%; left: 8%; animation-delay: -6s; }}
+        .medical-float:nth-child(4) {{ top: 64%; right: 12%; animation-delay: -2s; }}
+        .medical-float:nth-child(5) {{ top: 38%; left: 46%; animation-delay: -8s; }}
+        .medical-float:nth-child(6) {{ bottom: 8%; left: 28%; animation-delay: -5s; }}
+        .medical-float:nth-child(7) {{ top: 28%; left: 18%; animation-delay: -11s; }}
+        .medical-float:nth-child(8) {{ top: 76%; right: 24%; animation-delay: -7s; }}
+        .medical-float:nth-child(9) {{ top: 44%; right: 35%; animation-delay: -13s; }}
+        .medical-float:nth-child(10) {{ top: 6%; left: 52%; animation-delay: -9s; }}
+        .medical-float:nth-child(11) {{ bottom: 20%; right: 6%; animation-delay: -15s; }}
+        .medical-float:nth-child(12) {{ top: 82%; left: 6%; animation-delay: -4s; }}
+        .medical-float:nth-child(13) {{ top: 26%; right: 48%; animation-delay: -17s; }}
+        .medical-float:nth-child(14) {{ bottom: 34%; left: 64%; animation-delay: -10s; }}
+        .cinema-sweep {{
+            position: absolute;
+            inset: -20% auto auto -18%;
+            width: 58vw;
+            height: 130vh;
+            transform: rotate(18deg);
+            background: linear-gradient(90deg, transparent, {theme["primary_glow"]}, transparent);
+            opacity: {"0.16" if is_dark else "0.12"};
+            animation: sweepMove 22s ease-in-out infinite;
+        }}
         @keyframes medFloat {{
             0%, 100% {{ transform: translate3d(0,0,0) rotate(0deg); }}
             35% {{ transform: translate3d(14px,-18px,0) rotate(5deg); }}
             70% {{ transform: translate3d(-12px,10px,0) rotate(-4deg); }}
         }}
+        @keyframes medDrift {{
+            0%, 100% {{ transform: translate3d(0,0,0) rotate(-3deg) scale(1); }}
+            45% {{ transform: translate3d(22px,-22px,0) rotate(7deg) scale(1.04); }}
+            72% {{ transform: translate3d(-18px,16px,0) rotate(-6deg) scale(.98); }}
+        }}
+        @keyframes sweepMove {{
+            0%, 100% {{ transform: translateX(-18%) rotate(18deg); }}
+            50% {{ transform: translateX(118vw) rotate(18deg); }}
+        }}
         .stApp > *:not(.medical-animation-layer) {{
             position: relative;
             z-index: 1;
+        }}
+        .cinematic-page-strip {{
+            display:grid;
+            grid-template-columns: auto 1fr auto;
+            gap:14px;
+            align-items:center;
+            margin: 0 0 18px;
+            padding: 16px;
+            border-radius: 24px;
+            border: 1px solid var(--line);
+            background:
+                linear-gradient(135deg, var(--glass), rgba(255,255,255,0.10)),
+                radial-gradient(circle at 85% 20%, {theme["primary_glow"]}, transparent 34%);
+            box-shadow: var(--soft-shadow);
+            backdrop-filter: blur(22px);
+            overflow:hidden;
+            position:relative;
+        }}
+        .cinematic-page-strip::after {{
+            content:"";
+            position:absolute;
+            inset:0;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.18), transparent);
+            transform: translateX(-120%);
+            animation: pageShimmer 9s ease-in-out infinite;
+        }}
+        @keyframes pageShimmer {{
+            0%, 45% {{ transform: translateX(-120%); }}
+            70%, 100% {{ transform: translateX(120%); }}
+        }}
+        .cinema-page-symbol {{
+            width:52px;
+            height:52px;
+            border-radius:19px;
+            display:grid;
+            place-items:center;
+            background: linear-gradient(135deg, var(--cyan), var(--emerald));
+            color:{theme["text_inverse"]} !important;
+            font-size:1.35rem;
+            box-shadow: 0 14px 34px {theme["primary_glow"]};
+            z-index:1;
+        }}
+        .cinema-page-title {{
+            color:var(--ink) !important;
+            font-weight:900;
+            font-size:1.08rem;
+            z-index:1;
+        }}
+        .cinema-page-sub {{
+            color:var(--muted) !important;
+            font-size:.84rem;
+            margin-top:3px;
+            z-index:1;
+        }}
+        .cinema-tool-row {{
+            display:flex;
+            gap:8px;
+            flex-wrap:wrap;
+            justify-content:flex-end;
+            z-index:1;
+        }}
+        .cinema-tool-chip {{
+            display:inline-flex;
+            align-items:center;
+            gap:5px;
+            border-radius:999px;
+            border:1px solid var(--line);
+            background:rgba(255,255,255,0.42);
+            color:var(--ink) !important;
+            padding:7px 10px;
+            font-size:.75rem;
+            font-weight:850;
         }}
         .med-topbar {{
             position: sticky;
@@ -641,12 +750,21 @@ def inject_premium_css(theme):
     st.markdown(
         """
         <div class="medical-animation-layer">
-            <span class="medical-float">✚</span>
-            <span class="medical-float">⚕</span>
-            <span class="medical-float">ECG</span>
-            <span class="medical-float">DNA</span>
-            <span class="medical-float">Rx</span>
-            <span class="medical-float">OSCE</span>
+            <div class="cinema-sweep"></div>
+            <span class="medical-float instrument">🩺</span>
+            <span class="medical-float instrument">🎓</span>
+            <span class="medical-float wordmark">ECG</span>
+            <span class="medical-float wordmark">DNA</span>
+            <span class="medical-float wordmark">Rx</span>
+            <span class="medical-float wordmark">OSCE</span>
+            <span class="medical-float instrument">💉</span>
+            <span class="medical-float instrument">🔬</span>
+            <span class="medical-float instrument">🧪</span>
+            <span class="medical-float instrument">🧬</span>
+            <span class="medical-float instrument">🩻</span>
+            <span class="medical-float instrument">💊</span>
+            <span class="medical-float instrument">🩹</span>
+            <span class="medical-float instrument">📚</span>
         </div>
         """,
         unsafe_allow_html=True,
@@ -758,6 +876,45 @@ def render_sidebar():
         st.session_state.page = selected_page
         st.query_params["page"] = selected_page
         st.rerun()
+
+
+PAGE_CINEMA = {
+    "dashboard": ("⌂", "Student Command Center", "Plan today, continue studying, and keep your exam momentum visible.", ["🎓 Graduation", "🩺 Clinical", "ECG"]),
+    "profile": ("👤", "Professional Profile", "Private progress, bookmarks, achievements, and study identity.", ["📊 Progress", "🔖 Saved", "🎯 Goals"]),
+    "az_hub": ("🧠", "A-Z Medical Knowledge Hub", "Structured subjects with notes, clinical links, tables, OSCE skills, and references.", ["🧬 DNA", "🔬 Lab", "📚 Notes"]),
+    "subjects": ("📚", "Knowledge Library", "Browse core and clinical medicine through a focused student lens.", ["📖 Chapters", "✎ Review", "💡 Recall"]),
+    "mcq_quiz": ("📝", "Question Bank", "Practice exam-style reasoning and track accuracy by subject.", ["? MCQs", "⏱ Timed", "📈 Score"]),
+    "flashcards": ("💎", "Flashcard Vault", "Build fast active recall with beautiful review cards.", ["⚡ Recall", "🔁 Review", "🎓 Mastery"]),
+    "ai_tutor": ("🤖", "AI Study Tutor", "Ask clinical questions and turn confusion into clear study steps.", ["AI Tutor", "🩺 Cases", "💬 Explain"]),
+    "ai_mnemonics": ("💡", "AI Mnemonics Studio", "Create memorable English and Arabic mnemonics with recall quizzes.", ["💡 Memory", "🎨 Visual", "🧠 Quiz"]),
+    "osce_timer": ("🩺", "Clinical Skills Lab", "Rehearse stations, timing, scripts, and examiner-ready checklists.", ["OSCE", "⏱ Timer", "✚ Skills"]),
+    "pomodoro": ("⏱", "Focus Mode", "Protect deep work blocks with a calm clinical study timer.", ["⏱ Focus", "☕ Break", "✅ Session"]),
+    "analytics": ("📊", "Performance Insights", "Find weak areas, strong subjects, and your next best lesson.", ["📈 Trends", "🎯 Weak Areas", "🏆 Strong"]),
+    "resources": ("📖", "Medical References", "Keep high-quality reference pathways close to every topic.", ["⌘ Refs", "🔬 Evidence", "📚 Sources"]),
+    "shared_notes": ("✍️", "Study Notes", "Capture clinical pearls, saved thoughts, and revision notes.", ["✍️ Notes", "🔖 Bookmark", "🧾 Revision"]),
+    "settings": ("⚙️", "Settings", "Personalize language, theme, study goals, and exam track.", ["🎨 Themes", "🌍 Language", "🎯 Goal"]),
+}
+
+
+def render_cinematic_page_banner(page_id: str):
+    icon, title, subtitle, chips = PAGE_CINEMA.get(
+        page_id,
+        ("⚕", "MedStudy Workspace", "A cinematic clinical study space for modern medical learners.", ["🩺 Tools", "🎓 Study", "💊 Medicine"]),
+    )
+    chip_html = "".join(f'<span class="cinema-tool-chip">{chip}</span>' for chip in chips)
+    st.markdown(
+        f"""
+        <div class="cinematic-page-strip">
+            <div class="cinema-page-symbol">{icon}</div>
+            <div>
+                <div class="cinema-page-title">{title}</div>
+                <div class="cinema-page-sub">{subtitle}</div>
+            </div>
+            <div class="cinema-tool-row">{chip_html}</div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
 
 def render_hero():
