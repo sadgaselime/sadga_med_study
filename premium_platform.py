@@ -463,6 +463,106 @@ def inject_premium_css(theme):
         .student-nav-grid::-webkit-scrollbar {{
             display: none;
         }}
+        [data-testid="stSegmentedControl"] {{
+            background: rgba(255,255,255,0.91);
+            border: 1px solid rgba(255,255,255,0.84);
+            border-radius: 16px;
+            padding: 8px 10px;
+            box-shadow: 0 16px 42px rgba(31,41,55,0.10);
+            backdrop-filter: blur(18px);
+            margin-bottom: 18px;
+            overflow-x: auto;
+            scrollbar-width: none;
+        }}
+        [data-testid="stSegmentedControl"]::-webkit-scrollbar {{
+            display: none;
+        }}
+        [data-testid="stSegmentedControl"] [role="group"],
+        [data-testid="stSegmentedControl"] [role="radiogroup"] {{
+            display: flex !important;
+            align-items: center !important;
+            gap: 7px !important;
+            flex-wrap: wrap !important;
+        }}
+        [role="radiogroup"] button,
+        [data-testid="stSegmentedControl"] button {{
+            display: inline-flex !important;
+            align-items: center !important;
+            min-height: 38px !important;
+            border-radius: 10px !important;
+            border: 1px solid transparent !important;
+            background: rgba(255,255,255,0.92) !important;
+            padding: 0 12px !important;
+            color: {theme["text_muted"]} !important;
+            transition: all 0.18s ease !important;
+            box-shadow: 0 6px 18px rgba(31,41,55,0.06) !important;
+        }}
+        [role="radiogroup"] button p,
+        [data-testid="stSegmentedControl"] button p {{
+            color: inherit !important;
+            font-weight: 850 !important;
+            font-size: 0.86rem !important;
+            white-space: nowrap !important;
+        }}
+        [role="radiogroup"] button:hover,
+        [data-testid="stSegmentedControl"] button:hover {{
+            background: {theme["hover_bg"]} !important;
+            border-color: {theme["card_border"]} !important;
+            color: {theme["text"]} !important;
+            transform: translateY(-1px) !important;
+            box-shadow: 0 10px 24px rgba(31,41,55,0.08) !important;
+        }}
+        [role="radiogroup"] button[aria-pressed="true"],
+        [role="radiogroup"] button[aria-checked="true"],
+        [role="radiogroup"] button[data-checked="true"],
+        [data-testid="stSegmentedControl"] button[aria-pressed="true"],
+        [data-testid="stSegmentedControl"] button[aria-checked="true"] {{
+            background: linear-gradient(135deg, #9a3412, #c2410c) !important;
+            color: #fff7ed !important;
+            border-color: rgba(154,52,18,0.32) !important;
+            box-shadow: 0 12px 28px rgba(154,52,18,0.22) !important;
+        }}
+        .student-nav-grid [role="radiogroup"] {{
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            flex-wrap: wrap;
+        }}
+        .student-nav-grid [data-testid="stRadio"] > label {{
+            display: none !important;
+        }}
+        .student-nav-grid [data-testid="stRadio"] div[role="radio"] {{
+            border-radius: 10px !important;
+            border: 1px solid transparent !important;
+            background: transparent !important;
+            padding: 0 12px !important;
+            min-height: 38px !important;
+            color: {theme["text_muted"]} !important;
+            transition: all 0.18s ease !important;
+            box-shadow: none !important;
+        }}
+        .student-nav-grid [data-testid="stRadio"] div[role="radio"] > div:first-child {{
+            display: none !important;
+        }}
+        .student-nav-grid [data-testid="stRadio"] div[role="radio"] p {{
+            color: inherit !important;
+            font-weight: 850 !important;
+            font-size: 0.86rem !important;
+            white-space: nowrap !important;
+        }}
+        .student-nav-grid [data-testid="stRadio"] div[role="radio"]:hover {{
+            background: {theme["hover_bg"]} !important;
+            border-color: {theme["card_border"]} !important;
+            color: {theme["text"]} !important;
+            transform: translateY(-1px) !important;
+            box-shadow: 0 10px 24px rgba(31,41,55,0.08) !important;
+        }}
+        .student-nav-grid [data-testid="stRadio"] div[role="radio"][aria-checked="true"] {{
+            background: linear-gradient(135deg, #9a3412, #c2410c) !important;
+            color: #fff7ed !important;
+            border-color: rgba(154,52,18,0.32) !important;
+            box-shadow: 0 12px 28px rgba(154,52,18,0.22) !important;
+        }}
         .student-nav-link {{
             display: inline-flex;
             align-items: center;
@@ -623,14 +723,15 @@ def render_topbar(theme, themes):
 def render_sidebar():
     current_page = st.session_state.get("page", "dashboard")
     language = st.session_state.get("language", "en")
-    nav_links = []
+    nav_options = []
+    option_to_page = {}
     for _, page_id, icon, label_en, label_ar, _ in PRO_NAV_ITEMS:
         label = label_ar if language == "ar" else label_en
-        active = " active" if current_page == page_id else ""
-        nav_links.append(
-            f'<a class="student-nav-link{active}" href="?page={page_id}">'
-            f'<span class="student-nav-icon">{icon}</span><span>{label}</span></a>'
-        )
+        option = f"{icon} {label}"
+        nav_options.append(option)
+        option_to_page[option] = page_id
+    page_to_option = {page_id: option for option, page_id in option_to_page.items()}
+    current_option = page_to_option.get(current_page, nav_options[0])
     st.markdown(
         f"""
         <div class="student-workspace">
@@ -641,12 +742,22 @@ def render_sidebar():
             </div>
             <div class="student-badge">SQU-COM · OMSB · USMLE</div>
         </div>
-        <div class="student-nav-grid">
-            {"".join(nav_links)}
-        </div>
         """,
         unsafe_allow_html=True,
     )
+    selected_option = st.segmented_control(
+        "Workspace modules",
+        nav_options,
+        default=current_option,
+        label_visibility="collapsed",
+        key="workspace_module_selector",
+    )
+    selected_option = selected_option or current_option
+    selected_page = option_to_page[selected_option]
+    if selected_page != current_page:
+        st.session_state.page = selected_page
+        st.query_params["page"] = selected_page
+        st.rerun()
 
 
 def render_hero():
