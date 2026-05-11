@@ -1,100 +1,154 @@
-"""
-app.py — MedStudy Oman 🩺
-PHASES 1–5  (complete)
-ThemeManager · Auth · Bento Home · Subject Hub · OSCE Timer · Developer Portfolio
-"""
+            rows  = "".join(
+                f'<div style="font-size:0.84rem;color:{theme["text"]};padding:0.4rem 0;'
+                f'border-bottom:1px solid {theme["card_border"]};">● {e}</div>'
+                for e in exams
+            )
+            st.markdown(
+                f'<div style="background:{theme["glass_bg"]};border:1px solid {theme["glass_border"]};'
+                f'border-radius:18px;padding:1.4rem;backdrop-filter:blur(12px);">'
+                f'<div style="font-size:0.65rem;font-weight:800;color:{theme["primary"]};'
+                f'letter-spacing:0.12em;text-transform:uppercase;margin-bottom:0.6rem;">Target Exams</div>'
+                f'{rows}</div>',
+                unsafe_allow_html=True,
+            )
 
-import streamlit as st
-import time
-import random
-from importlib import import_module
+# ═════════════════════════════════════════════════════════════════════════════
+# ROUTING
+# ═════════════════════════════════════════════════════════════════════════════
+page = st.session_state.page
 
-st.set_page_config(
-    page_title="MedStudy Oman",
-    page_icon="🩺",
-    layout="wide",
-    initial_sidebar_state="collapsed",
-)
+if page == "auth":
+    auth_page(theme, login_user, signup_user)
 
-# ── Core imports ──────────────────────────────────────────────────────────────
-from database import (
-    init_db, signup_user, login_user,
-    update_theme, save_study_session, get_user_stats,
-)
-from styles          import ThemeManager, THEMES
-from login_page      import auth_page
-from home_page       import home_page
-from timer_enhanced      import timer_page
-from about_page      import about_page
-from ai_chat_page    import ai_tutor_page as ai_chat_tutor_page
-from mcq_quiz_page   import mcq_quiz_page
-from flashcards_page import flashcards_page
-from mobile          import inject_mobile, render_bottom_nav   # Phase 9
+elif page == "home":
+    home_page(theme, tr, MOTIVATIONAL_QUOTES)
 
-try:
-    from content import MOTIVATIONAL_QUOTES
-except ImportError:
-    MOTIVATIONAL_QUOTES = [{"quote": "The art of medicine is in comforting.", "author": "Hippocrates"}]
+elif page == "subjects":
+    if "subjects_page" in globals():
+        subjects_page(theme)
+    else:
+        _render_unavailable("Subjects", "subjects_page")
 
-# ── Feature modules ───────────────────────────────────────────────────────────
-# Import optional pages one-by-one so a missing dependency in one feature does
-# not disable unrelated parts of the medical study platform.
-FEATURE_ERRORS = {}
+elif page == "flashcards":
+    flashcards_page(theme)
 
+elif page == "mnemonics":
+    if "mnemonics_page" in globals():
+        mnemonics_page(theme)
+    else:
+        _render_unavailable("Mnemonics", "mnemonics_page")
 
-def _optional_import(module_name: str, *attrs: str):
-    try:
-        module = import_module(module_name)
-    except Exception as exc:
-        FEATURE_ERRORS[module_name] = str(exc)
-        return
+elif page == "mcq_quiz":
+    mcq_quiz_page(theme)
 
-    for attr in attrs:
-        try:
-            globals()[attr] = getattr(module, attr)
-        except AttributeError as exc:
-            FEATURE_ERRORS[f"{module_name}.{attr}"] = str(exc)
+elif page == "dashboard":
+    db_stats = {}
+    if st.session_state.logged_in:
+        db_stats = get_user_stats(st.session_state.user["id"]) or {}
+    else:
+        st.info("📊 Showing demo data — login to see your personal analytics.")
+    if "dashboard_page" in globals():
+        dashboard_page(theme, db_stats)
+    else:
+        _render_unavailable("Dashboard", "dashboard_page")
+
+elif page == "pomodoro":
+    _render_pomodoro()
+
+elif page == "osce_timer":
+    if "osce_timer_page" in globals():
+        osce_timer_page(theme)
+    else:
+        timer_page(theme)
 
 
-try:
-    from timer_enhanced import get_timer_html, get_timer_completion_animation
-except ImportError:
-    def get_timer_html(*a, **kw): return ""
-    def get_timer_completion_animation(*a, **kw): return ""
+elif page == "ai_tutor":
+    ai_chat_tutor_page(theme)
 
-try:
-    from ai_features import ai_tutor_page as _legacy_ai   # kept for compatibility
-except Exception as _e:
-    FEATURE_ERRORS["ai_features"] = str(_e)
 
-_optional_import("lab_game", "lab_game_page")
-_optional_import("osce_timer", "osce_timer_page")
-_optional_import("anatomy_3d", "anatomy_3d_page")
-_optional_import("progress_tracker", "progress_tracker_page")
-_optional_import("study_groups", "study_groups_page")
-_optional_import("discussion", "discussion_page")
-_optional_import("shared_notes", "shared_notes_page")
-_optional_import("leaderboards", "leaderboards_page")
-_optional_import("subjects_page", "subjects_page", "SUBJECTS_LIBRARY")
-_optional_import("mnemonics_page", "mnemonics_page")
-_optional_import("dashboard_page", "dashboard_page")
-_optional_import("tips_page", "tips_page")
-_optional_import("resources_page", "resources_page")
+elif page == "voice_ai":
+    _page_header("🎤", tr("voice_ai"), "Hands-free studying powered by speech recognition")
+    st.info("🎤 Voice AI — coming soon!")
 
-MODULES_LOADED = not FEATURE_ERRORS
+elif page == "lab_game":
+    if "lab_game_page" in globals():
+        lab_game_page(theme)
+    else:
+        _render_unavailable("Lab Game", "lab_game")
 
-init_db()
+elif page == "anatomy_3d":
+    if "anatomy_3d_page" in globals():
+        anatomy_3d_page(theme)
+    else:
+        _render_unavailable("3D Anatomy", "anatomy_3d")
 
-# ─────────────────────────────────────────────────────────────────────────────
-# TRANSLATIONS
-# ─────────────────────────────────────────────────────────────────────────────
-TRANSLATIONS = {
-    "en": {
-        "app_title": "MedStudy Oman",        "tagline": "AI-Powered Medical Education",
-        "home": "Home",                       "subjects": "Subjects",
-        "flashcards": "Flashcards",           "pomodoro": "Pomodoro",
-        "mnemonics": "Mnemonics",             "mcq_quiz": "MCQ Quiz",
-        "dashboard": "Dashboard",             "tips": "Tips",
-        "motivation": "Motivation",           "ai_tutor": "AI Tutor",
-        "voice_ai": "Voice AI",               "resources": "Resources",
-        "profile": "My Profile",             "login": "Login",
+elif page == "resources":
+    if "resources_page" in globals():
+        resources_page(theme)
+    else:
+        _render_unavailable("Resources", "resources_page")
+
+elif page == "progress":
+    if not st.session_state.logged_in:
+        _require_login("progress")
+    elif "progress_tracker_page" in globals():
+        progress_tracker_page(theme, get_user_stats(st.session_state.user["id"]))
+    else:
+        _render_unavailable("Progress", "progress_tracker")
+
+elif page == "study_groups":
+    if "study_groups_page" in globals():
+        study_groups_page(theme,
+            st.session_state.user if st.session_state.logged_in else None)
+    else:
+        _render_unavailable("Study Groups", "study_groups")
+
+elif page == "discussion":
+    if "discussion_page" in globals():
+        discussion_page(theme,
+            st.session_state.user if st.session_state.logged_in else None)
+    else:
+        _render_unavailable("Forums", "discussion")
+
+elif page == "shared_notes":
+    if "shared_notes_page" in globals():
+        shared_notes_page(theme,
+            st.session_state.user if st.session_state.logged_in else None)
+    else:
+        _render_unavailable("Shared Notes", "shared_notes")
+
+elif page == "leaderboards":
+    if "leaderboards_page" in globals():
+        leaderboards_page(theme,
+            st.session_state.user if st.session_state.logged_in else None)
+    else:
+        _render_unavailable("Leaderboards", "leaderboards")
+
+elif page == "tips":
+    if "tips_page" in globals():
+        tips_page(theme)
+    else:
+        _render_unavailable("Study Tips", "tips_page")
+
+elif page == "profile":
+    if not st.session_state.logged_in:
+        _require_login("profile")
+    else:
+        _page_header("👤", tr("profile"),
+                     f"Dr. {st.session_state.user['name']} · Academic Analytics")
+        _render_profile()
+
+elif page == "about":
+    about_page(theme)
+
+else:
+    st.session_state.page = "home"
+    st.rerun()
+
+render_bottom_nav(theme)
+
+
+
+
+
+
