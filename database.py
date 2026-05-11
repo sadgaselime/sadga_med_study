@@ -35,10 +35,13 @@ def init_db():
             university TEXT DEFAULT 'SQU',
             year_of_study INTEGER DEFAULT 1,
             theme TEXT DEFAULT '🩺 Clinical Snow',
+            language TEXT DEFAULT 'en',
             created_at TEXT DEFAULT CURRENT_TIMESTAMP,
             last_login TEXT
         )
     """)
+
+    _add_column_if_missing(c, "users", "language", "TEXT DEFAULT 'en'")
 
     c.execute("""
         CREATE TABLE IF NOT EXISTS flashcard_progress (
@@ -104,8 +107,209 @@ def init_db():
         )
     """)
 
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS user_profiles (
+            user_id INTEGER PRIMARY KEY,
+            display_name TEXT,
+            exam_track TEXT DEFAULT 'SQU-COM',
+            target_exam TEXT DEFAULT 'OMSB Part 1',
+            daily_goal_minutes INTEGER DEFAULT 60,
+            bio TEXT DEFAULT '',
+            avatar_url TEXT DEFAULT '',
+            FOREIGN KEY (user_id) REFERENCES users(id)
+        )
+    """)
+
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS subjects (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT UNIQUE NOT NULL,
+            category TEXT,
+            icon TEXT DEFAULT '▣',
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS chapters (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            subject_id INTEGER NOT NULL,
+            title TEXT NOT NULL,
+            chapter_order INTEGER DEFAULT 0,
+            FOREIGN KEY (subject_id) REFERENCES subjects(id)
+        )
+    """)
+
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS notes (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            subject_id INTEGER,
+            chapter_id INTEGER,
+            title TEXT NOT NULL,
+            content TEXT NOT NULL,
+            note_type TEXT DEFAULT 'high_yield',
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (subject_id) REFERENCES subjects(id),
+            FOREIGN KEY (chapter_id) REFERENCES chapters(id)
+        )
+    """)
+
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS bookmarks (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            item_type TEXT NOT NULL,
+            item_id TEXT NOT NULL,
+            title TEXT NOT NULL,
+            subject TEXT DEFAULT '',
+            metadata TEXT DEFAULT '{}',
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(user_id, item_type, item_id),
+            FOREIGN KEY (user_id) REFERENCES users(id)
+        )
+    """)
+
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS quiz_attempts (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            subject TEXT NOT NULL,
+            topic TEXT DEFAULT '',
+            correct INTEGER DEFAULT 0,
+            total INTEGER DEFAULT 0,
+            score_percent REAL DEFAULT 0,
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users(id)
+        )
+    """)
+
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS completed_lessons (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            subject TEXT NOT NULL,
+            lesson_id TEXT NOT NULL,
+            title TEXT NOT NULL,
+            completed_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(user_id, subject, lesson_id),
+            FOREIGN KEY (user_id) REFERENCES users(id)
+        )
+    """)
+
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS osce_progress (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            station TEXT NOT NULL,
+            skill_domain TEXT DEFAULT '',
+            score INTEGER DEFAULT 0,
+            notes TEXT DEFAULT '',
+            practiced_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users(id)
+        )
+    """)
+
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS ai_mnemonics_history (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            topic TEXT NOT NULL,
+            mnemonic_type TEXT DEFAULT 'exam',
+            easy_mnemonic TEXT NOT NULL,
+            funny_mnemonic TEXT DEFAULT '',
+            exam_mnemonic TEXT DEFAULT '',
+            visual_story TEXT DEFAULT '',
+            english_explanation TEXT DEFAULT '',
+            arabic_explanation TEXT DEFAULT '',
+            recall_quiz TEXT DEFAULT '[]',
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users(id)
+        )
+    """)
+
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS study_activity (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            activity_type TEXT NOT NULL,
+            subject TEXT DEFAULT '',
+            title TEXT NOT NULL,
+            metadata TEXT DEFAULT '{}',
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users(id)
+        )
+    """)
+
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS settings (
+            user_id INTEGER NOT NULL,
+            key TEXT NOT NULL,
+            value TEXT NOT NULL,
+            updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (user_id, key),
+            FOREIGN KEY (user_id) REFERENCES users(id)
+        )
+    """)
+
+    _seed_medical_content(c)
+
     conn.commit()
     conn.close()
+
+
+def _add_column_if_missing(cursor, table_name: str, column_name: str, definition: str):
+    cursor.execute(f"PRAGMA table_info({table_name})")
+    columns = {row[1] for row in cursor.fetchall()}
+    if column_name not in columns:
+        cursor.execute(f"ALTER TABLE {table_name} ADD COLUMN {column_name} {definition}")
+
+
+def _seed_medical_content(cursor):
+    try:
+        from medical_knowledge import AZ_MEDICAL_KNOWLEDGE
+    except Exception:
+        return
+
+    for subject_name, data in AZ_MEDICAL_KNOWLEDGE.items():
+        cursor.execute("""
+            INSERT OR IGNORE INTO subjects (name, category, icon)
+            VALUES (?, ?, ?)
+        """, (subject_name, data.get("category", ""), "▣"))
+        cursor.execute("SELECT id FROM subjects WHERE name = ?", (subject_name,))
+        subject_row = cursor.fetchone()
+        if not subject_row:
+            continue
+        subject_id = subject_row[0]
+        for order, chapter_title in enumerate(data.get("chapters", []), start=1):
+            cursor.execute("SELECT id FROM chapters WHERE subject_id = ? AND title = ?", (subject_id, chapter_title))
+            chapter_row = cursor.fetchone()
+            if not chapter_row:
+                cursor.execute("""
+                    INSERT INTO chapters (subject_id, title, chapter_order)
+                    VALUES (?, ?, ?)
+                """, (subject_id, chapter_title, order))
+                chapter_id = cursor.lastrowid
+            else:
+                chapter_id = chapter_row[0]
+            note_text = "\n".join([
+                "High-yield points:",
+                *[f"- {item}" for item in data.get("high_yield", [])],
+                "",
+                "Clinical correlations:",
+                *[f"- {item}" for item in data.get("clinical_correlations", [])],
+                "",
+                "Quick revision:",
+                *[f"- {item}" for item in data.get("quick_revision_notes", [])],
+            ])
+            cursor.execute("""
+                SELECT id FROM notes
+                WHERE subject_id = ? AND chapter_id = ? AND title = ? AND note_type = 'starter_curriculum'
+            """, (subject_id, chapter_id, chapter_title))
+            if not cursor.fetchone():
+                cursor.execute("""
+                    INSERT INTO notes (subject_id, chapter_id, title, content, note_type)
+                    VALUES (?, ?, ?, ?, 'starter_curriculum')
+                """, (subject_id, chapter_id, chapter_title, note_text))
 
 
 def signup_user(name, email, password, university="SQU", year=1):
@@ -117,6 +321,11 @@ def signup_user(name, email, password, university="SQU", year=1):
             INSERT INTO users (name, email, password_hash, university, year_of_study)
             VALUES (?, ?, ?, ?, ?)
         """, (name, email, password_hash, university, year))
+        user_id = c.lastrowid
+        c.execute("""
+            INSERT OR IGNORE INTO user_profiles (user_id, display_name)
+            VALUES (?, ?)
+        """, (user_id, name))
         conn.commit()
         conn.close()
         return True, "Account created successfully!"
@@ -148,6 +357,7 @@ def login_user(email, password):
                 "university": user["university"],
                 "year": user["year_of_study"],
                 "theme": user["theme"],
+                "language": user["language"] if "language" in user.keys() else "en",
                 "created_at": user["created_at"],
                 "last_login": user["last_login"],
             }
@@ -157,12 +367,78 @@ def login_user(email, password):
         return False, f"Error: {str(e)}"
 
 
+def reset_password(email, new_password):
+    if len(new_password or "") < 8:
+        return False, "Password must be at least 8 characters."
+    conn = _connect()
+    c = conn.cursor()
+    c.execute("SELECT id FROM users WHERE email = ?", (email,))
+    user = c.fetchone()
+    if not user:
+        conn.close()
+        return False, "No account found with this email."
+    password_hash = bcrypt.hashpw(new_password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
+    c.execute("UPDATE users SET password_hash = ? WHERE id = ?", (password_hash, user["id"]))
+    c.execute("""
+        INSERT INTO study_activity (user_id, activity_type, title)
+        VALUES (?, 'security', 'Password updated')
+    """, (user["id"],))
+    conn.commit()
+    conn.close()
+    return True, "Password updated. You can log in with the new password."
+
+
 def update_theme(user_id, theme_name):
     conn = _connect()
     c = conn.cursor()
     c.execute("UPDATE users SET theme = ? WHERE id = ?", (theme_name, user_id))
+    c.execute("""
+        INSERT INTO settings (user_id, key, value, updated_at)
+        VALUES (?, 'theme', ?, ?)
+        ON CONFLICT(user_id, key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at
+    """, (user_id, theme_name, datetime.now().isoformat()))
     conn.commit()
     conn.close()
+
+
+def update_language(user_id, language):
+    conn = _connect()
+    c = conn.cursor()
+    c.execute("UPDATE users SET language = ? WHERE id = ?", (language, user_id))
+    c.execute("""
+        INSERT INTO settings (user_id, key, value, updated_at)
+        VALUES (?, 'language', ?, ?)
+        ON CONFLICT(user_id, key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at
+    """, (user_id, language, datetime.now().isoformat()))
+    conn.commit()
+    conn.close()
+
+
+def update_user_setting(user_id, key, value):
+    conn = _connect()
+    c = conn.cursor()
+    c.execute("""
+        INSERT INTO settings (user_id, key, value, updated_at)
+        VALUES (?, ?, ?, ?)
+        ON CONFLICT(user_id, key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at
+    """, (user_id, key, str(value), datetime.now().isoformat()))
+    conn.commit()
+    conn.close()
+
+
+def get_user_preferences(user_id):
+    conn = _connect()
+    c = conn.cursor()
+    c.execute("SELECT theme, language FROM users WHERE id = ?", (user_id,))
+    user = c.fetchone()
+    c.execute("SELECT key, value FROM settings WHERE user_id = ?", (user_id,))
+    settings = {row["key"]: row["value"] for row in c.fetchall()}
+    conn.close()
+    return {
+        "theme": settings.get("theme") or (user["theme"] if user else "🌑 Deep Surgeon"),
+        "language": settings.get("language") or (user["language"] if user else "en"),
+        **settings,
+    }
 
 
 def save_study_session(user_id, subject, duration_minutes):
@@ -189,11 +465,177 @@ def save_mcq_attempt(user_id, subject, correct, total):
     """, (user_id, subject, correct, total))
     pct = round((correct / total * 100) if total else 0, 1)
     c.execute("""
+        INSERT INTO quiz_attempts (user_id, subject, correct, total, score_percent)
+        VALUES (?, ?, ?, ?, ?)
+    """, (user_id, subject, correct, total, pct))
+    c.execute("""
         INSERT INTO activity_log (user_id, icon, text, badge, badge_color)
         VALUES (?, '📝', ?, ?, '#10b981')
     """, (user_id, f"Completed {total}-question {subject} MCQ set", f"{pct}%"))
     conn.commit()
     conn.close()
+
+
+def save_bookmark(user_id, item_type, item_id, title, subject="", metadata=None):
+    conn = _connect()
+    c = conn.cursor()
+    c.execute("""
+        INSERT OR REPLACE INTO bookmarks
+        (user_id, item_type, item_id, title, subject, metadata, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+    """, (
+        user_id, item_type, item_id, title, subject,
+        json.dumps(metadata or {}), datetime.now().isoformat()
+    ))
+    c.execute("""
+        INSERT INTO study_activity (user_id, activity_type, subject, title, metadata)
+        VALUES (?, 'bookmark', ?, ?, ?)
+    """, (user_id, subject, f"Bookmarked {title}", json.dumps({"item_type": item_type})))
+    conn.commit()
+    conn.close()
+
+
+def remove_bookmark(user_id, item_type, item_id):
+    conn = _connect()
+    c = conn.cursor()
+    c.execute("DELETE FROM bookmarks WHERE user_id = ? AND item_type = ? AND item_id = ?", (user_id, item_type, item_id))
+    conn.commit()
+    conn.close()
+
+
+def get_bookmarks(user_id, limit=100):
+    conn = _connect()
+    c = conn.cursor()
+    c.execute("""
+        SELECT item_type, item_id, title, subject, metadata, created_at
+        FROM bookmarks
+        WHERE user_id = ?
+        ORDER BY created_at DESC
+        LIMIT ?
+    """, (user_id, limit))
+    rows = [dict(row) for row in c.fetchall()]
+    conn.close()
+    for row in rows:
+        try:
+            row["metadata"] = json.loads(row.get("metadata") or "{}")
+        except json.JSONDecodeError:
+            row["metadata"] = {}
+    return rows
+
+
+def save_completed_lesson(user_id, subject, lesson_id, title):
+    conn = _connect()
+    c = conn.cursor()
+    c.execute("""
+        INSERT OR IGNORE INTO completed_lessons (user_id, subject, lesson_id, title)
+        VALUES (?, ?, ?, ?)
+    """, (user_id, subject, lesson_id, title))
+    c.execute("""
+        INSERT INTO study_activity (user_id, activity_type, subject, title)
+        VALUES (?, 'lesson', ?, ?)
+    """, (user_id, subject, f"Completed {title}"))
+    conn.commit()
+    conn.close()
+
+
+def save_ai_mnemonic(user_id, topic, data):
+    conn = _connect()
+    c = conn.cursor()
+    c.execute("""
+        INSERT INTO ai_mnemonics_history (
+            user_id, topic, mnemonic_type, easy_mnemonic, funny_mnemonic,
+            exam_mnemonic, visual_story, english_explanation,
+            arabic_explanation, recall_quiz
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    """, (
+        user_id,
+        topic,
+        data.get("mnemonic_type", "exam"),
+        data.get("easy_mnemonic", ""),
+        data.get("funny_mnemonic", ""),
+        data.get("exam_mnemonic", ""),
+        data.get("visual_story", ""),
+        data.get("english_explanation", ""),
+        data.get("arabic_explanation", ""),
+        json.dumps(data.get("recall_quiz", [])),
+    ))
+    c.execute("""
+        INSERT INTO study_activity (user_id, activity_type, subject, title, metadata)
+        VALUES (?, 'ai_mnemonic', ?, ?, ?)
+    """, (user_id, data.get("subject", ""), f"Generated mnemonic for {topic}", json.dumps({"topic": topic})))
+    conn.commit()
+    conn.close()
+
+
+def get_ai_mnemonic_history(user_id, limit=20):
+    conn = _connect()
+    c = conn.cursor()
+    c.execute("""
+        SELECT topic, mnemonic_type, easy_mnemonic, funny_mnemonic, exam_mnemonic,
+               visual_story, english_explanation, arabic_explanation, recall_quiz, created_at
+        FROM ai_mnemonics_history
+        WHERE user_id = ?
+        ORDER BY created_at DESC
+        LIMIT ?
+    """, (user_id, limit))
+    rows = [dict(row) for row in c.fetchall()]
+    conn.close()
+    for row in rows:
+        try:
+            row["recall_quiz"] = json.loads(row.get("recall_quiz") or "[]")
+        except json.JSONDecodeError:
+            row["recall_quiz"] = []
+    return rows
+
+
+def get_recent_activity(user_id, limit=12):
+    conn = _connect()
+    c = conn.cursor()
+    rows = []
+    c.execute("""
+        SELECT activity_type AS icon, title AS text, activity_type AS badge, '#10b981' AS badge_color, created_at
+        FROM study_activity
+        WHERE user_id = ?
+        ORDER BY created_at DESC
+        LIMIT ?
+    """, (user_id, limit))
+    rows.extend(dict(row) for row in c.fetchall())
+    if len(rows) < limit:
+        c.execute("""
+            SELECT icon, text, badge, badge_color, created_at
+            FROM activity_log
+            WHERE user_id = ?
+            ORDER BY created_at DESC
+            LIMIT ?
+        """, (user_id, limit - len(rows)))
+        rows.extend(dict(row) for row in c.fetchall())
+    conn.close()
+    return [
+        {**row, "time": _relative_time(row.get("created_at"))}
+        for row in rows[:limit]
+    ]
+
+
+def get_profile_overview(user_id):
+    stats = get_user_stats(user_id)
+    bookmarks = get_bookmarks(user_id, limit=8)
+    mnemonics = get_ai_mnemonic_history(user_id, limit=5)
+    activity = get_recent_activity(user_id, limit=10)
+    subject_scores = stats.get("subject_scores", {})
+    weak = sorted(subject_scores, key=subject_scores.get)[:4]
+    strong = sorted(subject_scores, key=subject_scores.get, reverse=True)[:4]
+    progress_seed = min(100, int((stats.get("study_hours", 0) * 3) + (stats.get("mcq_percent", 0) * 0.45) + len(bookmarks) * 2))
+    return {
+        **stats,
+        "overall_progress": progress_seed,
+        "bookmarks": bookmarks,
+        "mnemonics": mnemonics,
+        "activities": activity or stats.get("activities", []),
+        "weak_areas": weak or ["Renal physiology", "Antimicrobial coverage", "ECG rhythm recognition"],
+        "strong_areas": strong or ["Anatomy", "Pathology", "Clinical reasoning"],
+        "recommended_lessons": ["Approach to chest pain", "Acid-base disorders", "Beta-lactam antibiotics"],
+    }
 
 
 def save_activity(user_id, icon, text, badge="Done", badge_color="#10b981"):

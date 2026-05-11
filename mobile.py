@@ -10,11 +10,11 @@ import streamlit as st
 # BOTTOM NAV PAGES  (5 most-used)
 # ─────────────────────────────────────────────────────────────────────────────
 BOTTOM_NAV = [
-    ("🏠", "home",      "Home"),
-    ("📚", "subjects",  "Subjects"),
-    ("📝", "mcq_quiz",  "Quiz"),
-    ("🤖", "ai_tutor",  "AI Tutor"),
-    ("📊", "dashboard", "More"),
+    ("◆", "dashboard", "Dashboard", "لوحة الدراسة"),
+    ("▦", "az_hub",    "Knowledge", "المعرفة"),
+    ("?", "mcq_quiz",  "Questions", "الأسئلة"),
+    ("AI", "ai_tutor", "AI Tutor", "المعلم"),
+    ("◎", "profile",   "Profile", "الملف"),
 ]
 
 
@@ -406,7 +406,9 @@ def _bottom_nav_buttons(t: dict):
 
     # ── Visual bar (HTML — fixed position, always visible) ────────────────
     items_html = ""
-    for icon, page_id, label in BOTTOM_NAV:
+    is_arabic = st.session_state.get("language") == "ar"
+    for icon, page_id, label, ar_label in BOTTOM_NAV:
+        label = ar_label if is_arabic else label
         is_active   = current == page_id
         item_style  = " bnav-active" if is_active else ""
         dot         = '<div class="bnav-active-dot"></div>' if is_active else ""
@@ -430,7 +432,9 @@ def _bottom_nav_buttons(t: dict):
         unsafe_allow_html=True,
     )
     cols = st.columns(len(BOTTOM_NAV))
-    for col, (icon, page_id, label) in zip(cols, BOTTOM_NAV):
+    is_arabic = st.session_state.get("language") == "ar"
+    for col, (icon, page_id, label, ar_label) in zip(cols, BOTTOM_NAV):
+        label = ar_label if is_arabic else label
         with col:
             if st.button(
                 f"{icon} {label}",
