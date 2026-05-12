@@ -138,6 +138,7 @@ PRO_NAV_ITEMS = [
     ("medical_references", "resources", "📖", "Refs", "المراجع", "#a855f7"),
     ("study_notes", "shared_notes", "✍️", "Notes", "الملاحظات", "#f59e0b"),
     ("settings", "settings", "⚙️", "Settings", "الإعدادات", "#64748b"),
+    ("admin_content", "admin_content", "🛠", "Admin", "الإدارة", "#4f46e5"),
     ("about", "about", "ℹ️", "About", "عن التطبيق", "#9ca3af"),
 ]
 
@@ -1260,6 +1261,13 @@ def render_sidebar():
     nav_options = []
     option_to_page = {}
     for _, page_id, icon, label_en, label_ar, _ in PRO_NAV_ITEMS:
+        if page_id == "admin_content":
+            try:
+                from content_system import is_admin_user
+                if not is_admin_user(st.session_state.get("user")):
+                    continue
+            except Exception:
+                continue
         label = label_ar if language == "ar" else label_en
         option = f"{icon} {label}"
         nav_options.append(option)
@@ -1288,7 +1296,7 @@ def render_sidebar():
     )
     selected_option = selected_option or current_option
     selected_page = option_to_page[selected_option]
-    if selected_page != current_page:
+    if current_page in page_to_option and selected_page != current_page:
         st.session_state.page = selected_page
         st.query_params["page"] = selected_page
         st.rerun()
@@ -1309,6 +1317,7 @@ PAGE_CINEMA = {
     "resources": ("📖", "Medical References", "Keep trusted references nearby when you want to check a guideline, source, or topic link.", ["⌘ Refs", "🔬 Evidence", "📚 Sources"]),
     "shared_notes": ("✍️", "Study Notes", "Write quick pearls, save useful thoughts, and keep revision notes for later.", ["✍️ Notes", "🔖 Bookmark", "🧾 Revision"]),
     "settings": ("⚙️", "Settings", "Change your language, theme, study goal, and exam track whenever your routine changes.", ["🎨 Themes", "🌍 Language", "🎯 Goal"]),
+    "admin_content": ("🛠", "Admin Content Panel", "Add, import, draft, review, and publish medical content without changing app code.", ["CSV", "JSON", "Drafts"]),
     "about": ("ℹ️", "About MedStudy Oman", "Meet the developer and learn why this platform was built for medical students in Oman.", ["👩‍💻 Developer", "🇴🇲 Oman", "🩺 Mission"]),
 }
 

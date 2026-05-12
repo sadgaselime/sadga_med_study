@@ -24,6 +24,7 @@ from mcq_quiz_page import mcq_quiz_page
 from flashcards_page import flashcards_page
 from ai_chat_page import ai_tutor_page as ai_chat_tutor_page
 from about_page import about_page
+from content_system import render_admin_content_panel, render_content_library
 from premium_platform import (
     apply_rtl_if_arabic,
     get_translation,
@@ -34,7 +35,6 @@ from premium_platform import (
     render_profile_dashboard,
     render_settings,
     render_sidebar,
-    render_subject_page,
     render_topbar,
     render_ai_mnemonics,
 )
@@ -137,7 +137,7 @@ query_page = st.query_params.get("page")
 valid_pages = {
     "dashboard", "profile", "az_hub", "subjects", "mcq_quiz", "flashcards",
     "ai_tutor", "ai_mnemonics", "osce_timer", "pomodoro", "analytics",
-    "resources", "shared_notes", "settings", "about",
+    "resources", "shared_notes", "settings", "about", "admin_content",
 }
 if query_page in valid_pages and query_page != st.session_state.get("page"):
     st.session_state.page = query_page
@@ -181,7 +181,7 @@ elif page == "dashboard":
     render_dashboard(stats)
 
 elif page in {"subjects", "az_hub"}:
-    render_subject_page()
+    render_content_library()
 
 elif page == "mcq_quiz":
     mcq_quiz_page(theme)
@@ -231,6 +231,9 @@ elif page == "profile":
 
 elif page == "settings":
     render_settings(THEMES)
+
+elif page == "admin_content":
+    render_admin_content_panel(theme)
 
 elif page == "lab_game":
     if "lab_game_page" in globals():

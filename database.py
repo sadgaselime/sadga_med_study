@@ -42,6 +42,7 @@ def init_db():
     """)
 
     _add_column_if_missing(c, "users", "language", "TEXT DEFAULT 'en'")
+    _add_column_if_missing(c, "users", "is_admin", "INTEGER DEFAULT 0")
 
     c.execute("""
         CREATE TABLE IF NOT EXISTS flashcard_progress (
@@ -256,6 +257,12 @@ def init_db():
     conn.commit()
     conn.close()
 
+    try:
+        from content_system import init_content_schema
+        init_content_schema()
+    except Exception:
+        pass
+
 
 def _add_column_if_missing(cursor, table_name: str, column_name: str, definition: str):
     cursor.execute(f"PRAGMA table_info({table_name})")
@@ -358,6 +365,7 @@ def login_user(email, password):
                 "year": user["year_of_study"],
                 "theme": user["theme"],
                 "language": user["language"] if "language" in user.keys() else "en",
+                "is_admin": user["is_admin"] if "is_admin" in user.keys() else 0,
                 "created_at": user["created_at"],
                 "last_login": user["last_login"],
             }
