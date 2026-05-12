@@ -331,13 +331,11 @@ html, body, [data-testid="stAppViewContainer"], .stApp {{
   font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
 }}
 
-[data-testid="stHeader"], [data-testid="stToolbar"], [data-testid="stSidebar"] {{
-  display: none !important;
-}}
-
 .block-container {{
   padding-top: 1.1rem !important;
   max-width: 1440px !important;
+  position: relative;
+  z-index: 2;
 }}
 
 * {{
@@ -346,7 +344,7 @@ html, body, [data-testid="stAppViewContainer"], .stApp {{
 
 .pulse-shell {{
   position: relative;
-  min-height: 100vh;
+  z-index: 2;
 }}
 
 .floating-orbit {{
@@ -359,6 +357,16 @@ html, body, [data-testid="stAppViewContainer"], .stApp {{
   filter: blur(8px);
   pointer-events: none;
   animation: pulse-drift 11s ease-in-out infinite alternate;
+  z-index: 0;
+}}
+
+[data-testid="stAppViewContainer"] > .main {{
+  position: relative;
+  z-index: 1;
+}}
+
+h1, h2, h3, h4, h5, h6, p, label, span, div[data-testid="stMarkdownContainer"] {{
+  color: var(--pulse-text);
 }}
 
 @keyframes pulse-drift {{
@@ -1332,7 +1340,6 @@ Include full notes, short notes, high-yield points, mnemonics, MCQs, flashcards,
 def main() -> None:
     init_state()
     inject_design_system()
-    st.markdown('<div class="pulse-shell">', unsafe_allow_html=True)
     render_nav()
     if st.session_state.current_view == "home":
         render_home()
@@ -1347,8 +1354,6 @@ def main() -> None:
     else:
         st.session_state.current_view = "home"
         st.rerun()
-    st.markdown("</div>", unsafe_allow_html=True)
 
 
-if __name__ == "__main__":
-    main()
+main()
