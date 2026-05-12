@@ -5,6 +5,7 @@ premium_platform.py - luxury MedStudy Oman Streamlit components.
 from __future__ import annotations
 
 import hashlib
+import html
 import re
 from datetime import datetime
 
@@ -38,6 +39,7 @@ TRANSLATIONS = {
         "study_notes": "Study Notes",
         "medical_references": "Medical References",
         "ai_mnemonics_studio": "AI Mnemonics Studio",
+        "study_pillars": "Study Pillars",
         "az_hub": "A-Z Medical Knowledge Hub",
         "settings": "Settings",
         "user_profile": "User Profile",
@@ -85,6 +87,7 @@ TRANSLATIONS = {
         "study_notes": "ملاحظات الدراسة",
         "medical_references": "المراجع الطبية",
         "ai_mnemonics_studio": "استوديو وسائل الحفظ الذكية",
+        "study_pillars": "ركائز الدراسة",
         "az_hub": "مركز المعرفة الطبية من الألف إلى الياء",
         "settings": "الإعدادات",
         "user_profile": "الملف الشخصي",
@@ -126,6 +129,7 @@ TRANSLATIONS = {
 PRO_NAV_ITEMS = [
     ("dashboard", "dashboard", "⌂", "Home", "الرئيسية", "#8b5cf6"),
     ("user_profile", "profile", "👤", "Profile", "الملف", "#0ea5e9"),
+    ("study_pillars", "study_pillars", "✚", "Pillars", "الركائز", "#06b6d4"),
     ("az_hub", "az_hub", "🧠", "Med Hub", "المركز", "#10b981"),
     ("knowledge_library", "subjects", "📚", "Library", "المكتبة", "#14b8a6"),
     ("question_bank", "mcq_quiz", "📝", "Q Bank", "الأسئلة", "#f97316"),
@@ -1305,6 +1309,7 @@ def render_sidebar():
 PAGE_CINEMA = {
     "dashboard": ("⌂", "Student Command Center", "Your home base for today: continue studying, see what matters, and jump into the next useful task.", ["🎓 Graduation", "🩺 Clinical", "ECG"]),
     "profile": ("👤", "Professional Profile", "See your progress, saved work, and study identity in one private student dashboard.", ["📊 Progress", "🔖 Saved", "🎯 Goals"]),
+    "study_pillars": ("✚", "Premium Study Pillars", "Use the permanent resource vault, generate AI study modules, craft mnemonics, and ask the clinical tutor.", ["📚 Vault", "AI", "💡 Memory"]),
     "az_hub": ("🧠", "A-Z Medical Knowledge Hub", "Pick any subject and revise it with notes, diseases, tables, skills, and exam points.", ["🧬 DNA", "🔬 Lab", "📚 Notes"]),
     "subjects": ("📚", "Knowledge Library", "Browse medicine in a simple student-friendly way when you need to understand before memorising.", ["📖 Chapters", "✎ Review", "💡 Recall"]),
     "mcq_quiz": ("📝", "Question Bank", "Practice exam-style questions, learn from mistakes, and build confidence one set at a time.", ["? MCQs", "⏱ Timed", "📈 Score"]),
@@ -1854,3 +1859,76 @@ def render_settings(themes):
 
 def render_quiz_system():
     st.info("Open the full Question Bank from the navigation. Your saved quiz attempts are persisted per user.")
+
+
+def render_ai_mnemonics():
+    """AI-backed mnemonic craftsman with a deterministic history fallback."""
+    from ai_service import DEFAULT_ERROR, generate_mnemonic, get_ai_status
+
+    st.markdown(f'<div class="section-title">{get_translation("ai_mnemonics_studio")}</div>', unsafe_allow_html=True)
+    uid = _user_id()
+    status = get_ai_status()
+    if not status["ready"]:
+        st.warning("Add GEMINI_API_KEY or OPENAI_API_KEY to Streamlit secrets to generate live mnemonics.")
+
+    facts = st.text_area(
+        "Complex medical facts or symptoms",
+        placeholder="Paste a list, diagnostic criteria, symptoms, drug adverse effects, or pathway steps...",
+        height=180,
+        key="ai_mnemonic_facts",
+    )
+    style = st.selectbox(
+        "Mnemonic Style",
+        ["Professional Academic", "Creative/Story", "Humorous"],
+        key="ai_mnemonic_style",
+    )
+    if st.button("Generate Mnemonic", type="primary", use_container_width=True, key="ai_mnemonic_generate"):
+        if not facts.strip():
+            st.error("Enter the facts you want to remember first.")
+        else:
+            with st.spinner("Designing a mapped acronym..."):
+                result = generate_mnemonic(facts.strip(), style)
+            st.session_state.last_mnemonic = {
+                "topic": facts.strip()[:80],
+                "style": style,
+                "response": result,
+            }
+            if uid and result != DEFAULT_ERROR:
+                save_ai_mnemonic(
+                    uid,
+                    facts.strip()[:120],
+                    {
+                        "mnemonic_type": style,
+                        "easy_mnemonic": result[:500],
+                        "funny_mnemonic": "",
+                        "exam_mnemonic": "AI-generated mapped acronym mnemonic.",
+                        "visual_story": result,
+                        "english_explanation": result,
+                        "arabic_explanation": "",
+                        "recall_quiz": [],
+                    },
+                )
+            st.rerun()
+
+    result = st.session_state.get("last_mnemonic")
+    if result:
+        st.markdown("### Generated Memory System")
+        if result.get("response") == DEFAULT_ERROR:
+            st.error(result["response"])
+        else:
+            safe_response = html.escape(result.get("response", "")).replace(chr(10), "<br>")
+            st.markdown(
+                f"""
+                <div class="glass-card" style="border-left:4px solid #eab308;">
+                    {safe_response}
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+
+    if uid:
+        st.markdown("### Mnemonic History")
+        for item in get_ai_mnemonic_history(uid):
+            with st.expander(f"{item['topic']} · {item['created_at'][:10]}"):
+                st.write(item["easy_mnemonic"])
+                st.caption(item["exam_mnemonic"])

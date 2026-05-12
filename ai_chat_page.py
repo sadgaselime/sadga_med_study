@@ -698,3 +698,59 @@ def _inject_chat_css(t: dict):
             '<div class="ai-float-bubble" title="AI Medical Tutor">🤖</div>',
             unsafe_allow_html=True,
         )
+
+
+def ai_tutor_page(theme: dict = None):
+    """Interactive AI Tutor using native Streamlit chat components."""
+    from ai_service import get_ai_status, tutor_reply
+
+    if theme is None:
+        from styles import THEMES
+        theme = THEMES.get(
+            st.session_state.get("theme", "🌸 Light Lavender"),
+            list(THEMES.values())[0],
+        )
+
+    st.markdown(
+        f"""
+        <div class="glass-card" style="margin-bottom:1rem;">
+            <div style="font-family:Syne,sans-serif;font-size:1.55rem;font-weight:900;color:{theme['text']};">
+                AI Clinical Medicine Professor
+            </div>
+            <div style="color:{theme['subtext']};font-size:0.9rem;">
+                Encouraging diagnostic reasoning, mechanisms-first explanations, and exam-ready clinical breakdowns.
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    if "ai_chat_history" not in st.session_state:
+        st.session_state.ai_chat_history = []
+
+    status = get_ai_status()
+    if not status["ready"]:
+        st.warning("Add GEMINI_API_KEY or OPENAI_API_KEY to Streamlit secrets to unlock live tutor responses.")
+
+    top_col, clear_col = st.columns([4, 1])
+    with top_col:
+        st.caption(f"Provider: {status['provider']}")
+    with clear_col:
+        if st.session_state.ai_chat_history and st.button("Clear", use_container_width=True, key="native_ai_clear"):
+            st.session_state.ai_chat_history = []
+            st.rerun()
+
+    for message in st.session_state.ai_chat_history:
+        with st.chat_message(message["role"]):
+            st.markdown(message["content"])
+
+    user_input = st.chat_input("Ask about a symptom, disease, drug, investigation, OSCE case, or MCQ...")
+    if user_input:
+        st.session_state.ai_chat_history.append({"role": "user", "content": user_input})
+        with st.chat_message("user"):
+            st.markdown(user_input)
+        with st.chat_message("assistant"):
+            with st.spinner("Thinking clinically..."):
+                response = tutor_reply(st.session_state.ai_chat_history[:-1], user_input)
+            st.markdown(response)
+        st.session_state.ai_chat_history.append({"role": "assistant", "content": response})

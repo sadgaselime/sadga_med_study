@@ -23,6 +23,7 @@ from timer_enhanced import timer_page
 from mcq_quiz_page import mcq_quiz_page
 from flashcards_page import flashcards_page
 from ai_chat_page import ai_tutor_page as ai_chat_tutor_page
+from study_pillars_page import study_pillars_page
 from about_page import about_page
 from content_system import render_admin_content_panel, render_content_library
 from premium_platform import (
@@ -135,7 +136,7 @@ init_session()
 
 query_page = st.query_params.get("page")
 valid_pages = {
-    "dashboard", "profile", "az_hub", "subjects", "mcq_quiz", "flashcards",
+    "dashboard", "profile", "study_pillars", "az_hub", "subjects", "mcq_quiz", "flashcards",
     "ai_tutor", "ai_mnemonics", "osce_timer", "pomodoro", "analytics",
     "resources", "shared_notes", "settings", "about", "admin_content",
 }
@@ -179,6 +180,9 @@ if page == "auth":
 elif page == "dashboard":
     stats = get_profile_overview(st.session_state.user["id"]) if st.session_state.get("logged_in") else _demo_stats()
     render_dashboard(stats)
+
+elif page == "study_pillars":
+    study_pillars_page(theme)
 
 elif page in {"subjects", "az_hub"}:
     render_content_library()
