@@ -9,6 +9,13 @@ import time
 import random
 import datetime
 
+try:
+    from content_system import get_mcq_bank
+    from database import save_mcq_attempt
+except Exception:
+    get_mcq_bank = None
+    save_mcq_attempt = None
+
 # ─────────────────────────────────────────────────────────────────────────────
 # BUILT-IN QUESTION BANK  (fallback if mcq_bank.py unavailable)
 # ─────────────────────────────────────────────────────────────────────────────
@@ -197,7 +204,15 @@ BUILTIN_QUESTIONS = [
 
 
 def _load_questions(subject_filter: str = "All", difficulty: str = "All") -> list:
-    """Load questions from mcq_bank.py if available, else use built-in."""
+    """Load database questions first, with local Python banks as a safety net."""
+    if get_mcq_bank:
+        try:
+            questions = get_mcq_bank(subject_filter, difficulty)
+            if questions:
+                return questions
+        except Exception:
+            pass
+
     questions = []
     try:
         from mcq_bank import MCQ_BANK, QUESTIONS
@@ -234,6 +249,7 @@ def _init_quiz_state():
         "quiz_difficulty": "All",
         "quiz_count":      10,
         "quiz_elapsed":    0,
+        "quiz_saved":      False,
     }
     for k, v in defaults.items():
         if k not in st.session_state:
@@ -327,6 +343,7 @@ def _render_quiz_setup(theme: dict):
                 st.session_state.quiz_started    = True
                 st.session_state.quiz_finished   = False
                 st.session_state.quiz_start_time = time.time()
+                st.session_state.quiz_saved      = False
                 st.rerun()
 
     with col_r:
@@ -339,8 +356,8 @@ def _render_quiz_setup(theme: dict):
             unsafe_allow_html=True,
         )
         stats = [
-            ("📝", str(len(BUILTIN_QUESTIONS))+"+ ", "Questions"),
-            ("📚", str(len(set(q["subject"] for q in BUILTIN_QUESTIONS))), "Subjects"),
+            ("📝", str(len(all_q))+"+ ", "Questions"),
+            ("📚", str(len(set(q.get("subject", "General") for q in all_q))), "Subjects"),
             ("⚡", "3", "Difficulty levels"),
             ("🎯", "OMSB + USMLE", "Aligned"),
         ]
@@ -427,7 +444,7 @@ def _render_question(theme: dict):
     )
 
     # ── Option cards ──────────────────────────────────────────────────────────
-    letters = ["A", "B", "C", "D"]
+    letters = ["A", "B", "C", "D", "E"]
     option_cols = st.columns(2)
 
     for i, (option, letter) in enumerate(zip(q["options"], letters)):
@@ -542,6 +559,15 @@ def _render_results(theme: dict):
     score_pct = (correct / total * 100) if total else 0
     elapsed   = st.session_state.quiz_elapsed
     mins, secs = elapsed // 60, elapsed % 60
+
+    user = st.session_state.get("user") if st.session_state.get("logged_in") else None
+    if user and save_mcq_attempt and not st.session_state.get("quiz_saved"):
+        subject_label = st.session_state.get("quiz_subject") or "Mixed"
+        if subject_label == "All" and questions:
+            unique_subjects = sorted({q.get("subject", "General") for q in questions})
+            subject_label = "Mixed: " + ", ".join(unique_subjects[:3])
+        save_mcq_attempt(user["id"], subject_label, correct, total)
+        st.session_state.quiz_saved = True
 
     # Score colour
     score_color = (

@@ -276,6 +276,7 @@ def init_content_schema():
 
     _sync_compatibility_columns(c)
     _seed_starter_topics(c)
+    _seed_starter_assessments(c)
     conn.commit()
     conn.close()
     _SCHEMA_READY = True
@@ -299,12 +300,12 @@ def _sync_compatibility_columns(cursor):
 
 
 def _seed_starter_topics(cursor):
-    cursor.execute("SELECT COUNT(*) FROM topics")
-    if cursor.fetchone()[0]:
-        return
     cursor.execute("SELECT id, name FROM subjects ORDER BY id")
     subjects = cursor.fetchall()
-    for subject in subjects[:10]:
+    for subject in subjects:
+        cursor.execute("SELECT id FROM topics WHERE subject_id = ? LIMIT 1", (subject["id"],))
+        if cursor.fetchone():
+            continue
         cursor.execute("SELECT id, title FROM chapters WHERE subject_id = ? ORDER BY chapter_order LIMIT 1", (subject["id"],))
         chapter = cursor.fetchone()
         topic_title = f"{subject['name']} essentials"
@@ -345,6 +346,48 @@ def _seed_starter_topics(cursor):
             "Define the mechanism, identify the clinical clue, and test yourself with one question.",
             "This keeps revision active rather than passive.",
         ))
+
+
+def _seed_starter_assessments(cursor):
+    cursor.execute("""
+        SELECT t.id AS topic_id, t.title AS topic_title, s.name AS subject_name
+        FROM topics t
+        JOIN subjects s ON s.id = t.subject_id
+        ORDER BY s.name, t.id
+    """)
+    topics = cursor.fetchall()
+    for row in topics:
+        cursor.execute("SELECT id FROM mcqs WHERE topic_id = ? LIMIT 1", (row["topic_id"],))
+        if not cursor.fetchone():
+            cursor.execute("""
+                INSERT INTO mcqs (
+                    topic_id, question, stem, option_a, option_b, option_c, option_d,
+                    correct_option, explanation, difficulty, status, is_reviewed, updated_at
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, 'B', ?, 'foundation', 'published', 1, ?)
+            """, (
+                row["topic_id"],
+                f"What is the best first revision approach for {row['topic_title']}?",
+                f"What is the best first revision approach for {row['topic_title']}?",
+                "Memorise isolated lists without context",
+                "Connect mechanism, clinical clue, investigation, and management",
+                "Skip active recall until the final week",
+                "Only read summaries without testing",
+                f"For {row['subject_name']}, durable recall improves when facts are attached to clinical reasoning and active testing.",
+                _now(),
+            ))
+        cursor.execute("SELECT id FROM flashcards WHERE topic_id = ? LIMIT 1", (row["topic_id"],))
+        if not cursor.fetchone():
+            cursor.execute("""
+                INSERT INTO flashcards (topic_id, front, back, explanation, status, is_reviewed, updated_at)
+                VALUES (?, ?, ?, ?, 'published', 1, ?)
+            """, (
+                row["topic_id"],
+                f"What should every {row['topic_title']} revision note include?",
+                "Definition, mechanism, clinical presentation, key investigation, management, and one complication.",
+                "This gives each topic a consistent clinical scaffold.",
+                _now(),
+            ))
 
 
 def is_admin_user(user: dict | None) -> bool:
@@ -483,7 +526,7 @@ def fetch_topic_bundle(topic_id: int, include_drafts=False):
 
 
 def _clear_content_caches():
-    for cached_func in [fetch_subjects, fetch_chapters, fetch_topics, fetch_topic_bundle]:
+    for cached_func in [fetch_subjects, fetch_chapters, fetch_topics, fetch_topic_bundle, fetch_mcq_bank, fetch_flashcard_deck]:
         try:
             cached_func.clear()
         except Exception:
@@ -769,6 +812,146 @@ def bookmark_topic(user_id, topic):
     conn.commit()
     conn.close()
     save_bookmark(user_id, "topic", str(topic["id"]), topic["title"], topic.get("subject_name", ""))
+
+
+def get_mcq_bank(subject_filter="All", difficulty="All", include_drafts=False):
+    ensure_content_schema()
+    return fetch_mcq_bank(subject_filter, difficulty, include_drafts)
+
+
+@st.cache_data(ttl=180, show_spinner=False)
+def fetch_mcq_bank(subject_filter="All", difficulty="All", include_drafts=False):
+    conn = _connect()
+    c = conn.cursor()
+    where = []
+    params = []
+    if not include_drafts:
+        where.append("COALESCE(m.status, 'published') = 'published'")
+        where.append("COALESCE(t.status, 'published') = 'published'")
+    if subject_filter and subject_filter != "All":
+        where.append("s.name = ?")
+        params.append(subject_filter)
+    if difficulty and difficulty != "All":
+        where.append("LOWER(m.difficulty) = LOWER(?)")
+        params.append(difficulty)
+    clause = "WHERE " + " AND ".join(where) if where else ""
+    c.execute(f"""
+        SELECT
+            m.id, m.topic_id, m.question, m.stem,
+            m.option_a, m.option_b, m.option_c, m.option_d, m.option_e,
+            m.correct_option, m.explanation, m.difficulty,
+            t.title AS topic, s.name AS subject
+        FROM mcqs m
+        JOIN topics t ON t.id = m.topic_id
+        JOIN subjects s ON s.id = t.subject_id
+        {clause}
+        ORDER BY s.name, t.title, m.id
+    """, params)
+    rows = [dict(row) for row in c.fetchall()]
+    conn.close()
+
+    questions = []
+    for row in rows:
+        options = [row.get("option_a"), row.get("option_b"), row.get("option_c"), row.get("option_d"), row.get("option_e")]
+        options = [option for option in options if option]
+        correct_letter = (row.get("correct_option") or "A").strip().upper()[:1]
+        correct_index = max(0, min(len(options) - 1, ord(correct_letter) - ord("A"))) if options else 0
+        questions.append({
+            "id": f"db-{row['id']}",
+            "db_id": row["id"],
+            "topic_id": row["topic_id"],
+            "subject": row.get("subject") or "General",
+            "topic": row.get("topic") or "",
+            "difficulty": _title_difficulty(row.get("difficulty")),
+            "question": row.get("question") or row.get("stem") or "",
+            "options": options,
+            "correct": correct_index,
+            "explanation": row.get("explanation") or "",
+            "pearl": row.get("topic") or "Review the linked topic after this question.",
+            "tags": [tag for tag in [row.get("topic"), "Database"] if tag],
+        })
+    return questions
+
+
+def get_flashcard_deck(subject_filter="All", include_drafts=False):
+    ensure_content_schema()
+    return fetch_flashcard_deck(subject_filter, include_drafts)
+
+
+@st.cache_data(ttl=180, show_spinner=False)
+def fetch_flashcard_deck(subject_filter="All", include_drafts=False):
+    conn = _connect()
+    c = conn.cursor()
+    where = []
+    params = []
+    if not include_drafts:
+        where.append("COALESCE(f.status, 'published') = 'published'")
+        where.append("COALESCE(t.status, 'published') = 'published'")
+    if subject_filter and subject_filter != "All":
+        where.append("s.name = ?")
+        params.append(subject_filter)
+    clause = "WHERE " + " AND ".join(where) if where else ""
+    c.execute(f"""
+        SELECT
+            f.id, f.topic_id, f.front, f.back, f.mnemonic, f.explanation,
+            t.title AS topic, s.name AS subject
+        FROM flashcards f
+        JOIN topics t ON t.id = f.topic_id
+        JOIN subjects s ON s.id = t.subject_id
+        {clause}
+        ORDER BY s.name, t.title, f.id
+    """, params)
+    rows = [dict(row) for row in c.fetchall()]
+    conn.close()
+    return [
+        {
+            "id": f"db-{row['id']}",
+            "db_id": row["id"],
+            "topic_id": row["topic_id"],
+            "subject": row.get("subject") or "General",
+            "front": row.get("front") or "",
+            "back": row.get("back") or "",
+            "tags": [tag for tag in [row.get("topic"), "Database"] if tag],
+            "mnemonic": row.get("mnemonic") or "",
+            "explanation": row.get("explanation") or "",
+        }
+        for row in rows
+    ]
+
+
+def save_flashcard_review(user_id, card, rating, sr):
+    conn = _connect()
+    c = conn.cursor()
+    c.execute("""
+        INSERT OR REPLACE INTO flashcard_progress
+        (user_id, card_id, subject, ease_factor, interval_days, next_review, times_reviewed)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+    """, (
+        user_id,
+        str(card.get("id")),
+        card.get("subject") or "General",
+        float(sr.get("ease", 2.5)),
+        int(sr.get("interval", 1)),
+        sr.get("next_review"),
+        int(sr.get("reps", 0)),
+    ))
+    c.execute("""
+        INSERT INTO study_activity (user_id, activity_type, subject, title, metadata, created_at)
+        VALUES (?, 'flashcard_review', ?, ?, ?, ?)
+    """, (
+        user_id,
+        card.get("subject") or "General",
+        f"Reviewed flashcard: {(card.get('front') or '')[:80]}",
+        json.dumps({"rating": rating, "card_id": str(card.get("id")), "topic_id": card.get("topic_id")}),
+        _now(),
+    ))
+    conn.commit()
+    conn.close()
+
+
+def _title_difficulty(value):
+    normalized = (value or "core").strip().lower()
+    return {"foundation": "Easy", "core": "Medium", "advanced": "Hard"}.get(normalized, normalized.title())
 
 
 def parse_upload(file):

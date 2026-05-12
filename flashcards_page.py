@@ -8,6 +8,12 @@ import streamlit as st
 import random
 import datetime
 
+try:
+    from content_system import get_flashcard_deck, save_flashcard_review
+except Exception:
+    get_flashcard_deck = None
+    save_flashcard_review = None
+
 # ─────────────────────────────────────────────────────────────────────────────
 # BUILT-IN FLASHCARD DECKS
 # ─────────────────────────────────────────────────────────────────────────────
@@ -91,6 +97,14 @@ SUBJECTS = ["All"] + sorted(set(c["subject"] for c in BUILTIN_CARDS))
 
 
 def _load_cards(subject: str = "All") -> list:
+    if get_flashcard_deck:
+        try:
+            cards = get_flashcard_deck(subject)
+            if cards:
+                return cards
+        except Exception:
+            pass
+
     cards = []
     try:
         from flashcards_page import FLASHCARD_BANK
@@ -107,7 +121,7 @@ def _load_cards(subject: str = "All") -> list:
 # ─────────────────────────────────────────────────────────────────────────────
 # SPACED REPETITION  (simplified SM-2)
 # ─────────────────────────────────────────────────────────────────────────────
-def _update_sr(card_id: int, rating: int):
+def _update_sr(card_id: int | str, rating: int, card: dict | None = None):
     """rating: 0=Again, 1=Hard, 2=Good, 3=Easy"""
     sr_key = f"sr_{card_id}"
     sr = st.session_state.get(sr_key, {"interval": 1, "ease": 2.5, "reps": 0})
@@ -131,6 +145,9 @@ def _update_sr(card_id: int, rating: int):
         datetime.date.today() + datetime.timedelta(days=sr["interval"])
     ).isoformat()
     st.session_state[sr_key] = sr
+    user = st.session_state.get("user") if st.session_state.get("logged_in") else None
+    if user and card and save_flashcard_review:
+        save_flashcard_review(user["id"], card, rating, sr)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -184,9 +201,12 @@ def _render_fc_setup(theme: dict):
         unsafe_allow_html=True,
     )
 
+    all_cards = _load_cards()
+    subjects = ["All"] + sorted({c.get("subject", "General") for c in all_cards})
+
     col_l, col_r = st.columns([2, 1])
     with col_l:
-        subj = st.selectbox("📚 Subject", SUBJECTS, key="fc_subj_sel")
+        subj = st.selectbox("📚 Subject", subjects, key="fc_subj_sel")
         cards = _load_cards(subj)
 
         st.markdown(
@@ -215,7 +235,6 @@ def _render_fc_setup(theme: dict):
 
     with col_r:
         # SR stats
-        all_cards = _load_cards()
         mastered  = sum(1 for c in all_cards
                         if st.session_state.get(f"sr_{c['id']}", {}).get("reps", 0) >= 3)
         due_today = sum(1 for c in all_cards
@@ -377,7 +396,7 @@ def _render_fc_main(theme: dict):
                 )
                 if st.button(label, key=f"rate_{card['id']}_{rating}",
                              use_container_width=True):
-                    _update_sr(card["id"], rating)
+                    _update_sr(card["id"], rating, card)
                     rating_key = ["again", "hard", "good", "easy"][rating]
                     st.session_state.fc_session[rating_key] += 1
                     st.session_state.fc_idx     = idx + 1

@@ -1,0 +1,6 @@
+content_type,subject,chapter,topic,title,content,summary,point,explanation,front,back,stem,option_a,option_b,option_c,option_d,option_e,correct_option,difficulty,status,url,citation,resource_type
+note,Cardiology,Ischemic Heart Disease,Acute Coronary Syndrome,ACS detailed notes,"Definition, pathophysiology, presentation, ECG approach, troponin strategy, initial management, complications, and follow-up.",High-yield ACS framework,,,,,,,,,,,,core,published,,,
+high_yield_point,Cardiology,Ischemic Heart Disease,Acute Coronary Syndrome,,,,ST elevation in contiguous leads is a reperfusion emergency.,Always localize territory and check for contraindications to nitrates.,,,,,,,,,,,core,published,,,
+flashcard,Cardiology,Ischemic Heart Disease,Acute Coronary Syndrome,,,,,,Which ECG leads suggest inferior MI?,II, III, and aVF.,,,,,,,,,core,published,,,
+mcq,Cardiology,Ischemic Heart Disease,Acute Coronary Syndrome,,,,,,,,"A 58-year-old man has crushing chest pain and ST elevation in II, III, and aVF. What territory is involved?",Anterior,Inferior,Lateral,Septal,,B,core,published,,,
+resource,Cardiology,Ischemic Heart Disease,Acute Coronary Syndrome,Local ACS guideline,,,,,,,,,,,,,,core,published,https://example.com,Replace with approved hospital or guideline source,reference
