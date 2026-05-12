@@ -65,6 +65,7 @@ def init_content_schema():
     _add_column_if_missing(c, "subjects", "description", "TEXT DEFAULT ''")
     _add_column_if_missing(c, "subjects", "status", "TEXT DEFAULT 'published'")
     _add_column_if_missing(c, "subjects", "updated_at", "TEXT")
+    _add_column_if_missing(c, "chapters", "name", "TEXT")
     _add_column_if_missing(c, "chapters", "description", "TEXT DEFAULT ''")
     _add_column_if_missing(c, "chapters", "status", "TEXT DEFAULT 'published'")
     _add_column_if_missing(c, "chapters", "updated_at", "TEXT")
@@ -79,9 +80,13 @@ def init_content_schema():
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             subject_id INTEGER NOT NULL,
             chapter_id INTEGER,
+            name TEXT,
             title TEXT NOT NULL,
             slug TEXT NOT NULL,
             overview TEXT DEFAULT '',
+            detailed_notes TEXT DEFAULT '',
+            high_yield TEXT DEFAULT '',
+            clinical_pearls TEXT DEFAULT '',
             learning_objectives TEXT DEFAULT '[]',
             topic_order INTEGER DEFAULT 0,
             difficulty TEXT DEFAULT 'core',
@@ -94,6 +99,10 @@ def init_content_schema():
             FOREIGN KEY (chapter_id) REFERENCES chapters(id)
         )
     """)
+    _add_column_if_missing(c, "topics", "name", "TEXT")
+    _add_column_if_missing(c, "topics", "detailed_notes", "TEXT DEFAULT ''")
+    _add_column_if_missing(c, "topics", "high_yield", "TEXT DEFAULT ''")
+    _add_column_if_missing(c, "topics", "clinical_pearls", "TEXT DEFAULT ''")
 
     c.execute("""
         CREATE TABLE IF NOT EXISTS high_yield_points (
@@ -147,6 +156,7 @@ def init_content_schema():
             topic_id INTEGER NOT NULL,
             front TEXT NOT NULL,
             back TEXT NOT NULL,
+            mnemonic TEXT DEFAULT '',
             explanation TEXT DEFAULT '',
             status TEXT DEFAULT 'published',
             is_reviewed INTEGER DEFAULT 0,
@@ -155,11 +165,13 @@ def init_content_schema():
             FOREIGN KEY (topic_id) REFERENCES topics(id)
         )
     """)
+    _add_column_if_missing(c, "flashcards", "mnemonic", "TEXT DEFAULT ''")
 
     c.execute("""
         CREATE TABLE IF NOT EXISTS mcqs (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             topic_id INTEGER NOT NULL,
+            question TEXT,
             stem TEXT NOT NULL,
             option_a TEXT NOT NULL,
             option_b TEXT NOT NULL,
@@ -176,6 +188,7 @@ def init_content_schema():
             FOREIGN KEY (topic_id) REFERENCES topics(id)
         )
     """)
+    _add_column_if_missing(c, "mcqs", "question", "TEXT")
 
     c.execute("""
         CREATE TABLE IF NOT EXISTS osce_cases (
@@ -261,6 +274,7 @@ def init_content_schema():
         )
     """)
 
+    _sync_compatibility_columns(c)
     _seed_starter_topics(c)
     conn.commit()
     conn.close()
@@ -275,6 +289,13 @@ def ensure_content_schema():
     """
     if not _SCHEMA_READY:
         init_content_schema()
+
+
+def _sync_compatibility_columns(cursor):
+    """Keep old rich CMS columns and the clean relational API in sync."""
+    cursor.execute("UPDATE chapters SET name = title WHERE (name IS NULL OR name = '') AND title IS NOT NULL")
+    cursor.execute("UPDATE topics SET name = title WHERE (name IS NULL OR name = '') AND title IS NOT NULL")
+    cursor.execute("UPDATE mcqs SET question = stem WHERE (question IS NULL OR question = '') AND stem IS NOT NULL")
 
 
 def _seed_starter_topics(cursor):
@@ -341,10 +362,15 @@ def is_admin_user(user: dict | None) -> bool:
 
 def get_subjects(include_drafts=False):
     ensure_content_schema()
+    return fetch_subjects(include_drafts)
+
+
+@st.cache_data(ttl=300, show_spinner=False)
+def fetch_subjects(include_drafts=False):
     conn = _connect()
     c = conn.cursor()
     where = "" if include_drafts else "WHERE COALESCE(status, 'published') = 'published'"
-    c.execute(f"SELECT * FROM subjects {where} ORDER BY name")
+    c.execute(f"SELECT id, name, category, icon, description, status, created_at, updated_at FROM subjects {where} ORDER BY name")
     rows = [dict(row) for row in c.fetchall()]
     conn.close()
     return rows
@@ -352,13 +378,24 @@ def get_subjects(include_drafts=False):
 
 def get_chapters(subject_id, include_drafts=False):
     ensure_content_schema()
+    return fetch_chapters(subject_id, include_drafts)
+
+
+@st.cache_data(ttl=300, show_spinner=False)
+def fetch_chapters(subject_id, include_drafts=False):
     conn = _connect()
     c = conn.cursor()
     where = "subject_id = ?"
     params = [subject_id]
     if not include_drafts:
         where += " AND COALESCE(status, 'published') = 'published'"
-    c.execute(f"SELECT * FROM chapters WHERE {where} ORDER BY chapter_order, title", params)
+    c.execute(f"""
+        SELECT id, subject_id, COALESCE(NULLIF(name, ''), title) AS name,
+               title, description, chapter_order, status, updated_at
+        FROM chapters
+        WHERE {where}
+        ORDER BY chapter_order, name
+    """, params)
     rows = [dict(row) for row in c.fetchall()]
     conn.close()
     return rows
@@ -366,6 +403,11 @@ def get_chapters(subject_id, include_drafts=False):
 
 def get_topics(subject_id=None, chapter_id=None, include_drafts=False):
     ensure_content_schema()
+    return fetch_topics(subject_id, chapter_id, include_drafts)
+
+
+@st.cache_data(ttl=300, show_spinner=False)
+def fetch_topics(subject_id=None, chapter_id=None, include_drafts=False):
     conn = _connect()
     c = conn.cursor()
     where = []
@@ -380,7 +422,9 @@ def get_topics(subject_id=None, chapter_id=None, include_drafts=False):
         where.append("COALESCE(t.status, 'published') = 'published'")
     clause = "WHERE " + " AND ".join(where) if where else ""
     c.execute(f"""
-        SELECT t.*, s.name AS subject_name, c.title AS chapter_title
+        SELECT t.*, COALESCE(NULLIF(t.name, ''), t.title) AS name,
+               s.name AS subject_name, COALESCE(NULLIF(c.name, ''), c.title) AS chapter_name,
+               c.title AS chapter_title
         FROM topics t
         JOIN subjects s ON s.id = t.subject_id
         LEFT JOIN chapters c ON c.id = t.chapter_id
@@ -394,11 +438,19 @@ def get_topics(subject_id=None, chapter_id=None, include_drafts=False):
 
 def get_topic_bundle(topic_id: int, include_drafts=False):
     ensure_content_schema()
+    return fetch_topic_bundle(topic_id, include_drafts)
+
+
+@st.cache_data(ttl=180, show_spinner=False)
+def fetch_topic_bundle(topic_id: int, include_drafts=False):
     conn = _connect()
     c = conn.cursor()
     status_filter = "" if include_drafts else "AND COALESCE(status, 'published') = 'published'"
     c.execute("""
-        SELECT t.*, s.name AS subject_name, s.id AS subject_id, c.title AS chapter_title, c.id AS chapter_id
+        SELECT t.*, COALESCE(NULLIF(t.name, ''), t.title) AS name,
+               s.name AS subject_name, s.id AS subject_id,
+               COALESCE(NULLIF(c.name, ''), c.title) AS chapter_name,
+               c.title AS chapter_title, c.id AS chapter_id
         FROM topics t
         JOIN subjects s ON s.id = t.subject_id
         LEFT JOIN chapters c ON c.id = t.chapter_id
@@ -428,6 +480,14 @@ def get_topic_bundle(topic_id: int, include_drafts=False):
     bundle["resources"] = [dict(row) for row in c.fetchall()]
     conn.close()
     return bundle
+
+
+def _clear_content_caches():
+    for cached_func in [fetch_subjects, fetch_chapters, fetch_topics, fetch_topic_bundle]:
+        try:
+            cached_func.clear()
+        except Exception:
+            pass
 
 
 def _create_version(cursor, content_type, content_id, payload, status="draft", created_by=None):
@@ -462,6 +522,7 @@ def upsert_subject(name, category="", icon="▣", description="", status="publis
     _create_version(c, "subject", content_id, locals(), status, admin_id)
     conn.commit()
     conn.close()
+    _clear_content_caches()
     return content_id
 
 
@@ -474,9 +535,11 @@ def add_chapter(subject_id, title, description="", order=0, status="published", 
         VALUES (?, ?, ?, ?, ?, ?)
     """, (subject_id, title.strip(), description, order, status, _now()))
     content_id = c.lastrowid
+    c.execute("UPDATE chapters SET name = title WHERE id = ?", (content_id,))
     _create_version(c, "chapter", content_id, locals(), status, admin_id)
     conn.commit()
     conn.close()
+    _clear_content_caches()
     return content_id
 
 
@@ -485,13 +548,14 @@ def add_topic(subject_id, chapter_id, title, overview="", order=0, difficulty="c
     conn = _connect()
     c = conn.cursor()
     c.execute("""
-        INSERT INTO topics (subject_id, chapter_id, title, slug, overview, topic_order, difficulty, status, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-    """, (subject_id, chapter_id or None, title.strip(), _slug(title), overview, order, difficulty, status, _now()))
+        INSERT INTO topics (subject_id, chapter_id, name, title, slug, overview, topic_order, difficulty, status, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    """, (subject_id, chapter_id or None, title.strip(), title.strip(), _slug(title), overview, order, difficulty, status, _now()))
     content_id = c.lastrowid
     _create_version(c, "topic", content_id, locals(), status, admin_id)
     conn.commit()
     conn.close()
+    _clear_content_caches()
     return content_id
 
 
@@ -508,23 +572,31 @@ def add_content_item(content_type, topic_id, payload, status="draft", admin_id=N
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (subject_id, chapter_id, topic_id, payload.get("title", "Note"), payload.get("content", ""), payload.get("summary", ""), payload.get("note_type", "detailed"), status, _now()))
         content_id = c.lastrowid
+        if payload.get("note_type") in {"detailed", "overview"}:
+            c.execute("""
+                UPDATE topics
+                SET detailed_notes = COALESCE(NULLIF(detailed_notes, ''), ?)
+                WHERE id = ?
+            """, (payload.get("content", ""), topic_id))
     elif content_type == "high_yield_point":
         c.execute("INSERT INTO high_yield_points (topic_id, point, explanation, exam_relevance, status, updated_at) VALUES (?, ?, ?, ?, ?, ?)", (topic_id, payload.get("point", ""), payload.get("explanation", ""), payload.get("exam_relevance", ""), status, _now()))
         content_id = c.lastrowid
+        c.execute("UPDATE topics SET high_yield = trim(COALESCE(high_yield, '') || char(10) || ?) WHERE id = ?", (payload.get("point", ""), topic_id))
     elif content_type == "clinical_correlation":
         c.execute("INSERT INTO clinical_correlations (topic_id, title, correlation, patient_link, status, updated_at) VALUES (?, ?, ?, ?, ?, ?)", (topic_id, payload.get("title", "Clinical correlation"), payload.get("correlation", ""), payload.get("patient_link", ""), status, _now()))
         content_id = c.lastrowid
+        c.execute("UPDATE topics SET clinical_pearls = trim(COALESCE(clinical_pearls, '') || char(10) || ?) WHERE id = ?", (payload.get("correlation", ""), topic_id))
     elif content_type == "mnemonic":
         c.execute("INSERT INTO mnemonics (topic_id, title, mnemonic, explanation, language, status, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)", (topic_id, payload.get("title", "Mnemonic"), payload.get("mnemonic", ""), payload.get("explanation", ""), payload.get("language", "en"), status, _now()))
         content_id = c.lastrowid
     elif content_type == "flashcard":
-        c.execute("INSERT INTO flashcards (topic_id, front, back, explanation, status, updated_at) VALUES (?, ?, ?, ?, ?, ?)", (topic_id, payload.get("front", ""), payload.get("back", ""), payload.get("explanation", ""), status, _now()))
+        c.execute("INSERT INTO flashcards (topic_id, front, back, mnemonic, explanation, status, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)", (topic_id, payload.get("front", ""), payload.get("back", ""), payload.get("mnemonic", ""), payload.get("explanation", ""), status, _now()))
         content_id = c.lastrowid
     elif content_type == "mcq":
         c.execute("""
-            INSERT INTO mcqs (topic_id, stem, option_a, option_b, option_c, option_d, option_e, correct_option, explanation, difficulty, status, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """, (topic_id, payload.get("stem", ""), payload.get("option_a", ""), payload.get("option_b", ""), payload.get("option_c", ""), payload.get("option_d", ""), payload.get("option_e", ""), payload.get("correct_option", "A"), payload.get("explanation", ""), payload.get("difficulty", "core"), status, _now()))
+            INSERT INTO mcqs (topic_id, question, stem, option_a, option_b, option_c, option_d, option_e, correct_option, explanation, difficulty, status, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, (topic_id, payload.get("question") or payload.get("stem", ""), payload.get("stem") or payload.get("question", ""), payload.get("option_a", ""), payload.get("option_b", ""), payload.get("option_c", ""), payload.get("option_d", ""), payload.get("option_e", ""), payload.get("correct_option", "A"), payload.get("explanation", ""), payload.get("difficulty", "core"), status, _now()))
         content_id = c.lastrowid
     elif content_type == "osce_case":
         c.execute("INSERT INTO osce_cases (topic_id, title, scenario, tasks, checklist, examiner_notes, status, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", (topic_id, payload.get("title", "OSCE case"), payload.get("scenario", ""), json.dumps(_split_lines(payload.get("tasks", ""))), json.dumps(_split_lines(payload.get("checklist", ""))), payload.get("examiner_notes", ""), status, _now()))
@@ -540,6 +612,7 @@ def add_content_item(content_type, topic_id, payload, status="draft", admin_id=N
     _create_version(c, content_type, content_id, payload, status, admin_id)
     conn.commit()
     conn.close()
+    _clear_content_caches()
     return content_id
 
 
@@ -581,6 +654,7 @@ def update_content_status(content_type, content_id, status, reviewed=False, admi
     """, (content_type, content_id, content_type, content_id, json.dumps({"status": status, "reviewed": reviewed}), status, admin_id, _now() if reviewed else None))
     conn.commit()
     conn.close()
+    _clear_content_caches()
 
 
 def delete_content(content_type, content_id, admin_id=None):
@@ -618,8 +692,8 @@ def update_content_row(content_type, content_id, updates, status=None, reviewed=
         "high_yield_point": ("high_yield_points", {"point", "explanation", "exam_relevance", "status"}),
         "clinical_correlation": ("clinical_correlations", {"title", "correlation", "patient_link", "status"}),
         "mnemonic": ("mnemonics", {"title", "mnemonic", "explanation", "language", "status"}),
-        "flashcard": ("flashcards", {"front", "back", "explanation", "status"}),
-        "mcq": ("mcqs", {"stem", "option_a", "option_b", "option_c", "option_d", "option_e", "correct_option", "explanation", "difficulty", "status"}),
+        "flashcard": ("flashcards", {"front", "back", "mnemonic", "explanation", "status"}),
+        "mcq": ("mcqs", {"question", "stem", "option_a", "option_b", "option_c", "option_d", "option_e", "correct_option", "explanation", "difficulty", "status"}),
         "osce_case": ("osce_cases", {"title", "scenario", "tasks", "checklist", "examiner_notes", "status"}),
         "resource": ("resources", {"title", "url", "citation", "resource_type", "notes", "status"}),
     }
@@ -634,9 +708,16 @@ def update_content_row(content_type, content_id, updates, status=None, reviewed=
     conn = _connect()
     c = conn.cursor()
     c.execute(f"UPDATE {table} SET {assignments} WHERE id = ?", [*clean_updates.values(), content_id])
+    if content_type == "topic" and "title" in clean_updates:
+        c.execute("UPDATE topics SET name = ?, slug = ? WHERE id = ?", (clean_updates["title"], _slug(clean_updates["title"]), content_id))
+    if content_type == "mcq" and "stem" in clean_updates:
+        c.execute("UPDATE mcqs SET question = ? WHERE id = ?", (clean_updates["stem"], content_id))
+    if content_type == "mcq" and "question" in clean_updates:
+        c.execute("UPDATE mcqs SET stem = ? WHERE id = ?", (clean_updates["question"], content_id))
     _create_version(c, content_type, content_id, clean_updates, clean_updates.get("status", "draft"), admin_id)
     conn.commit()
     conn.close()
+    _clear_content_caches()
 
 
 def save_topic_progress(user_id, topic, status="completed", score_percent=0, last_position=""):
@@ -652,8 +733,19 @@ def save_topic_progress(user_id, topic, status="completed", score_percent=0, las
             last_position=excluded.last_position,
             updated_at=excluded.updated_at
     """, (user_id, topic.get("subject_id"), topic.get("chapter_id"), topic.get("id"), status, score_percent, last_position, _now()))
+    c.execute("""
+        INSERT INTO study_activity (user_id, activity_type, subject, title, metadata, created_at)
+        VALUES (?, 'topic_progress', ?, ?, ?, ?)
+    """, (
+        user_id,
+        topic.get("subject_name", ""),
+        f"{status.title()} {topic.get('title') or topic.get('name')}",
+        json.dumps({"topic_id": topic.get("id"), "score_percent": score_percent, "last_position": last_position}),
+        _now(),
+    ))
     conn.commit()
     conn.close()
+    _clear_content_caches()
 
 
 def bookmark_topic(user_id, topic):
@@ -664,6 +756,16 @@ def bookmark_topic(user_id, topic):
         INSERT OR REPLACE INTO user_bookmarks (user_id, topic_id, content_type, content_id, created_at)
         VALUES (?, ?, 'topic', ?, ?)
     """, (user_id, topic["id"], topic["id"], _now()))
+    c.execute("""
+        INSERT INTO study_activity (user_id, activity_type, subject, title, metadata, created_at)
+        VALUES (?, 'bookmark', ?, ?, ?, ?)
+    """, (
+        user_id,
+        topic.get("subject_name", ""),
+        f"Bookmarked {topic.get('title') or topic.get('name')}",
+        json.dumps({"topic_id": topic.get("id"), "content_type": "topic"}),
+        _now(),
+    ))
     conn.commit()
     conn.close()
     save_bookmark(user_id, "topic", str(topic["id"]), topic["title"], topic.get("subject_name", ""))
@@ -805,6 +907,68 @@ def save_ai_draft(topic_id, draft, admin_id=None):
         add_content_item("resource", topic_id, item, status="draft", admin_id=admin_id)
 
 
+def extract_high_yield_text(text: str) -> str:
+    """Return bolded lines and bullet-style points for rapid cramming mode."""
+    lines = []
+    for raw_line in (text or "").splitlines():
+        line = raw_line.strip()
+        if not line:
+            continue
+        is_bullet = line.startswith(("-", "•", "*"))
+        is_marked = "**" in line or "high-yield" in line.lower() or "red flag" in line.lower()
+        has_metric = bool(re.search(r"\b\d+(\.\d+)?\s*(%|mg|mmol|hours?|days?|weeks?|months?|years?|mmHg|bpm)\b", line, re.I))
+        if is_bullet or is_marked or has_metric:
+            lines.append(line)
+    return "\n".join(lines) if lines else text
+
+
+def build_topic_context(bundle: dict) -> str:
+    """Create a compact context block for a context-aware AI tutor prompt."""
+    topic = bundle["topic"]
+    sections = [
+        f"Topic: {topic.get('name') or topic.get('title')}",
+        f"Subject: {topic.get('subject_name')}",
+        f"Chapter: {topic.get('chapter_name') or topic.get('chapter_title') or 'General'}",
+        f"Overview: {topic.get('overview', '')}",
+        f"Detailed notes: {topic.get('detailed_notes', '')}",
+        f"High-yield: {topic.get('high_yield', '')}",
+        f"Clinical pearls: {topic.get('clinical_pearls', '')}",
+    ]
+    for note in bundle.get("notes", []):
+        sections.append(f"Note - {note.get('title')}: {note.get('content')}")
+    for point in bundle.get("high_yield_points", []):
+        sections.append(f"High-yield point: {point.get('point')} {point.get('explanation', '')}")
+    for item in bundle.get("clinical_correlations", []):
+        sections.append(f"Clinical correlation - {item.get('title')}: {item.get('correlation')}")
+    return "\n\n".join(section for section in sections if section and not section.endswith(": "))
+
+
+def build_ai_tutor_prompt(bundle: dict, student_question: str) -> str:
+    """Skeleton prompt for plugging into your chosen AI provider.
+
+    Keep this provider-neutral. The calling page can send the returned prompt to
+    OpenAI, Gemini, or any local model.
+    """
+    context = build_topic_context(bundle)
+    return f"""You are MedStudy Oman's AI Study Tutor for medical students.
+Use only the topic context below unless you clearly label additional knowledge as general medical background.
+Explain in a student-friendly way, emphasize high-yield exam reasoning, and include clinical relevance.
+Do not provide patient-specific medical advice.
+
+TOPIC CONTEXT:
+{context}
+
+STUDENT QUESTION:
+{student_question}
+
+ANSWER STRUCTURE:
+1. Direct answer
+2. Why it matters clinically
+3. High-yield exam point
+4. One active-recall question
+"""
+
+
 def render_content_library():
     st.markdown('<div class="section-title">A-Z Medical Knowledge Hub</div>', unsafe_allow_html=True)
     st.caption("Database-powered content. Admins can add more subjects, chapters, topics, notes, questions, and resources without editing app.py.")
@@ -837,7 +1001,8 @@ def render_topic_page(topic_id):
         st.error("Topic not found.")
         return
     topic = bundle["topic"]
-    st.markdown(f"## {topic['title']}")
+    high_yield_mode = st.toggle("⚡ High-Yield Mode", value=False, help="Show condensed bullet points, bold items, and exam-facing clues.", key=f"hy_mode_{topic_id}")
+    st.markdown(f"## {topic.get('name') or topic['title']}")
     st.caption(f"{topic['subject_name']} · {topic.get('chapter_title') or 'General'} · Last updated: {(topic.get('updated_at') or topic.get('created_at') or '')[:10]}")
     col_a, col_b = st.columns(2)
     uid = st.session_state.user["id"] if st.session_state.get("logged_in") and st.session_state.get("user") else None
@@ -856,19 +1021,34 @@ def render_topic_page(topic_id):
             else:
                 st.warning("Login to save progress.")
 
+    with st.expander("🤖 Context-aware AI Tutor prompt"):
+        st.caption("This skeleton automatically includes the currently selected topic context, so students do not need to copy/paste notes.")
+        student_question = st.text_area("Ask about this topic", placeholder="Explain this like I am revising for an OSCE...")
+        if student_question:
+            st.code(build_ai_tutor_prompt(bundle, student_question), language="text")
+
     tabs = st.tabs(["Overview", "Detailed Notes", "High-Yield", "Clinical", "Tables & Diagrams", "Mnemonics", "Flashcards", "MCQs", "OSCE", "Resources"])
     with tabs[0]:
-        st.write(topic.get("overview") or "Overview will be added by the content team.")
+        overview = topic.get("overview") or "Overview will be added by the content team."
+        st.write(extract_high_yield_text(overview) if high_yield_mode else overview)
     with tabs[1]:
+        topic_notes = topic.get("detailed_notes") or ""
+        if topic_notes:
+            st.write(extract_high_yield_text(topic_notes) if high_yield_mode else topic_notes)
         for note in bundle["notes"]:
             st.markdown(f"### {note['title']}")
-            st.write(note["content"])
+            content = note["content"]
+            st.write(extract_high_yield_text(content) if high_yield_mode else content)
     with tabs[2]:
+        if topic.get("high_yield"):
+            st.success(extract_high_yield_text(topic["high_yield"]))
         for point in bundle["high_yield_points"]:
             st.success(point["point"])
             if point.get("explanation"):
                 st.caption(point["explanation"])
     with tabs[3]:
+        if topic.get("clinical_pearls"):
+            st.info(extract_high_yield_text(topic["clinical_pearls"]) if high_yield_mode else topic["clinical_pearls"])
         for item in bundle["clinical_correlations"]:
             st.info(f"**{item['title']}**\n\n{item['correlation']}")
     with tabs[4]:
@@ -892,10 +1072,13 @@ def render_topic_page(topic_id):
         for item in bundle["flashcards"]:
             with st.expander(item["front"]):
                 st.write(item["back"])
+                if item.get("mnemonic"):
+                    st.warning(f"Mnemonic: {item['mnemonic']}")
                 st.caption(item.get("explanation", ""))
     with tabs[7]:
         for item in bundle["mcqs"]:
-            with st.expander(item["stem"]):
+            question = item.get("question") or item["stem"]
+            with st.expander(question):
                 st.write(f"A. {item['option_a']}")
                 st.write(f"B. {item['option_b']}")
                 st.write(f"C. {item['option_c']}")
@@ -1039,9 +1222,10 @@ def _content_payload_form(content_type):
     if content_type == "mnemonic":
         return {"title": st.text_input("Mnemonic title"), "mnemonic": st.text_input("Mnemonic"), "explanation": st.text_area("Explanation"), "language": st.selectbox("Language", ["en", "ar", "bilingual"])}
     if content_type == "flashcard":
-        return {"front": st.text_area("Front"), "back": st.text_area("Back"), "explanation": st.text_area("Explanation")}
+        return {"front": st.text_area("Front"), "back": st.text_area("Back"), "mnemonic": st.text_input("Mnemonic"), "explanation": st.text_area("Explanation")}
     if content_type == "mcq":
-        return {"stem": st.text_area("Stem"), "option_a": st.text_input("A"), "option_b": st.text_input("B"), "option_c": st.text_input("C"), "option_d": st.text_input("D"), "option_e": st.text_input("E optional"), "correct_option": st.selectbox("Correct", ["A", "B", "C", "D", "E"]), "explanation": st.text_area("Explanation"), "difficulty": st.selectbox("Difficulty", ["foundation", "core", "advanced"])}
+        question = st.text_area("Question")
+        return {"question": question, "stem": question, "option_a": st.text_input("A"), "option_b": st.text_input("B"), "option_c": st.text_input("C"), "option_d": st.text_input("D"), "option_e": st.text_input("E optional"), "correct_option": st.selectbox("Correct", ["A", "B", "C", "D", "E"]), "explanation": st.text_area("Explanation"), "difficulty": st.selectbox("Difficulty", ["foundation", "core", "advanced"])}
     if content_type == "osce_case":
         return {"title": st.text_input("Case title"), "scenario": st.text_area("Scenario"), "tasks": st.text_area("Tasks, one per line"), "checklist": st.text_area("Checklist, one per line"), "examiner_notes": st.text_area("Examiner notes")}
     return {"title": st.text_input("Resource title"), "url": st.text_input("URL"), "citation": st.text_area("Citation/reference"), "resource_type": st.text_input("Type", value="reference"), "notes": st.text_area("Notes")}
@@ -1087,9 +1271,12 @@ def _render_edit_existing(admin_id):
     elif content_type == "flashcard":
         updates["front"] = st.text_area("Front", value=row.get("front", ""))
         updates["back"] = st.text_area("Back", value=row.get("back", ""))
+        updates["mnemonic"] = st.text_input("Mnemonic", value=row.get("mnemonic", ""))
         updates["explanation"] = st.text_area("Explanation", value=row.get("explanation", ""))
     elif content_type == "mcq":
-        updates["stem"] = st.text_area("Stem", value=row.get("stem", ""))
+        question = st.text_area("Question", value=row.get("question") or row.get("stem", ""))
+        updates["question"] = question
+        updates["stem"] = question
         for option in ["option_a", "option_b", "option_c", "option_d", "option_e"]:
             updates[option] = st.text_input(option.replace("_", " ").title(), value=row.get(option, ""))
         updates["correct_option"] = st.selectbox("Correct", ["A", "B", "C", "D", "E"], index=["A", "B", "C", "D", "E"].index(row.get("correct_option", "A")) if row.get("correct_option", "A") in ["A", "B", "C", "D", "E"] else 0)
