@@ -20,6 +20,8 @@ from typing import Any
 import requests
 import streamlit as st
 
+import pulse_backend as backend
+
 
 st.set_page_config(
     page_title="PULSE.md | Premium Medical Study",
@@ -34,6 +36,7 @@ VIEWS = {
     "vault": "📚 Vault Library",
     "ai_lab": "🔬 Dynamic AI Lab",
     "assessment": "📝 Assessment Arena",
+    "admin": "⚙️ Admin Studio",
 }
 
 AI_TOOLS = ["Syllabus Synthesizer", "Mnemonic Craftsman", "Clinical Professor Chat"]
@@ -217,12 +220,29 @@ ASSESSMENT_BANK: list[dict[str, Any]] = [
 ]
 
 
+def content_tree() -> dict[str, Any]:
+    if "content_tree" not in st.session_state or st.session_state.get("refresh_content"):
+        st.session_state.content_tree = backend.fetch_content_tree(PULSE_DB)
+        st.session_state.refresh_content = False
+    return st.session_state.content_tree
+
+
+def assessment_bank() -> list[dict[str, Any]]:
+    return backend.fetch_assessment_bank(content_tree()) or ASSESSMENT_BANK
+
+
+def reset_content_cache() -> None:
+    st.session_state.refresh_content = True
+
+
 def init_state() -> None:
+    tree = content_tree()
+    default_subject = next(iter(tree))
     defaults = {
         "current_view": "home",
         "visual_mode": "light",
         "clinical_focus": False,
-        "selected_subject": next(iter(PULSE_DB)),
+        "selected_subject": default_subject,
         "selected_chapter": None,
         "selected_topic": None,
         "ai_tool": AI_TOOLS[0],
@@ -233,15 +253,23 @@ def init_state() -> None:
         "assessment_submitted": {},
         "assessment_score": 0,
         "daily_goal_percent": 72,
+        "auth": None,
+        "backend_error": None,
+        "admin_table": "subjects",
+        "admin_ai_result": None,
+        "refresh_content": False,
     }
     for key, value in defaults.items():
         if key not in st.session_state:
             st.session_state[key] = value
     subject = st.session_state.selected_subject
-    chapters = list(PULSE_DB[subject])
+    if subject not in tree:
+        subject = default_subject
+        st.session_state.selected_subject = subject
+    chapters = list(tree[subject])
     if st.session_state.selected_chapter not in chapters:
         st.session_state.selected_chapter = chapters[0]
-    topics = list(PULSE_DB[subject][st.session_state.selected_chapter])
+    topics = list(tree[subject][st.session_state.selected_chapter])
     if st.session_state.selected_topic not in topics:
         st.session_state.selected_topic = topics[0]
 
@@ -630,6 +658,54 @@ def render_nav() -> None:
             st.session_state.visual_mode = "dark" if st.session_state.visual_mode == "light" else "light"
             st.rerun()
     st.markdown("</div></div>", unsafe_allow_html=True)
+    render_auth_strip()
+
+
+def render_auth_strip() -> None:
+    user = backend.current_user()
+    status = "Supabase connected" if backend.is_configured() else "Demo mode - add Supabase secrets"
+    c1, c2, c3, c4 = st.columns([2.2, 1.2, 1.2, 1.0])
+    with c1:
+        st.caption(f"Backend: {status}")
+        if st.session_state.get("backend_error"):
+            st.caption(f"Last backend notice: {st.session_state.backend_error[:140]}")
+    if user:
+        with c2:
+            st.caption(f"Signed in: {user['email']}")
+        with c3:
+            if user["is_admin"]:
+                st.caption("Admin access enabled")
+        with c4:
+            if st.button("Sign out", key="signout", use_container_width=True):
+                st.session_state.auth = None
+                st.rerun()
+    else:
+        with c2:
+            email = st.text_input("Email", key="auth_email", label_visibility="collapsed", placeholder="email")
+        with c3:
+            password = st.text_input("Password", key="auth_password", type="password", label_visibility="collapsed", placeholder="password")
+        with c4:
+            login, signup = st.columns(2)
+            with login:
+                if st.button("Login", key="login_button", use_container_width=True):
+                    ok, message, data = backend.auth_sign_in(email, password)
+                    if ok:
+                        st.session_state.auth = data
+                        backend.ensure_profile()
+                        st.success(message)
+                        st.rerun()
+                    else:
+                        st.error(message)
+            with signup:
+                if st.button("Join", key="signup_button", use_container_width=True):
+                    ok, message, data = backend.auth_sign_up(email, password, email.split("@")[0])
+                    if ok:
+                        st.session_state.auth = data
+                        backend.ensure_profile()
+                        st.success(message)
+                        st.rerun()
+                    else:
+                        st.error(message)
 
 
 def card(kicker: str, title: str, copy: str = "", extra: str = "") -> None:
@@ -688,6 +764,7 @@ def circular_progress(percent: int) -> str:
 
 
 def render_home() -> None:
+    metrics = backend.dashboard_metrics()
     st.markdown('<div class="hero-title">Welcome Back,<br>Doctor</div>', unsafe_allow_html=True)
     st.markdown(
         '<div class="hero-subtitle">Your premium medical command center for focused study, active recall, clinical reasoning, and exam-ready telemetry.</div>',
@@ -709,7 +786,7 @@ def render_home() -> None:
 <div class="advanced-bento" style="min-height:260px;">
   <div class="bento-kicker">Completion Engine</div>
   <div class="bento-title">Daily Progress</div>
-  {circular_progress(int(st.session_state.daily_goal_percent))}
+  {circular_progress(int(metrics.get("completion") or st.session_state.daily_goal_percent))}
 </div>
             """,
             unsafe_allow_html=True,
@@ -717,11 +794,16 @@ def render_home() -> None:
 
     m1, m2, m3 = st.columns([1, 1, 1.2], gap="large")
     with m1:
-        card("Active Streak", '<span class="metric-number">12</span> days', "Clinical consistency beats heroic cramming.")
+        card("Active Streak", f'<span class="metric-number">{metrics.get("streak", 0)}</span> days', "Saved from your real Supabase study activity.")
     with m2:
-        card("Spaced Repetition", '<span class="metric-number">28</span> due', "Priority cards waiting for high-yield recall.")
+        card("Spaced Repetition", f'<span class="metric-number">{metrics.get("due_cards", 0)}</span> due', "Flashcard priority is derived from completed and reviewed topics.")
     with m3:
-        card("Next Best Action", "Endocrine sprint", "DKA potassium logic, acid-base patterning, and two MCQ vignettes.")
+        recent = metrics.get("recent") or []
+        next_title = "Open the Vault" if not recent else "Resume recent topic"
+        next_copy = "Pick a subject and start saving progress." if not recent else "Your last opened topics are saved in Supabase."
+        card("Recently Studied", next_title, next_copy)
+        for item in recent[:3]:
+            st.caption(f"• Topic {item.get('topic_id')} · {str(item.get('status', '')).replace('_', ' ')}")
 
     st.write("")
     render_medical_tools()
@@ -817,10 +899,11 @@ def render_abg_interpreter() -> None:
 
 
 def get_selected_topic() -> dict[str, Any]:
-    return PULSE_DB[st.session_state.selected_subject][st.session_state.selected_chapter][st.session_state.selected_topic]
+    return content_tree()[st.session_state.selected_subject][st.session_state.selected_chapter][st.session_state.selected_topic]
 
 
 def render_vault() -> None:
+    tree = content_tree()
     if st.session_state.clinical_focus:
         topic = get_selected_topic()
         st.markdown('<div class="focus-reading">', unsafe_allow_html=True)
@@ -828,8 +911,12 @@ def render_vault() -> None:
             st.session_state.clinical_focus = False
             st.rerun()
         st.markdown(f"# {st.session_state.selected_topic}")
+        backend.mark_topic_opened(topic.get("id"))
         st.write(topic["overview"])
         st.markdown(topic["notes"])
+        if topic.get("short_notes"):
+            st.markdown("## Short Notes")
+            st.markdown(topic["short_notes"])
         st.markdown("## High-Yield Pearls")
         for pearl in topic["pearls"]:
             st.markdown(f"- **{pearl}**")
@@ -843,20 +930,22 @@ def render_vault() -> None:
         st.markdown('<div class="advanced-bento">', unsafe_allow_html=True)
         c1, c2, c3, c4 = st.columns([1, 1, 1, .8], gap="medium")
         with c1:
-            subject = st.selectbox("Subject", list(PULSE_DB), key="vault_subject_select")
+            subject = st.selectbox("Subject", list(tree), key="vault_subject_select")
             if subject != st.session_state.selected_subject:
                 st.session_state.selected_subject = subject
-                st.session_state.selected_chapter = list(PULSE_DB[subject])[0]
-                st.session_state.selected_topic = list(PULSE_DB[subject][st.session_state.selected_chapter])[0]
+                first_topic = next(iter(next(iter(tree[subject].values()))))
+                backend.save_last_opened_subject(tree[subject][list(tree[subject])[0]][first_topic].get("subject_id"))
+                st.session_state.selected_chapter = list(tree[subject])[0]
+                st.session_state.selected_topic = list(tree[subject][st.session_state.selected_chapter])[0]
                 st.rerun()
         with c2:
-            chapter = st.selectbox("Chapter", list(PULSE_DB[st.session_state.selected_subject]), key="vault_chapter_select")
+            chapter = st.selectbox("Chapter", list(tree[st.session_state.selected_subject]), key="vault_chapter_select")
             if chapter != st.session_state.selected_chapter:
                 st.session_state.selected_chapter = chapter
-                st.session_state.selected_topic = list(PULSE_DB[st.session_state.selected_subject][chapter])[0]
+                st.session_state.selected_topic = list(tree[st.session_state.selected_subject][chapter])[0]
                 st.rerun()
         with c3:
-            topic = st.selectbox("Topic", list(PULSE_DB[st.session_state.selected_subject][st.session_state.selected_chapter]), key="vault_topic_select")
+            topic = st.selectbox("Topic", list(tree[st.session_state.selected_subject][st.session_state.selected_chapter]), key="vault_topic_select")
             if topic != st.session_state.selected_topic:
                 st.session_state.selected_topic = topic
                 st.rerun()
@@ -869,13 +958,30 @@ def render_vault() -> None:
         st.markdown("</div>", unsafe_allow_html=True)
 
     topic_data = get_selected_topic()
+    backend.mark_topic_opened(topic_data.get("id"))
     st.write("")
-    tabs = st.tabs(["Overview", "High-Yield Notebook", "Active Recall Cards"])
+    a, b, c = st.columns([1, 1, 3])
+    with a:
+        if st.button("Bookmark topic", key="bookmark_topic", use_container_width=True):
+            backend.save_bookmark(topic_data.get("id"))
+            st.success("Bookmark saved.")
+    with b:
+        if st.button("Mark completed", key="complete_topic", use_container_width=True):
+            backend.mark_topic_completed(topic_data.get("id"))
+            st.success("Progress saved.")
+    tabs = st.tabs(["Overview", "High-Yield Notebook", "Active Recall Cards", "Resources", "MCQs & OSCE"])
     with tabs[0]:
         st.markdown('<div class="advanced-bento">', unsafe_allow_html=True)
         st.markdown(f"## {st.session_state.selected_topic}")
         st.write(topic_data["overview"])
+        if topic_data.get("short_notes"):
+            st.markdown("### Short Notes")
+            st.markdown(topic_data["short_notes"])
         st.markdown(topic_data["notes"])
+        if topic_data.get("mnemonics"):
+            st.markdown("### Mnemonics")
+            for item in topic_data["mnemonics"]:
+                st.markdown(f"- {item}")
         st.markdown("</div>", unsafe_allow_html=True)
     with tabs[1]:
         for idx, pearl in enumerate(topic_data["pearls"]):
@@ -884,6 +990,36 @@ def render_vault() -> None:
         for idx, flashcard in enumerate(topic_data["flashcards"]):
             with st.expander(f"Card {idx + 1}: {flashcard['front']}"):
                 st.markdown(f"**Answer:** {flashcard['back']}")
+                rating = st.radio("Review rating", ["again", "hard", "good", "easy"], key=f"fc_rating_{flashcard.get('id', idx)}", horizontal=True)
+                if st.button("Save card progress", key=f"save_fc_{flashcard.get('id', idx)}"):
+                    backend.save_flashcard_progress(flashcard.get("id"), rating)
+                    st.success("Flashcard progress saved.")
+    with tabs[3]:
+        resources = topic_data.get("resources") or []
+        if not resources:
+            st.info("No external resources have been uploaded for this topic yet.")
+        for resource in resources:
+            st.markdown(
+                f"""
+<div class="advanced-bento">
+  <div class="bento-kicker">{resource.get("resource_type", "resource")}</div>
+  <div class="bento-title">{resource.get("title", "Resource")}</div>
+  <div class="bento-copy">{resource.get("description", "")}</div>
+  <a href="{resource.get("url", "#")}" target="_blank">Open resource</a>
+</div>
+                """,
+                unsafe_allow_html=True,
+            )
+    with tabs[4]:
+        st.markdown("#### MCQs")
+        for idx, q in enumerate(topic_data.get("mcqs") or []):
+            with st.expander(q["question"]):
+                st.write(", ".join(q.get("options") or []))
+                st.success(f"Answer: {q.get('correct')}")
+                st.caption(q.get("explanation", ""))
+        st.markdown("#### OSCE / Viva")
+        for item in topic_data.get("osce_viva") or []:
+            st.markdown(f"- {item}")
 
 
 def get_secret(*names: str) -> str | None:
@@ -1048,10 +1184,11 @@ def render_professor_chat() -> None:
 
 
 def render_assessment() -> None:
+    bank = assessment_bank()
     st.markdown('<div class="hero-title">Assessment Arena</div>', unsafe_allow_html=True)
     st.markdown('<div class="hero-subtitle">Clinical vignettes, instant scoring, and high-yield explanations in a focused testing cockpit.</div>', unsafe_allow_html=True)
     st.write("")
-    total = len(ASSESSMENT_BANK)
+    total = len(bank)
     answered = sum(1 for i in range(total) if st.session_state.assessment_submitted.get(i))
     correct = st.session_state.assessment_score
     p1, p2, p3 = st.columns(3)
@@ -1063,7 +1200,7 @@ def render_assessment() -> None:
         pct = int((correct / answered) * 100) if answered else 0
         card("Accuracy", f'<span class="metric-number">{pct}%</span>')
 
-    for idx, q in enumerate(ASSESSMENT_BANK):
+    for idx, q in enumerate(bank):
         st.markdown('<div class="advanced-bento">', unsafe_allow_html=True)
         st.markdown(f"#### Case {idx + 1}")
         st.write(q["question"])
@@ -1075,6 +1212,13 @@ def render_assessment() -> None:
             st.session_state.assessment_submitted[idx] = True
             if not was_submitted and choice == q["correct"]:
                 st.session_state.assessment_score += 1
+            backend.save_quiz_attempt(
+                q.get("quiz_id"),
+                get_selected_topic().get("id") if st.session_state.get("selected_topic") else None,
+                1 if choice == q["correct"] else 0,
+                1,
+                {str(q.get("id") or idx): choice},
+            )
             st.rerun()
         if submitted:
             selected = st.session_state.assessment_answers.get(idx)
@@ -1085,6 +1229,104 @@ def render_assessment() -> None:
             st.info(q["explanation"])
         st.markdown("</div>", unsafe_allow_html=True)
         st.write("")
+
+
+def render_admin_studio() -> None:
+    user = backend.current_user()
+    st.markdown('<div class="hero-title">Admin Studio</div>', unsafe_allow_html=True)
+    st.markdown(
+        '<div class="hero-subtitle">Upload, edit, and delete A-Z medical resources subject-wise. All writes go through Supabase.</div>',
+        unsafe_allow_html=True,
+    )
+    if not backend.is_configured():
+        st.warning("Supabase is not configured. Add SUPABASE_URL, SUPABASE_ANON_KEY, and optionally SUPABASE_SERVICE_ROLE_KEY.")
+        st.code("Run supabase_schema.sql in your Supabase SQL editor first.", language="text")
+        return
+    if not user:
+        st.info("Sign in with an admin email to use the Admin Studio.")
+        return
+    if not user["is_admin"]:
+        st.error("Your email is not listed in ADMIN_EMAILS, so admin tools are locked.")
+        return
+
+    admin_tables = {
+        "subjects": ["name", "slug", "description", "icon"],
+        "chapters": ["subject_id", "title", "slug", "description"],
+        "topics": ["chapter_id", "title", "slug", "overview", "full_notes", "short_notes", "high_yield_points", "mnemonics", "osce_viva"],
+        "notes": ["topic_id", "title", "note_type", "content"],
+        "resources": ["topic_id", "title", "resource_type", "url", "description"],
+        "quizzes": ["topic_id", "title", "description", "difficulty"],
+        "quiz_questions": ["quiz_id", "question", "options", "correct_answer", "explanation", "high_yield_tip"],
+        "flashcards": ["topic_id", "front", "back", "mnemonic"],
+    }
+    table = st.selectbox("Content table", list(admin_tables), key="admin_table_select")
+    st.session_state.admin_table = table
+    store = backend.active_store(admin=True)
+    rows = store.select(table, {"select": "*"}, "created_at.desc")
+
+    create_tab, manage_tab, ai_tab = st.tabs(["Create / Upload", "Edit / Delete", "AI Draft Generators"])
+    with create_tab:
+        st.markdown('<div class="advanced-bento">', unsafe_allow_html=True)
+        st.markdown(f"#### Add {table.replace('_', ' ').title()}")
+        payload: dict[str, Any] = {}
+        for field in admin_tables[table]:
+            if field in {"full_notes", "short_notes", "content", "overview", "description", "question", "explanation", "high_yield_tip", "back"}:
+                payload[field] = st.text_area(field.replace("_", " ").title(), key=f"admin_new_{table}_{field}")
+            elif field in {"high_yield_points", "mnemonics", "osce_viva", "options"}:
+                raw = st.text_area(f"{field.replace('_', ' ').title()} (JSON array)", value="[]", key=f"admin_new_{table}_{field}")
+                try:
+                    payload[field] = json.loads(raw or "[]")
+                except json.JSONDecodeError:
+                    st.warning(f"{field} must be valid JSON.")
+                    payload[field] = []
+            else:
+                payload[field] = st.text_input(field.replace("_", " ").title(), key=f"admin_new_{table}_{field}")
+        if st.button("Save to Supabase", key=f"admin_save_{table}", type="primary", use_container_width=True):
+            cleaned = {k: v for k, v in payload.items() if v not in ("", None, [])}
+            if cleaned:
+                saved = backend.admin_insert(table, cleaned)
+                if saved:
+                    reset_content_cache()
+                    st.success("Saved.")
+                    st.rerun()
+                else:
+                    st.error("Save failed. Check required foreign keys and Supabase policies.")
+            else:
+                st.warning("Fill at least one field.")
+        st.markdown("</div>", unsafe_allow_html=True)
+
+    with manage_tab:
+        st.markdown(f"#### Existing {table}")
+        if not rows:
+            st.info("No rows found.")
+        for row in rows[:50]:
+            label = row.get("title") or row.get("name") or row.get("question") or row.get("front") or row.get("id")
+            with st.expander(str(label)):
+                st.json(row)
+                if st.button("Delete row", key=f"delete_{table}_{row['id']}"):
+                    if backend.admin_delete(table, row["id"]):
+                        reset_content_cache()
+                        st.success("Deleted.")
+                        st.rerun()
+                    else:
+                        st.error("Delete failed.")
+
+    with ai_tab:
+        st.markdown('<div class="advanced-bento">', unsafe_allow_html=True)
+        st.markdown("#### AI Content Drafts")
+        draft_topic = st.text_input("Topic to draft", placeholder="e.g. Rheumatic fever", key="admin_ai_topic")
+        draft_type = st.selectbox("Draft type", ["AI notes generator", "AI MCQ generator", "AI flashcard generator", "AI mnemonics generator", "AI study plan generator"], key="admin_ai_type")
+        if st.button("Generate draft", key="admin_ai_generate", type="primary", use_container_width=True):
+            prompt = f"""
+Create a production-ready medical education draft for: {draft_topic}
+Tool: {draft_type}
+Return structured markdown plus JSON-ready fields for Supabase insertion.
+Include full notes, short notes, high-yield points, mnemonics, MCQs, flashcards, OSCE/viva, resource suggestions.
+"""
+            st.session_state.admin_ai_result = call_ai(prompt, "You are a senior medical education content editor.", 2400, 0.45)
+        if st.session_state.admin_ai_result:
+            st.markdown(st.session_state.admin_ai_result)
+        st.markdown("</div>", unsafe_allow_html=True)
 
 
 def main() -> None:
@@ -1100,6 +1342,8 @@ def main() -> None:
         render_ai_lab()
     elif st.session_state.current_view == "assessment":
         render_assessment()
+    elif st.session_state.current_view == "admin":
+        render_admin_studio()
     else:
         st.session_state.current_view = "home"
         st.rerun()
