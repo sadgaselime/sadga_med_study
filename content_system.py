@@ -32,6 +32,7 @@ CONTENT_TYPES = [
     "resource",
 ]
 ADMIN_EMAILS = {"sadgasalime@gmail.com", "sadgaselime@gmail.com", "sadgasalim@gmail.com"}
+_SCHEMA_READY = False
 
 
 def _connect():
@@ -56,6 +57,7 @@ def _add_column_if_missing(cursor, table_name: str, column_name: str, definition
 
 
 def init_content_schema():
+    global _SCHEMA_READY
     conn = _connect()
     c = conn.cursor()
 
@@ -262,6 +264,17 @@ def init_content_schema():
     _seed_starter_topics(c)
     conn.commit()
     conn.close()
+    _SCHEMA_READY = True
+
+
+def ensure_content_schema():
+    """Run lightweight SQLite migrations before content queries.
+
+    Streamlit Cloud keeps the SQLite file between deploys, so older databases
+    may be missing columns that newer code expects.
+    """
+    if not _SCHEMA_READY:
+        init_content_schema()
 
 
 def _seed_starter_topics(cursor):
@@ -327,6 +340,7 @@ def is_admin_user(user: dict | None) -> bool:
 
 
 def get_subjects(include_drafts=False):
+    ensure_content_schema()
     conn = _connect()
     c = conn.cursor()
     where = "" if include_drafts else "WHERE COALESCE(status, 'published') = 'published'"
@@ -337,6 +351,7 @@ def get_subjects(include_drafts=False):
 
 
 def get_chapters(subject_id, include_drafts=False):
+    ensure_content_schema()
     conn = _connect()
     c = conn.cursor()
     where = "subject_id = ?"
@@ -350,6 +365,7 @@ def get_chapters(subject_id, include_drafts=False):
 
 
 def get_topics(subject_id=None, chapter_id=None, include_drafts=False):
+    ensure_content_schema()
     conn = _connect()
     c = conn.cursor()
     where = []
@@ -377,6 +393,7 @@ def get_topics(subject_id=None, chapter_id=None, include_drafts=False):
 
 
 def get_topic_bundle(topic_id: int, include_drafts=False):
+    ensure_content_schema()
     conn = _connect()
     c = conn.cursor()
     status_filter = "" if include_drafts else "AND COALESCE(status, 'published') = 'published'"
@@ -427,6 +444,7 @@ def _create_version(cursor, content_type, content_id, payload, status="draft", c
 
 
 def upsert_subject(name, category="", icon="▣", description="", status="published", admin_id=None):
+    ensure_content_schema()
     conn = _connect()
     c = conn.cursor()
     c.execute("""
@@ -448,6 +466,7 @@ def upsert_subject(name, category="", icon="▣", description="", status="publis
 
 
 def add_chapter(subject_id, title, description="", order=0, status="published", admin_id=None):
+    ensure_content_schema()
     conn = _connect()
     c = conn.cursor()
     c.execute("""
@@ -462,6 +481,7 @@ def add_chapter(subject_id, title, description="", order=0, status="published", 
 
 
 def add_topic(subject_id, chapter_id, title, overview="", order=0, difficulty="core", status="draft", admin_id=None):
+    ensure_content_schema()
     conn = _connect()
     c = conn.cursor()
     c.execute("""
@@ -476,6 +496,7 @@ def add_topic(subject_id, chapter_id, title, overview="", order=0, difficulty="c
 
 
 def add_content_item(content_type, topic_id, payload, status="draft", admin_id=None):
+    ensure_content_schema()
     conn = _connect()
     c = conn.cursor()
     if content_type == "note":
@@ -529,6 +550,7 @@ def _split_lines(value):
 
 
 def update_content_status(content_type, content_id, status, reviewed=False, admin_id=None):
+    ensure_content_schema()
     table_map = {
         "subject": "subjects",
         "chapter": "chapters",
@@ -566,6 +588,7 @@ def delete_content(content_type, content_id, admin_id=None):
 
 
 def list_content_rows(content_type, include_archived=False, limit=100):
+    ensure_content_schema()
     table_map = {
         "topic": ("topics", "title"),
         "note": ("notes", "title"),
@@ -588,6 +611,7 @@ def list_content_rows(content_type, include_archived=False, limit=100):
 
 
 def update_content_row(content_type, content_id, updates, status=None, reviewed=False, admin_id=None):
+    ensure_content_schema()
     table_map = {
         "topic": ("topics", {"title", "overview", "difficulty", "status"}),
         "note": ("notes", {"title", "summary", "content", "note_type", "status"}),
@@ -616,6 +640,7 @@ def update_content_row(content_type, content_id, updates, status=None, reviewed=
 
 
 def save_topic_progress(user_id, topic, status="completed", score_percent=0, last_position=""):
+    ensure_content_schema()
     conn = _connect()
     c = conn.cursor()
     c.execute("""
@@ -632,6 +657,7 @@ def save_topic_progress(user_id, topic, status="completed", score_percent=0, las
 
 
 def bookmark_topic(user_id, topic):
+    ensure_content_schema()
     conn = _connect()
     c = conn.cursor()
     c.execute("""

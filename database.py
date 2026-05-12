@@ -260,8 +260,8 @@ def init_db():
     try:
         from content_system import init_content_schema
         init_content_schema()
-    except Exception:
-        pass
+    except Exception as exc:
+        print(f"Content schema migration failed: {exc}")
 
 
 def _add_column_if_missing(cursor, table_name: str, column_name: str, definition: str):
