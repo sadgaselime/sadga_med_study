@@ -502,6 +502,343 @@ def inject_premium_css(theme):
         .card-body {{ color:var(--premium-card-body) !important; font-size:.88rem; line-height:1.5; }}
         .progress-line {{ height:8px; background:#dbeaf2; border-radius:999px; overflow:hidden; margin-top:14px; }}
         .progress-line span {{ display:block; height:100%; background:linear-gradient(90deg, var(--cyan), var(--emerald)); border-radius:999px; }}
+        .clinical-dashboard-shell {{
+            position: relative;
+            overflow: hidden;
+            margin: 18px 0 20px;
+            padding: clamp(16px, 2.2vw, 28px);
+            border-radius: 30px;
+            border: 1px solid rgba(129, 140, 248, 0.24);
+            background:
+                radial-gradient(circle at 12% 14%, rgba(110, 231, 183, 0.30), transparent 28%),
+                radial-gradient(circle at 88% 8%, rgba(129, 140, 248, 0.28), transparent 26%),
+                linear-gradient(135deg, rgba(250, 245, 255, 0.96), rgba(236, 253, 245, 0.86) 46%, rgba(255, 247, 237, 0.92));
+            box-shadow: 0 28px 90px rgba(79, 70, 229, 0.16);
+            color: #1f1b3d !important;
+            isolation: isolate;
+        }}
+        .clinical-dashboard-shell::before {{
+            content: "";
+            position: absolute;
+            inset: -42% -16% auto auto;
+            width: 44vw;
+            height: 44vw;
+            min-width: 280px;
+            min-height: 280px;
+            border-radius: 999px;
+            background: conic-gradient(from 120deg, rgba(16, 185, 129, 0.28), rgba(79, 70, 229, 0.22), rgba(34, 211, 238, 0.26), rgba(16, 185, 129, 0.28));
+            filter: blur(16px);
+            opacity: .7;
+            animation: clinicalOrb 18s linear infinite;
+            z-index: -1;
+        }}
+        .clinical-dashboard-shell::after {{
+            content: "🩺   ECG   🎓   Rx   ⚕   DNA   💉";
+            position: absolute;
+            left: -8%;
+            right: -8%;
+            bottom: 10px;
+            color: rgba(79, 70, 229, 0.12);
+            font-size: clamp(1.6rem, 5vw, 4.8rem);
+            font-weight: 900;
+            white-space: nowrap;
+            letter-spacing: .12em;
+            animation: medTicker 28s linear infinite;
+            z-index: -1;
+        }}
+        .clinical-headline {{
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+            gap: 16px;
+            align-items: start;
+            margin-bottom: 18px;
+        }}
+        .clinical-kicker {{
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            width: fit-content;
+            padding: 7px 11px;
+            border-radius: 999px;
+            border: 1px solid rgba(79, 70, 229, 0.18);
+            background: rgba(255,255,255,0.58);
+            color: #4f46e5 !important;
+            font-size: .76rem;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: .08em;
+        }}
+        .clinical-title {{
+            color: #241b4d !important;
+            font-size: clamp(1.45rem, 3vw, 2.55rem);
+            line-height: 1.05;
+            font-weight: 950;
+            margin: 10px 0 8px;
+        }}
+        .clinical-subtitle {{
+            color: #655f85 !important;
+            max-width: 720px;
+            line-height: 1.65;
+            font-size: .98rem;
+        }}
+        .clinical-live-chip {{
+            display: inline-flex;
+            align-items: center;
+            gap: 9px;
+            padding: 10px 13px;
+            border-radius: 16px;
+            border: 1px solid rgba(16, 185, 129, 0.22);
+            background: rgba(255,255,255,0.68);
+            color: #064e3b !important;
+            font-weight: 900;
+            box-shadow: 0 14px 30px rgba(16,185,129,.13);
+            white-space: nowrap;
+        }}
+        .status-dot {{
+            width: 10px;
+            height: 10px;
+            border-radius: 999px;
+            background: #10b981;
+            box-shadow: 0 0 0 0 rgba(16,185,129,.46);
+            animation: statusPulse 1.55s ease-out infinite;
+        }}
+        .telemetry-grid {{
+            display: grid;
+            grid-template-columns: 1.35fr .9fr .9fr;
+            gap: 14px;
+            align-items: stretch;
+        }}
+        .telemetry-panel, .progress-orbit-card, .clinical-flip-card {{
+            border: 1px solid rgba(255,255,255,0.74);
+            background: rgba(255,255,255,0.62);
+            box-shadow: 0 18px 48px rgba(79, 70, 229, 0.12);
+            backdrop-filter: blur(22px);
+        }}
+        .telemetry-panel {{
+            border-radius: 26px;
+            padding: 18px;
+            min-height: 260px;
+            position: relative;
+            overflow: hidden;
+        }}
+        .telemetry-panel::after {{
+            content: "";
+            position: absolute;
+            inset: auto -10% 0 -10%;
+            height: 46%;
+            background: linear-gradient(180deg, transparent, rgba(110,231,183,.18));
+            pointer-events: none;
+        }}
+        .telemetry-label, .orbit-label, .flip-label {{
+            color: #6d668a !important;
+            font-size: .74rem;
+            font-weight: 950;
+            text-transform: uppercase;
+            letter-spacing: .08em;
+        }}
+        .telemetry-value {{
+            color: #1f1b3d !important;
+            font-size: clamp(2.3rem, 5vw, 4.6rem);
+            font-weight: 950;
+            line-height: .94;
+            margin-top: 10px;
+            text-shadow: 0 0 26px rgba(16,185,129,.16);
+        }}
+        .telemetry-unit {{
+            color: #655f85 !important;
+            font-size: .88rem;
+            margin: 7px 0 18px;
+        }}
+        .ecg-window {{
+            position: relative;
+            height: 108px;
+            border-radius: 20px;
+            overflow: hidden;
+            border: 1px solid rgba(79,70,229,.12);
+            background:
+                linear-gradient(rgba(79,70,229,.07) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(79,70,229,.07) 1px, transparent 1px),
+                rgba(250,245,255,.72);
+            background-size: 22px 22px;
+        }}
+        .ecg-track {{
+            width: 170%;
+            height: 100%;
+            animation: ecgSlide 5.4s linear infinite;
+        }}
+        .ecg-track polyline {{
+            fill: none;
+            stroke: #10b981;
+            stroke-width: 4;
+            stroke-linejoin: round;
+            stroke-linecap: round;
+            filter: drop-shadow(0 0 9px rgba(16,185,129,.55));
+            stroke-dasharray: 1080;
+            stroke-dashoffset: 1080;
+            animation: ecgDraw 2.8s ease-in-out infinite;
+        }}
+        .orbit-grid {{
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 14px;
+        }}
+        .progress-orbit-card {{
+            min-height: 123px;
+            border-radius: 24px;
+            padding: 16px;
+            display: grid;
+            grid-template-columns: auto 1fr;
+            gap: 13px;
+            align-items: center;
+            transition: transform .2s ease, box-shadow .2s ease;
+        }}
+        .progress-orbit-card:hover {{
+            transform: translateY(-4px);
+            box-shadow: 0 24px 62px rgba(79, 70, 229, 0.18);
+        }}
+        .progress-ring {{
+            --value: 70;
+            --ring-color: #10b981;
+            width: 76px;
+            height: 76px;
+            border-radius: 50%;
+            display: grid;
+            place-items: center;
+            background:
+                radial-gradient(circle closest-side, rgba(255,255,255,.94) 71%, transparent 72%),
+                conic-gradient(var(--ring-color) calc(var(--value) * 1%), rgba(226,232,240,.9) 0);
+            box-shadow: inset 0 0 18px rgba(255,255,255,.85), 0 12px 26px rgba(79,70,229,.12);
+        }}
+        .progress-ring span {{
+            color: #241b4d !important;
+            font-size: .95rem;
+            font-weight: 950;
+        }}
+        .orbit-title {{
+            color: #241b4d !important;
+            font-weight: 950;
+            margin: 4px 0 3px;
+        }}
+        .orbit-copy {{
+            color: #655f85 !important;
+            font-size: .8rem;
+            line-height: 1.35;
+        }}
+        .state-stable {{ --ring-color: #10b981; border-color: rgba(16,185,129,.24); }}
+        .state-warn {{ --ring-color: #f59e0b; border-color: rgba(245,158,11,.28); }}
+        .state-risk {{ --ring-color: #f43f5e; border-color: rgba(244,63,94,.24); }}
+        .state-action {{ --ring-color: #4f46e5; border-color: rgba(79,70,229,.24); }}
+        .flip-lab-grid {{
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 14px;
+            margin-top: 14px;
+            perspective: 1200px;
+        }}
+        .clinical-flip-card {{
+            min-height: 214px;
+            border-radius: 26px;
+            background: transparent;
+            perspective: 1100px;
+            box-shadow: none;
+            border: 0;
+        }}
+        .clinical-flip-inner {{
+            position: relative;
+            width: 100%;
+            min-height: 214px;
+            transform-style: preserve-3d;
+            transition: transform .7s cubic-bezier(.2,.8,.2,1);
+        }}
+        .clinical-flip-card:hover .clinical-flip-inner {{
+            transform: rotateY(180deg) translateY(-3px);
+        }}
+        .clinical-flip-face {{
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            border-radius: 26px;
+            padding: 18px;
+            border: 1px solid rgba(255,255,255,.76);
+            backface-visibility: hidden;
+            background:
+                radial-gradient(circle at 86% 18%, rgba(110,231,183,.24), transparent 34%),
+                rgba(255,255,255,.68);
+            box-shadow: 0 18px 48px rgba(79, 70, 229, 0.13);
+        }}
+        .clinical-flip-back {{
+            transform: rotateY(180deg);
+            background:
+                radial-gradient(circle at 16% 20%, rgba(34,211,238,.25), transparent 34%),
+                linear-gradient(135deg, rgba(79,70,229,.90), rgba(67,56,202,.82));
+        }}
+        .flip-icon {{
+            width: 48px;
+            height: 48px;
+            border-radius: 18px;
+            display: grid;
+            place-items: center;
+            background: linear-gradient(135deg, #4f46e5, #10b981);
+            color: #ffffff !important;
+            font-size: 1.25rem;
+            box-shadow: 0 14px 30px rgba(79,70,229,.25);
+        }}
+        .flip-title {{
+            color: #241b4d !important;
+            font-weight: 950;
+            font-size: 1.08rem;
+            margin-top: 12px;
+        }}
+        .flip-copy {{
+            color: #655f85 !important;
+            font-size: .86rem;
+            line-height: 1.5;
+            margin-top: 8px;
+        }}
+        .clinical-flip-back .flip-label,
+        .clinical-flip-back .flip-title,
+        .clinical-flip-back .flip-copy {{
+            color: #f8fbff !important;
+        }}
+        .clinical-flip-back .flip-copy {{
+            opacity: .88;
+        }}
+        .clinical-action-pill {{
+            display: inline-flex;
+            width: fit-content;
+            align-items: center;
+            gap: 7px;
+            padding: 8px 11px;
+            border-radius: 999px;
+            color: #eef2ff !important;
+            background: rgba(255,255,255,.16);
+            border: 1px solid rgba(255,255,255,.24);
+            font-size: .76rem;
+            font-weight: 900;
+        }}
+        @keyframes clinicalOrb {{
+            to {{ transform: rotate(360deg); }}
+        }}
+        @keyframes medTicker {{
+            from {{ transform: translateX(-8%); }}
+            to {{ transform: translateX(8%); }}
+        }}
+        @keyframes statusPulse {{
+            0% {{ box-shadow: 0 0 0 0 rgba(16,185,129,.46); }}
+            70% {{ box-shadow: 0 0 0 13px rgba(16,185,129,0); }}
+            100% {{ box-shadow: 0 0 0 0 rgba(16,185,129,0); }}
+        }}
+        @keyframes ecgSlide {{
+            from {{ transform: translateX(0); }}
+            to {{ transform: translateX(-30%); }}
+        }}
+        @keyframes ecgDraw {{
+            0% {{ stroke-dashoffset: 1080; opacity: .55; }}
+            45% {{ stroke-dashoffset: 0; opacity: 1; }}
+            100% {{ stroke-dashoffset: -1080; opacity: .72; }}
+        }}
         .student-workspace {{
             display:grid;
             grid-template-columns: auto 1fr auto;
@@ -735,6 +1072,8 @@ def inject_premium_css(theme):
         @media (max-width: 1100px) {{
             .med-topbar {{ grid-template-columns: 1fr; }}
             .lux-grid {{ grid-template-columns: repeat(2, minmax(0,1fr)); }}
+            .clinical-headline {{ grid-template-columns: 1fr; }}
+            .telemetry-grid {{ grid-template-columns: 1fr; }}
         }}
         @media (max-width: 680px) {{
             .lux-grid {{ grid-template-columns: 1fr; }}
@@ -742,6 +1081,10 @@ def inject_premium_css(theme):
             .module-card, .lux-card {{ border-radius:20px; }}
             .student-workspace {{ grid-template-columns: auto 1fr; }}
             .student-badge {{ display:none; }}
+            .clinical-dashboard-shell {{ border-radius: 24px; padding: 14px; }}
+            .orbit-grid, .flip-lab-grid {{ grid-template-columns: 1fr; }}
+            .progress-orbit-card {{ min-height: 106px; }}
+            .clinical-live-chip {{ width: fit-content; }}
         }}
         </style>
         """,
@@ -976,8 +1319,191 @@ def render_module_card(icon, title, description, progress, page_id, cta="Open"):
         st.rerun()
 
 
+def _clamp_percent(value, fallback=0):
+    try:
+        number = int(float(value))
+    except (TypeError, ValueError):
+        number = fallback
+    return min(100, max(0, number))
+
+
+def _clinical_state(value, stable=75, warn=50):
+    value = _clamp_percent(value)
+    if value >= stable:
+        return "state-stable", "Stable", "Emerald learning momentum"
+    if value >= warn:
+        return "state-warn", "Watch", "Needs a focused revision pulse"
+    return "state-risk", "Priority", "Schedule targeted recall today"
+
+
+def render_clinical_dashboard_visuals(stats):
+    progress = _clamp_percent(stats.get("overall_progress", 38), 38)
+    quiz = _clamp_percent(stats.get("mcq_percent", 0), 42)
+    streak = _clamp_percent(stats.get("streak", 0), 0)
+    study_hours = _clamp_percent(stats.get("study_hours", 0), 0)
+    retention = _clamp_percent(round((progress * 0.52) + (quiz * 0.38) + min(streak, 20) * 0.5), 62)
+    readiness = _clamp_percent(round((quiz * 0.46) + (progress * 0.44) + min(study_hours, 40) * 0.25), 58)
+    focus_score = _clamp_percent(max(34, min(96, 48 + (streak * 4) + (study_hours * 2))), 64)
+    weak_area = (stats.get("weak_areas") or ["Pharmacology"])[0]
+    strong_area = (stats.get("strong_areas") or ["Clinical reasoning"])[0]
+    progress_class, progress_label, progress_copy = _clinical_state(progress)
+    quiz_class, quiz_label, quiz_copy = _clinical_state(quiz)
+    retention_class, retention_label, retention_copy = _clinical_state(retention)
+    readiness_class, readiness_label, readiness_copy = _clinical_state(readiness)
+
+    st.markdown(
+        f"""
+        <section class="clinical-dashboard-shell">
+            <div class="clinical-headline">
+                <div>
+                    <div class="clinical-kicker"><span class="status-dot"></span> Live clinical workspace</div>
+                    <div class="clinical-title">Immersive Study Telemetry</div>
+                    <div class="clinical-subtitle">
+                        A soft-lavender command center with animated vitals, glowing progress states,
+                        and hover-reveal cards for rapid clinical recall.
+                    </div>
+                </div>
+                <div class="clinical-live-chip"><span class="status-dot"></span> Synced dashboard active</div>
+            </div>
+            <div class="telemetry-grid">
+                <div class="telemetry-panel">
+                    <div class="telemetry-label">Today's learning rhythm</div>
+                    <div class="telemetry-value">{focus_score}%</div>
+                    <div class="telemetry-unit">Focus flow from streak, study time, and saved activity</div>
+                    <div class="ecg-window">
+                        <svg class="ecg-track" viewBox="0 0 920 120" preserveAspectRatio="none" aria-hidden="true">
+                            <polyline points="0,68 50,68 70,54 88,84 112,16 145,98 172,68 230,68 250,58 272,76 302,68 372,68 392,48 414,88 442,28 470,96 502,68 570,68 590,54 612,80 644,68 708,68 730,45 756,90 782,22 812,98 842,68 920,68" />
+                        </svg>
+                    </div>
+                </div>
+                <div class="orbit-grid">
+                    <div class="progress-orbit-card {progress_class}" style="--value:{progress};">
+                        <div class="progress-ring"><span>{progress}%</span></div>
+                        <div>
+                            <div class="orbit-label">{progress_label}</div>
+                            <div class="orbit-title">Platform progress</div>
+                            <div class="orbit-copy">{progress_copy}</div>
+                        </div>
+                    </div>
+                    <div class="progress-orbit-card {quiz_class}" style="--value:{quiz};">
+                        <div class="progress-ring"><span>{quiz}%</span></div>
+                        <div>
+                            <div class="orbit-label">{quiz_label}</div>
+                            <div class="orbit-title">Question accuracy</div>
+                            <div class="orbit-copy">{quiz_copy}</div>
+                        </div>
+                    </div>
+                    <div class="progress-orbit-card {retention_class}" style="--value:{retention};">
+                        <div class="progress-ring"><span>{retention}%</span></div>
+                        <div>
+                            <div class="orbit-label">{retention_label}</div>
+                            <div class="orbit-title">Recall retention</div>
+                            <div class="orbit-copy">{retention_copy}</div>
+                        </div>
+                    </div>
+                    <div class="progress-orbit-card {readiness_class}" style="--value:{readiness};">
+                        <div class="progress-ring"><span>{readiness}%</span></div>
+                        <div>
+                            <div class="orbit-label">{readiness_label}</div>
+                            <div class="orbit-title">Exam readiness</div>
+                            <div class="orbit-copy">{readiness_copy}</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="telemetry-panel">
+                    <div class="telemetry-label">Clinical signal board</div>
+                    <div class="telemetry-value" style="font-size:clamp(2rem, 4vw, 3.6rem);">Rx</div>
+                    <div class="telemetry-unit">Weak signal: {weak_area}<br>Strong signal: {strong_area}</div>
+                    <svg viewBox="0 0 280 112" width="100%" height="112" aria-hidden="true">
+                        <defs>
+                            <linearGradient id="clinicalBars" x1="0" x2="1">
+                                <stop offset="0%" stop-color="#4f46e5"/>
+                                <stop offset="100%" stop-color="#10b981"/>
+                            </linearGradient>
+                        </defs>
+                        <rect x="12" y="68" width="32" height="32" rx="10" fill="url(#clinicalBars)" opacity=".84"/>
+                        <rect x="58" y="42" width="32" height="58" rx="10" fill="url(#clinicalBars)" opacity=".72"/>
+                        <rect x="104" y="24" width="32" height="76" rx="10" fill="url(#clinicalBars)" opacity=".9"/>
+                        <rect x="150" y="54" width="32" height="46" rx="10" fill="url(#clinicalBars)" opacity=".7"/>
+                        <rect x="196" y="18" width="32" height="82" rx="10" fill="url(#clinicalBars)" opacity=".92"/>
+                        <path d="M15 31 C60 8, 84 56, 128 35 S206 14, 250 34" stroke="#10b981" stroke-width="5" fill="none" stroke-linecap="round" opacity=".75"/>
+                    </svg>
+                </div>
+            </div>
+            <div class="flip-lab-grid">
+                <div class="clinical-flip-card">
+                    <div class="clinical-flip-inner">
+                        <div class="clinical-flip-face">
+                            <div>
+                                <div class="flip-icon">🧠</div>
+                                <div class="flip-label">Flash recall</div>
+                                <div class="flip-title">Mnemonic Capsule</div>
+                                <div class="flip-copy">Hover to reveal a compact memory prompt for the next revision sprint.</div>
+                            </div>
+                            <div class="orbit-copy">3D hover reveal</div>
+                        </div>
+                        <div class="clinical-flip-face clinical-flip-back">
+                            <div>
+                                <div class="flip-label">Reveal</div>
+                                <div class="flip-title">Think: definition, danger signs, decision.</div>
+                                <div class="flip-copy">Convert every note into one clinical trigger, one investigation, and one management action.</div>
+                            </div>
+                            <span class="clinical-action-pill">Launch recall loop</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="clinical-flip-card">
+                    <div class="clinical-flip-inner">
+                        <div class="clinical-flip-face">
+                            <div>
+                                <div class="flip-icon">🩺</div>
+                                <div class="flip-label">OSCE station</div>
+                                <div class="flip-title">Clinical Skills Pulse</div>
+                                <div class="flip-copy">Practice a focused exam flow with timing, findings, and closing summary.</div>
+                            </div>
+                            <div class="orbit-copy">Hover for station brief</div>
+                        </div>
+                        <div class="clinical-flip-face clinical-flip-back">
+                            <div>
+                                <div class="flip-label">Reveal</div>
+                                <div class="flip-title">Cardio exam: inspect, palpate, auscultate, summarize.</div>
+                                <div class="flip-copy">End with likely diagnosis, severity, and immediate next step.</div>
+                            </div>
+                            <span class="clinical-action-pill">Start 8 min station</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="clinical-flip-card">
+                    <div class="clinical-flip-inner">
+                        <div class="clinical-flip-face">
+                            <div>
+                                <div class="flip-icon">🎓</div>
+                                <div class="flip-label">Exam track</div>
+                                <div class="flip-title">Premium Study Sprint</div>
+                                <div class="flip-copy">A student-friendly command card for SQU-COM, OMSB, USMLE, and PLAB prep.</div>
+                            </div>
+                            <div class="orbit-copy">Hover for next step</div>
+                        </div>
+                        <div class="clinical-flip-face clinical-flip-back">
+                            <div>
+                                <div class="flip-label">Reveal</div>
+                                <div class="flip-title">Next best step: 15 MCQs plus 5 flashcards.</div>
+                                <div class="flip-copy">Prioritize {weak_area}, then protect your strength in {strong_area}.</div>
+                            </div>
+                            <span class="clinical-action-pill">Begin sprint</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
 def render_dashboard(stats):
     render_hero()
+    render_clinical_dashboard_visuals(stats)
     st.markdown(
         """
         <div class="lux-grid">
