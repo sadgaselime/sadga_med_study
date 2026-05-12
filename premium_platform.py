@@ -138,6 +138,7 @@ PRO_NAV_ITEMS = [
     ("medical_references", "resources", "📖", "Refs", "المراجع", "#a855f7"),
     ("study_notes", "shared_notes", "✍️", "Notes", "الملاحظات", "#f59e0b"),
     ("settings", "settings", "⚙️", "Settings", "الإعدادات", "#64748b"),
+    ("about", "about", "ℹ️", "About", "عن التطبيق", "#9ca3af"),
 ]
 
 
@@ -1218,7 +1219,7 @@ def render_topbar(theme, themes):
         """,
         unsafe_allow_html=True,
     )
-    controls = st.columns([1.4, 1.1, 1.1, 1])
+    controls = st.columns([1.35, 0.75, 1.05, 1.05, 0.8])
     with controls[0]:
         theme_keys = list(themes.keys())
         current = st.session_state.get("theme", theme_keys[0])
@@ -1229,8 +1230,13 @@ def render_topbar(theme, themes):
                 update_theme(st.session_state.user["id"], selected)
             st.rerun()
     with controls[1]:
-        render_language_selector()
+        if st.button("⌂ Home", use_container_width=True, key="home_top"):
+            st.session_state.page = "dashboard"
+            st.query_params["page"] = "dashboard"
+            st.rerun()
     with controls[2]:
+        render_language_selector()
+    with controls[3]:
         if st.session_state.get("logged_in"):
             if st.button(get_translation("profile"), use_container_width=True, key="profile_top"):
                 st.session_state.page = "profile"
@@ -1240,7 +1246,7 @@ def render_topbar(theme, themes):
                 st.session_state.page = "auth"
                 st.session_state.auth_mode = "login"
                 st.rerun()
-    with controls[3]:
+    with controls[4]:
         if st.session_state.get("logged_in") and st.button(get_translation("logout"), use_container_width=True, key="logout_top"):
             for key in ["logged_in", "user"]:
                 st.session_state[key] = False if key == "logged_in" else None
@@ -1289,20 +1295,21 @@ def render_sidebar():
 
 
 PAGE_CINEMA = {
-    "dashboard": ("⌂", "Student Command Center", "Plan today, continue studying, and keep your exam momentum visible.", ["🎓 Graduation", "🩺 Clinical", "ECG"]),
-    "profile": ("👤", "Professional Profile", "Private progress, bookmarks, achievements, and study identity.", ["📊 Progress", "🔖 Saved", "🎯 Goals"]),
-    "az_hub": ("🧠", "A-Z Medical Knowledge Hub", "Structured subjects with notes, clinical links, tables, OSCE skills, and references.", ["🧬 DNA", "🔬 Lab", "📚 Notes"]),
-    "subjects": ("📚", "Knowledge Library", "Browse core and clinical medicine through a focused student lens.", ["📖 Chapters", "✎ Review", "💡 Recall"]),
-    "mcq_quiz": ("📝", "Question Bank", "Practice exam-style reasoning and track accuracy by subject.", ["? MCQs", "⏱ Timed", "📈 Score"]),
-    "flashcards": ("💎", "Flashcard Vault", "Build fast active recall with beautiful review cards.", ["⚡ Recall", "🔁 Review", "🎓 Mastery"]),
-    "ai_tutor": ("🤖", "AI Study Tutor", "Ask clinical questions and turn confusion into clear study steps.", ["AI Tutor", "🩺 Cases", "💬 Explain"]),
-    "ai_mnemonics": ("💡", "AI Mnemonics Studio", "Create memorable English and Arabic mnemonics with recall quizzes.", ["💡 Memory", "🎨 Visual", "🧠 Quiz"]),
-    "osce_timer": ("🩺", "Clinical Skills Lab", "Rehearse stations, timing, scripts, and examiner-ready checklists.", ["OSCE", "⏱ Timer", "✚ Skills"]),
-    "pomodoro": ("⏱", "Focus Mode", "Protect deep work blocks with a calm clinical study timer.", ["⏱ Focus", "☕ Break", "✅ Session"]),
-    "analytics": ("📊", "Performance Insights", "Find weak areas, strong subjects, and your next best lesson.", ["📈 Trends", "🎯 Weak Areas", "🏆 Strong"]),
-    "resources": ("📖", "Medical References", "Keep high-quality reference pathways close to every topic.", ["⌘ Refs", "🔬 Evidence", "📚 Sources"]),
-    "shared_notes": ("✍️", "Study Notes", "Capture clinical pearls, saved thoughts, and revision notes.", ["✍️ Notes", "🔖 Bookmark", "🧾 Revision"]),
-    "settings": ("⚙️", "Settings", "Personalize language, theme, study goals, and exam track.", ["🎨 Themes", "🌍 Language", "🎯 Goal"]),
+    "dashboard": ("⌂", "Student Command Center", "Your home base for today: continue studying, see what matters, and jump into the next useful task.", ["🎓 Graduation", "🩺 Clinical", "ECG"]),
+    "profile": ("👤", "Professional Profile", "See your progress, saved work, and study identity in one private student dashboard.", ["📊 Progress", "🔖 Saved", "🎯 Goals"]),
+    "az_hub": ("🧠", "A-Z Medical Knowledge Hub", "Pick any subject and revise it with notes, diseases, tables, skills, and exam points.", ["🧬 DNA", "🔬 Lab", "📚 Notes"]),
+    "subjects": ("📚", "Knowledge Library", "Browse medicine in a simple student-friendly way when you need to understand before memorising.", ["📖 Chapters", "✎ Review", "💡 Recall"]),
+    "mcq_quiz": ("📝", "Question Bank", "Practice exam-style questions, learn from mistakes, and build confidence one set at a time.", ["? MCQs", "⏱ Timed", "📈 Score"]),
+    "flashcards": ("💎", "Flashcard Vault", "Use quick recall cards for facts that are easy to forget before exams and ward rounds.", ["⚡ Recall", "🔁 Review", "🎓 Mastery"]),
+    "ai_tutor": ("🤖", "AI Study Tutor", "Ask for simple explanations, clinical examples, or a study plan when a topic feels confusing.", ["AI Tutor", "🩺 Cases", "💬 Explain"]),
+    "ai_mnemonics": ("💡", "AI Mnemonics Studio", "Turn long lists, pathways, and criteria into memorable English or Arabic study tricks.", ["💡 Memory", "🎨 Visual", "🧠 Quiz"]),
+    "osce_timer": ("🩺", "Clinical Skills Lab", "Practise stations like a real student exam: timing, structure, checklists, and closing summaries.", ["OSCE", "⏱ Timer", "✚ Skills"]),
+    "pomodoro": ("⏱", "Focus Mode", "Start calm study blocks when you need to stop scrolling and finish one clear task.", ["⏱ Focus", "☕ Break", "✅ Session"]),
+    "analytics": ("📊", "Performance Insights", "Find what is strong, what needs work, and what to study next without guessing.", ["📈 Trends", "🎯 Weak Areas", "🏆 Strong"]),
+    "resources": ("📖", "Medical References", "Keep trusted references nearby when you want to check a guideline, source, or topic link.", ["⌘ Refs", "🔬 Evidence", "📚 Sources"]),
+    "shared_notes": ("✍️", "Study Notes", "Write quick pearls, save useful thoughts, and keep revision notes for later.", ["✍️ Notes", "🔖 Bookmark", "🧾 Revision"]),
+    "settings": ("⚙️", "Settings", "Change your language, theme, study goal, and exam track whenever your routine changes.", ["🎨 Themes", "🌍 Language", "🎯 Goal"]),
+    "about": ("ℹ️", "About MedStudy Oman", "Meet the developer and learn why this platform was built for medical students in Oman.", ["👩‍💻 Developer", "🇴🇲 Oman", "🩺 Mission"]),
 }
 
 
@@ -1577,22 +1584,22 @@ def render_dashboard(stats):
             <div class="lux-card">
                 <div class="card-kicker">✚ Start Here</div>
                 <div class="card-title">Pick one clinical goal</div>
-                <div class="card-body">Choose a topic, practice questions, review flashcards, or rehearse an OSCE station.</div>
+                <div class="card-body">Choose one small task for now: read a topic, answer a few questions, or practise one OSCE skill.</div>
             </div>
             <div class="lux-card">
                 <div class="card-kicker">◇ Study Flow</div>
                 <div class="card-title">Learn → Recall → Test</div>
-                <div class="card-body">Read high-yield notes, generate a mnemonic, then finish with MCQs for feedback.</div>
+                <div class="card-body">Study the idea first, recall it without looking, then test yourself so the lesson actually sticks.</div>
             </div>
             <div class="lux-card">
                 <div class="card-kicker">⚕ Clinical Mode</div>
                 <div class="card-title">Think like a doctor</div>
-                <div class="card-body">Every subject links facts to symptoms, investigations, management, and OSCE skills.</div>
+                <div class="card-body">Connect facts to real patients: symptoms, investigations, management, and what to say in an OSCE.</div>
             </div>
             <div class="lux-card">
                 <div class="card-kicker">↗ Exam Ready</div>
                 <div class="card-title">Track your weak spots</div>
-                <div class="card-body">Use analytics, bookmarks, and progress history to decide what to study next.</div>
+                <div class="card-body">See what needs revision before it becomes exam stress, then plan your next study move clearly.</div>
             </div>
         </div>
         """,
@@ -1601,10 +1608,10 @@ def render_dashboard(stats):
     render_stat_cards(stats)
     st.markdown(f'<div class="section-title">{get_translation("quick_actions")}</div>', unsafe_allow_html=True)
     modules = [
-        ("▦", get_translation("az_hub"), "Chapter notes, clinical correlations, exam tables, OSCE links.", 64, "az_hub"),
-        ("?", get_translation("question_bank"), "Practice exam-style MCQs and preserve attempt history.", 48, "mcq_quiz"),
-        ("M", get_translation("ai_mnemonics_studio"), "Generate English and Arabic memory systems with recall quizzes.", 38, "ai_mnemonics"),
-        ("✚", get_translation("clinical_skills_lab"), "Time OSCE stations and rehearse structured clinical skills.", 52, "osce_timer"),
+        ("▦", get_translation("az_hub"), "Open a subject when you want notes, high-yield points, diseases, drugs, and skills in one place.", 64, "az_hub"),
+        ("?", get_translation("question_bank"), "Do a short MCQ set, learn from the answer, and keep track of your score over time.", 48, "mcq_quiz"),
+        ("M", get_translation("ai_mnemonics_studio"), "Make hard lists easier to remember with simple, funny, or exam-style mnemonics.", 38, "ai_mnemonics"),
+        ("✚", get_translation("clinical_skills_lab"), "Practise OSCE stations with timing so your exam flow feels calm and organised.", 52, "osce_timer"),
     ]
     cols = st.columns(4)
     for col, module in zip(cols, modules):

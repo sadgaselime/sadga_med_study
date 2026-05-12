@@ -107,6 +107,14 @@ FEATURED_IN = [
     ("🌍", "USMLE Aspirants",         "Step 1 & 2 CK revision"),
 ]
 
+DEVELOPER_DETAILS = [
+    ("Developer Name", "Sadga Selime"),
+    ("Role", "Medical student, full-stack builder, and AI medical education designer"),
+    ("Location", "Oman"),
+    ("Platform", "MedStudy Oman"),
+    ("Built For", "Medical students preparing for SQU-COM, OMSB, USMLE, PLAB, and clinical exams"),
+]
+
 
 # ─────────────────────────────────────────────────────────────────────────────
 # MAIN PAGE
@@ -115,6 +123,7 @@ def about_page(theme: dict):
     _inject_about_css(theme)
 
     _render_hero(theme)
+    _render_developer_details(theme)
     _render_stats_strip(theme)
     _render_mission_bio(theme)
     _render_tech_stack(theme)
@@ -161,6 +170,39 @@ def _render_hero(t: dict):
         </div>
     </div>
     """, unsafe_allow_html=True)
+
+
+def _render_developer_details(t: dict):
+    st.markdown("<div style='height:1rem'></div>", unsafe_allow_html=True)
+    _section_divider(t, "👩‍💻 Developer Details")
+    details_html = "".join(
+        f"""
+        <div style="padding:0.9rem 1rem;border:1px solid {t['card_border']};
+             border-radius:16px;background:{t['glass_bg']};">
+            <div style="font-size:0.72rem;color:{t['subtext']};font-weight:800;
+                 text-transform:uppercase;letter-spacing:0.08em;">{label}</div>
+            <div style="font-size:0.98rem;color:{t['text']};font-weight:800;
+                 margin-top:0.25rem;line-height:1.45;">{value}</div>
+        </div>
+        """
+        for label, value in DEVELOPER_DETAILS
+    )
+    st.markdown(
+        f"""
+        <div class="about-card">
+            <div class="about-card-label">About the Creator</div>
+            <div class="about-card-body">
+                <p>This section is reserved for the developer name, role, and platform story,
+                so visitors can quickly understand who built MedStudy Oman and why it exists.</p>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));
+                 gap:0.8rem;margin-top:1rem;">
+                {details_html}
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
 
 def _render_stats_strip(t: dict):

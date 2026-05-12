@@ -217,8 +217,30 @@ def auth_page(theme: dict, login_user_fn, signup_user_fn):
         50%     {{ text-shadow: 0 0 20px {t['primary']}, 0 0 40px {t['primary_glow']}; }}
     }}
     .lock-icon {{ animation: lockPulse 2.5s ease-in-out infinite; }}
+    .auth-home-note {{
+        max-width: 760px;
+        margin: 0 auto 1rem;
+        padding: 12px 14px;
+        border-radius: 18px;
+        border: 1px solid {t['card_border']};
+        background: {t['glass_bg']};
+        box-shadow: {t['shadow_sm']};
+        color: {t['text']};
+        text-align: center;
+        font-size: .9rem;
+        font-weight: 650;
+    }}
     </style>
     """, unsafe_allow_html=True)
+
+    st.markdown(
+        """
+        <div class="auth-home-note">
+            Want to browse first? Use the Home button in the top bar to return to the student dashboard.
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
     # ── Logo header ──────────────────────────────────────────────────────────
     st.markdown(f"""
@@ -298,7 +320,7 @@ def auth_page(theme: dict, login_user_fn, signup_user_fn):
                     st.session_state.logged_in = True
                     st.session_state.user = result
                     st.session_state.theme = result.get("theme", "🩺 Clinical Snow")
-                    st.session_state.page = "home"
+                    st.session_state.page = "dashboard"
                     st.session_state.show_auth = False
                     st.session_state.just_logged_in = True
                     st.success(f"✅ Welcome back, Dr. {result['name']}! 🎉")

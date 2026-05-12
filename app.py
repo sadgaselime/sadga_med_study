@@ -137,7 +137,7 @@ query_page = st.query_params.get("page")
 valid_pages = {
     "dashboard", "profile", "az_hub", "subjects", "mcq_quiz", "flashcards",
     "ai_tutor", "ai_mnemonics", "osce_timer", "pomodoro", "analytics",
-    "resources", "shared_notes", "settings",
+    "resources", "shared_notes", "settings", "about",
 }
 if query_page in valid_pages and query_page != st.session_state.get("page"):
     st.session_state.page = query_page
