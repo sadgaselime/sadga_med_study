@@ -351,7 +351,7 @@ def inject_premium_css(theme):
             top: 0;
             z-index: 50;
             display: grid;
-            grid-template-columns: minmax(230px, 1.15fr) minmax(260px, 1.6fr) auto auto auto auto;
+            grid-template-columns: minmax(310px, 1.2fr) minmax(260px, 1.55fr) auto auto auto auto;
             gap: 12px;
             align-items: center;
             padding: 14px;
@@ -369,27 +369,30 @@ def inject_premium_css(theme):
             min-width:0;
         }}
         .brand-mark {{
-            width:46px;
-            height:46px;
+            width:56px;
+            height:56px;
             display:grid;
             place-items:center;
-            border-radius:18px;
+            border-radius:21px;
             background: linear-gradient(135deg, var(--cyan), var(--emerald));
             color:{theme["text_inverse"]} !important;
             font-weight:900;
+            font-size:1.1rem;
             box-shadow: 0 14px 36px rgba(56,213,255,0.22);
         }}
         .brand-title {{
             color: var(--ink) !important;
-            font-weight: 900;
-            font-size: 1.02rem;
-            line-height: 1.05;
+            font-weight: 950;
+            font-size: clamp(1.5rem, 2.2vw, 2.15rem);
+            line-height: .96;
+            letter-spacing: 0 !important;
         }}
         .brand-sub {{
             color: var(--muted) !important;
-            font-size: .72rem;
+            font-size: .78rem;
             letter-spacing: .08em;
             text-transform: uppercase;
+            margin-top: 3px;
         }}
         .search-shell {{
             min-height:46px;
@@ -502,6 +505,69 @@ def inject_premium_css(theme):
         .card-body {{ color:var(--premium-card-body) !important; font-size:.88rem; line-height:1.5; }}
         .progress-line {{ height:8px; background:#dbeaf2; border-radius:999px; overflow:hidden; margin-top:14px; }}
         .progress-line span {{ display:block; height:100%; background:linear-gradient(90deg, var(--cyan), var(--emerald)); border-radius:999px; }}
+        .stTabs [data-baseweb="tab-list"],
+        .stTabs div[role="tablist"] {{
+            background:
+                linear-gradient(135deg, var(--glass), rgba(255,255,255,0.18)),
+                radial-gradient(circle at 90% 10%, {theme["primary_glow"]}, transparent 34%) !important;
+            border:1px solid var(--line) !important;
+            border-radius:18px !important;
+            padding:6px !important;
+            box-shadow:var(--soft-shadow) !important;
+            backdrop-filter:blur(22px) !important;
+        }}
+        .stTabs button[role="tab"],
+        .stTabs [data-baseweb="tab"] {{
+            border-radius:13px !important;
+            color:var(--muted) !important;
+            background:rgba(255,255,255,0.18) !important;
+            border:1px solid transparent !important;
+            min-height:40px !important;
+            transition:all .18s ease !important;
+        }}
+        .stTabs button[role="tab"] *,
+        .stTabs [data-baseweb="tab"] * {{
+            color:inherit !important;
+        }}
+        .stTabs button[role="tab"]:hover,
+        .stTabs [data-baseweb="tab"]:hover {{
+            background:{theme["hover_bg"]} !important;
+            color:var(--ink) !important;
+        }}
+        .stTabs button[role="tab"][aria-selected="true"],
+        .stTabs [data-baseweb="tab"][aria-selected="true"],
+        .stTabs [aria-selected="true"] {{
+            background:linear-gradient(135deg, var(--cyan), var(--emerald)) !important;
+            color:{theme["text_inverse"]} !important;
+            border-color:rgba(255,255,255,.24) !important;
+            box-shadow:0 14px 28px {theme["primary_glow"]} !important;
+        }}
+        .stTabs [data-baseweb="tab-highlight"] {{
+            display:none !important;
+        }}
+        .stTabs div[role="tabpanel"],
+        .stTabs [data-baseweb="tab-panel"] {{
+            background:transparent !important;
+            color:var(--ink) !important;
+            border:0 !important;
+        }}
+        [data-baseweb="popover"] > div,
+        [data-baseweb="menu"],
+        [data-baseweb="select"] > div,
+        [data-testid="stExpander"],
+        [data-testid="stForm"],
+        [data-testid="stAlert"] {{
+            background:var(--glass) !important;
+            color:var(--ink) !important;
+            border-color:var(--line) !important;
+            box-shadow:var(--soft-shadow) !important;
+        }}
+        [data-baseweb="menu"] *,
+        [data-baseweb="popover"] *,
+        [data-testid="stExpander"] *,
+        [data-testid="stAlert"] * {{
+            color:var(--ink) !important;
+        }}
         .clinical-dashboard-shell {{
             position: relative;
             overflow: hidden;
@@ -1074,6 +1140,7 @@ def inject_premium_css(theme):
             .lux-grid {{ grid-template-columns: repeat(2, minmax(0,1fr)); }}
             .clinical-headline {{ grid-template-columns: 1fr; }}
             .telemetry-grid {{ grid-template-columns: 1fr; }}
+            .brand-title {{ font-size: clamp(1.38rem, 5vw, 1.82rem); }}
         }}
         @media (max-width: 680px) {{
             .lux-grid {{ grid-template-columns: 1fr; }}

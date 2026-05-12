@@ -82,14 +82,23 @@ class ThemeManager:
 /* ── Fonts & Base ──────────────────────────────────────────── */
 *,*::before,*::after {{ font-family:'DM Sans',system-ui,sans-serif !important; -webkit-font-smoothing:antialiased; box-sizing:border-box; }}
 h1,h2,h3,h4,h5,h6 {{ font-family:'Syne',sans-serif !important; font-weight:800 !important; letter-spacing:0 !important; color:var(--text) !important; }}
-html,body {{ background:var(--bg) !important; color:var(--text) !important; }}
+html,body {{
+    background:
+        radial-gradient(circle at 8% 8%, var(--primary-glow), transparent 32%),
+        radial-gradient(circle at 92% 14%, var(--hover-bg), transparent 30%),
+        var(--hero-gradient) !important;
+    color:var(--text) !important;
+}}
 .stApp {{
     background:
-        linear-gradient(180deg, rgba(255,255,255,0.10), rgba(255,255,255,0)),
+        radial-gradient(circle at 15% 10%, var(--primary-glow), transparent 34%),
+        radial-gradient(circle at 85% 18%, var(--hover-bg), transparent 32%),
+        linear-gradient(180deg, rgba(255,255,255,0.12), rgba(255,255,255,0)),
         var(--hero-gradient) !important;
+    background-attachment: fixed !important;
 }}
 
-.main,.main .block-container,[data-testid="stAppViewContainer"],[data-testid="stAppViewContainer"] > .main,[data-testid="stMain"],[data-testid="stVerticalBlock"],[data-testid="column"],.element-container {{ background:transparent !important; color:var(--text) !important; }}
+.main,.main .block-container,[data-testid="stAppViewContainer"],[data-testid="stAppViewContainer"] > .main,[data-testid="stMain"],[data-testid="stVerticalBlock"],[data-testid="column"],.element-container,[data-testid="stMarkdownContainer"],[data-testid="stTabs"],[data-testid="stForm"],[data-testid="stExpander"] {{ background:transparent !important; color:var(--text) !important; }}
 p,li,span,label,td,th,.stMarkdown,.stMarkdown *,[data-testid="stMarkdownContainer"],[data-testid="stMarkdownContainer"] * {{ color:var(--text) !important; }}
 small,.stCaption {{ color:var(--subtext) !important; }}
 
@@ -219,9 +228,47 @@ hr {{
 .stButton > button[kind="primary"] {{ background:var(--gradient) !important; border:none !important; color:var(--text-inverse) !important; }}
 
 /* ── Tabs ────────────────────────────────────────────────────── */
-.stTabs [data-baseweb="tab-list"] {{ background:var(--glass-bg) !important; border:1px solid var(--card-border) !important; border-radius:8px !important; padding:4px !important; }}
-.stTabs [data-baseweb="tab"] {{ color:var(--text-muted) !important; background:transparent !important; border:none !important; border-radius:6px !important; }}
-.stTabs [aria-selected="true"] {{ background:var(--gradient) !important; color:var(--text-inverse) !important; }}
+.stTabs [data-baseweb="tab-list"] {{
+    background:var(--glass-bg) !important;
+    border:1px solid var(--card-border) !important;
+    border-radius:14px !important;
+    padding:5px !important;
+    box-shadow:var(--shadow-sm) !important;
+    backdrop-filter: blur(18px) !important;
+}}
+.stTabs [data-baseweb="tab"],
+.stTabs button[role="tab"] {{
+    color:var(--text-muted) !important;
+    background:rgba(255,255,255,0.16) !important;
+    border:1px solid transparent !important;
+    border-radius:11px !important;
+    min-height:38px !important;
+}}
+.stTabs [data-baseweb="tab"] *,
+.stTabs button[role="tab"] * {{
+    color:inherit !important;
+}}
+.stTabs [aria-selected="true"],
+.stTabs button[role="tab"][aria-selected="true"] {{
+    background:var(--gradient) !important;
+    color:var(--text-inverse) !important;
+    border-color:var(--card-border) !important;
+    box-shadow:var(--shadow-md) !important;
+}}
+.stTabs [data-baseweb="tab-highlight"] {{
+    background:transparent !important;
+}}
+.stTabs [data-baseweb="tab-panel"],
+.stTabs div[role="tabpanel"] {{
+    background:transparent !important;
+    color:var(--text) !important;
+}}
+.stTabs [data-focus-visible-added],
+.stTabs button:focus,
+.stTabs button:active {{
+    outline:none !important;
+    box-shadow:var(--focus-ring) !important;
+}}
 
 /* ── Forms & Expanders ───────────────────────────────────────── */
 [data-testid="stForm"] {{ background:var(--glass-bg) !important; border:1px solid var(--card-border) !important; border-radius:8px !important; }}
