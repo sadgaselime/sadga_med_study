@@ -134,8 +134,12 @@ PRO_NAV_ITEMS = [
     ("knowledge_library", "subjects", "📚", "Library", "المكتبة", "#14b8a6"),
     ("question_bank", "mcq_quiz", "📝", "Q Bank", "الأسئلة", "#f97316"),
     ("flashcard_vault", "flashcards", "💎", "Cards", "البطاقات", "#ec4899"),
+    ("interactive_cases", "interactive_cases", "🧩", "Cases", "الحالات", "#f97316"),
     ("ai_study_tutor", "ai_tutor", "🤖", "AI Tutor", "المعلم", "#6366f1"),
     ("ai_mnemonics_studio", "ai_mnemonics", "💡", "Mnemonics", "الحفظ", "#eab308"),
+    ("clinical_calculators", "clinical_calculators", "🧮", "Calculators", "الحاسبات", "#0891b2"),
+    ("imaging_atlas", "imaging_atlas", "🩻", "Atlas", "الأطلس", "#7c3aed"),
+    ("pharmacology_matrix", "pharmacology_matrix", "💊", "Pharm Matrix", "الأدوية", "#059669"),
     ("clinical_skills_lab", "osce_timer", "🩺", "OSCE", "الأوسكي", "#ef4444"),
     ("focus_mode", "pomodoro", "⏱", "Focus", "التركيز", "#06b6d4"),
     ("performance_insights", "analytics", "📊", "Insights", "الأداء", "#22c55e"),
@@ -144,6 +148,53 @@ PRO_NAV_ITEMS = [
     ("settings", "settings", "⚙️", "Settings", "الإعدادات", "#64748b"),
     ("admin_content", "admin_content", "🛠", "Admin", "الإدارة", "#4f46e5"),
     ("about", "about", "ℹ️", "About", "عن التطبيق", "#9ca3af"),
+]
+
+
+SIDEBAR_NAV_GROUPS = [
+    {
+        "title": "Dashboard",
+        "icon": "📊",
+        "items": [("dashboard", "⌂", "Home"), ("profile", "👤", "Profile"), ("analytics", "📊", "Insights")],
+    },
+    {
+        "title": "Knowledge Hub",
+        "icon": "📚",
+        "items": [
+            ("study_pillars", "✚", "Pillars"),
+            ("az_hub", "🧠", "Med Hub"),
+            ("subjects", "📚", "Library"),
+            ("resources", "📖", "Refs"),
+            ("pharmacology_matrix", "💊", "Pharm Matrix"),
+        ],
+    },
+    {
+        "title": "Active Testing",
+        "icon": "🧠",
+        "items": [
+            ("mcq_quiz", "📝", "Q Bank"),
+            ("flashcards", "💎", "Cards"),
+            ("osce_timer", "🩺", "OSCE"),
+            ("interactive_cases", "🧩", "Interactive Cases"),
+        ],
+    },
+    {
+        "title": "Smart Tools",
+        "icon": "⚡",
+        "items": [
+            ("ai_tutor", "🤖", "AI Tutor"),
+            ("ai_mnemonics", "💡", "Mnemonics"),
+            ("pomodoro", "⏱", "Focus"),
+            ("shared_notes", "✍️", "Notes"),
+            ("clinical_calculators", "🧮", "Clinical Calculators"),
+            ("imaging_atlas", "🩻", "Imaging & Pathology Atlas"),
+        ],
+    },
+    {
+        "title": "System",
+        "icon": "⚙️",
+        "items": [("settings", "⚙️", "Settings"), ("about", "ℹ️", "About"), ("admin_content", "🛠", "Admin")],
+    },
 ]
 
 
@@ -417,6 +468,120 @@ def inject_premium_css(theme):
             display:grid;place-items:center;
             background:var(--glass);
             color:var(--ink) !important;
+        }}
+        [data-testid="stSidebar"] {{
+            background:
+                linear-gradient(180deg, rgba(255,255,255,0.86), rgba(248,251,255,0.70)),
+                radial-gradient(circle at 18% 0%, {theme["primary_glow"]}, transparent 34%) !important;
+            border-right: 1px solid rgba(255,255,255,0.74);
+            box-shadow: 18px 0 54px rgba(31,41,55,0.08);
+        }}
+        [data-testid="stSidebar"] > div:first-child {{
+            padding-top: 1.1rem;
+        }}
+        .sidebar-brand-card {{
+            border: 1px solid var(--line);
+            border-radius: 22px;
+            background:
+                linear-gradient(135deg, rgba(255,255,255,0.86), rgba(255,255,255,0.52)),
+                radial-gradient(circle at 100% 0%, {theme["primary_glow"]}, transparent 46%);
+            padding: 14px;
+            box-shadow: 0 18px 44px rgba(31,41,55,0.08);
+            margin-bottom: 12px;
+        }}
+        .sidebar-brand-row {{
+            display:flex;
+            align-items:center;
+            gap:10px;
+        }}
+        .sidebar-brand-mark {{
+            width:44px;
+            height:44px;
+            border-radius:16px;
+            display:grid;
+            place-items:center;
+            background: linear-gradient(135deg, var(--cyan), var(--emerald));
+            color:{theme["text_inverse"]} !important;
+            font-weight:950;
+            box-shadow:0 14px 32px rgba(56,213,255,0.18);
+        }}
+        .sidebar-brand-title {{
+            color:var(--ink) !important;
+            font-weight:950;
+            font-size:1.05rem;
+            line-height:1.05;
+        }}
+        .sidebar-brand-sub {{
+            color:var(--muted) !important;
+            font-size:.68rem;
+            text-transform:uppercase;
+            letter-spacing:.08em;
+            margin-top:2px;
+        }}
+        .sidebar-context-chip {{
+            display:flex;
+            align-items:center;
+            justify-content:space-between;
+            gap:8px;
+            margin-top:12px;
+            border:1px solid var(--line);
+            background:rgba(255,255,255,0.58);
+            border-radius:999px;
+            padding:7px 10px;
+            color:var(--muted) !important;
+            font-size:.69rem;
+            font-weight:850;
+        }}
+        .sidebar-mini-label {{
+            margin:.75rem 0 .3rem;
+            color:var(--muted) !important;
+            font-size:.68rem;
+            font-weight:950;
+            text-transform:uppercase;
+            letter-spacing:.1em;
+        }}
+        [data-testid="stSidebar"] [data-testid="stExpander"] {{
+            border: 1px solid var(--line) !important;
+            border-radius: 16px !important;
+            background: rgba(255,255,255,0.56) !important;
+            box-shadow: 0 10px 26px rgba(31,41,55,0.055);
+            overflow:hidden;
+            margin-bottom: 8px;
+        }}
+        [data-testid="stSidebar"] [data-testid="stExpander"] details summary {{
+            color: var(--ink) !important;
+            font-weight: 900 !important;
+            min-height: 42px;
+        }}
+        [data-testid="stSidebar"] .stButton > button {{
+            width:100% !important;
+            justify-content:flex-start !important;
+            min-height:38px !important;
+            border-radius:12px !important;
+            border:1px solid transparent !important;
+            background: transparent !important;
+            color: {theme["text_muted"]} !important;
+            box-shadow:none !important;
+            font-weight:850 !important;
+            text-align:left !important;
+            padding:.48rem .62rem !important;
+            margin:1px 0 !important;
+        }}
+        [data-testid="stSidebar"] .stButton > button:hover {{
+            background: {theme["hover_bg"]} !important;
+            border-color: {theme["card_border"]} !important;
+            color: {theme["text"]} !important;
+            transform: translateX(2px) !important;
+        }}
+        [data-testid="stSidebar"] .stButton > button[kind="primary"] {{
+            background: linear-gradient(135deg, {theme["primary"]}, {theme["secondary"]}) !important;
+            color: {theme["text_inverse"]} !important;
+            border-color: rgba(255,255,255,0.24) !important;
+            box-shadow: 0 12px 24px rgba(56,213,255,0.16) !important;
+        }}
+        [data-testid="stSidebar"] [data-testid="stSelectbox"],
+        [data-testid="stSidebar"] [data-testid="stTextInput"] {{
+            margin-bottom: .45rem;
         }}
         .language-chip {{
             display:flex;
@@ -1261,49 +1426,87 @@ def render_topbar(theme, themes):
 
 def render_sidebar():
     current_page = st.session_state.get("page", "dashboard")
-    language = st.session_state.get("language", "en")
-    nav_options = []
-    option_to_page = {}
-    for _, page_id, icon, label_en, label_ar, _ in PRO_NAV_ITEMS:
-        if page_id == "admin_content":
-            try:
-                from content_system import is_admin_user
-                if not is_admin_user(st.session_state.get("user")):
-                    continue
-            except Exception:
-                continue
-        label = label_ar if language == "ar" else label_en
-        option = f"{icon} {label}"
-        nav_options.append(option)
-        option_to_page[option] = page_id
-    page_to_option = {page_id: option for option, page_id in option_to_page.items()}
-    current_option = page_to_option.get(current_page, nav_options[0])
-    st.markdown(
-        f"""
-        <div class="student-workspace">
-            <div class="student-symbol">⚕</div>
-            <div>
-                <div class="student-workspace-title">{get_translation("workspace")}</div>
-                <div class="student-workspace-sub">{get_translation("workspace_subtitle")}</div>
+    with st.sidebar:
+        st.markdown(
+            """
+            <div class="sidebar-brand-card">
+                <div class="sidebar-brand-row">
+                    <div class="sidebar-brand-mark">MS</div>
+                    <div>
+                        <div class="sidebar-brand-title">MedStudy Oman</div>
+                        <div class="sidebar-brand-sub">Clinical study workspace</div>
+                    </div>
+                </div>
+                <div class="sidebar-context-chip"><span>SQU-COM · OMSB · USMLE</span><span>Live</span></div>
             </div>
-            <div class="student-badge">SQU-COM · OMSB · USMLE</div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-    selected_option = st.segmented_control(
-        "Workspace modules",
-        nav_options,
-        default=current_option,
-        label_visibility="collapsed",
-        key="workspace_module_selector",
-    )
-    selected_option = selected_option or current_option
-    selected_page = option_to_page[selected_option]
-    if current_page in page_to_option and selected_page != current_page:
-        st.session_state.page = selected_page
-        st.query_params["page"] = selected_page
-        st.rerun()
+            """,
+            unsafe_allow_html=True,
+        )
+        st.text_input("Search", placeholder=get_translation("search"), key="sidebar_search", label_visibility="collapsed")
+
+        st.markdown('<div class="sidebar-mini-label">Workspace</div>', unsafe_allow_html=True)
+        for group in SIDEBAR_NAV_GROUPS:
+            visible_items = []
+            for page_id, icon, label in group["items"]:
+                if page_id == "admin_content":
+                    try:
+                        from content_system import is_admin_user
+                        if not is_admin_user(st.session_state.get("user")):
+                            continue
+                    except Exception:
+                        continue
+                visible_items.append((page_id, icon, label))
+            if not visible_items:
+                continue
+            expanded = any(page_id == current_page for page_id, _, _ in visible_items)
+            with st.expander(f"{group['icon']} {group['title']}", expanded=expanded):
+                for page_id, icon, label in visible_items:
+                    active = page_id == current_page
+                    if st.button(f"{icon} {label}", key=f"side_nav_{page_id}", type="primary" if active else "secondary"):
+                        if not active:
+                            st.session_state.page = page_id
+                            st.query_params["page"] = page_id
+                            st.rerun()
+
+        st.markdown('<div class="sidebar-mini-label">Preferences</div>', unsafe_allow_html=True)
+        try:
+            from styles import THEMES
+            theme_keys = list(THEMES.keys())
+            current_theme = st.session_state.get("theme", theme_keys[0])
+            selected_theme = st.selectbox(
+                "Theme",
+                theme_keys,
+                index=theme_keys.index(current_theme) if current_theme in theme_keys else 0,
+                key="sidebar_theme_select",
+            )
+            if selected_theme != current_theme:
+                st.session_state.theme = selected_theme
+                if st.session_state.get("logged_in"):
+                    update_theme(st.session_state.user["id"], selected_theme)
+                st.rerun()
+        except Exception:
+            pass
+        render_language_selector()
+
+        st.markdown('<div class="sidebar-mini-label">Account</div>', unsafe_allow_html=True)
+        if st.session_state.get("logged_in"):
+            st.caption(st.session_state.user.get("email", "Logged in"))
+            col_a, col_b = st.columns(2)
+            with col_a:
+                if st.button(get_translation("profile"), use_container_width=True, key="side_profile_btn"):
+                    st.session_state.page = "profile"
+                    st.rerun()
+            with col_b:
+                if st.button(get_translation("logout"), use_container_width=True, key="side_logout_btn"):
+                    st.session_state.logged_in = False
+                    st.session_state.user = None
+                    st.session_state.page = "dashboard"
+                    st.rerun()
+        else:
+            if st.button(get_translation("login"), type="primary", use_container_width=True, key="side_login_btn"):
+                st.session_state.page = "auth"
+                st.session_state.auth_mode = "login"
+                st.rerun()
 
 
 PAGE_CINEMA = {
@@ -1314,8 +1517,12 @@ PAGE_CINEMA = {
     "subjects": ("📚", "Knowledge Library", "Browse medicine in a simple student-friendly way when you need to understand before memorising.", ["📖 Chapters", "✎ Review", "💡 Recall"]),
     "mcq_quiz": ("📝", "Question Bank", "Practice exam-style questions, learn from mistakes, and build confidence one set at a time.", ["? MCQs", "⏱ Timed", "📈 Score"]),
     "flashcards": ("💎", "Flashcard Vault", "Use quick recall cards for facts that are easy to forget before exams and ward rounds.", ["⚡ Recall", "🔁 Review", "🎓 Mastery"]),
+    "interactive_cases": ("🧩", "Interactive Patient Cases", "Work through clinical decisions step by step: order tests, interpret results, and commit to a diagnosis.", ["🩺 Vignettes", "🧪 Labs", "🧠 Dx"]),
     "ai_tutor": ("🤖", "AI Study Tutor", "Ask for simple explanations, clinical examples, or a study plan when a topic feels confusing.", ["AI Tutor", "🩺 Cases", "💬 Explain"]),
     "ai_mnemonics": ("💡", "AI Mnemonics Studio", "Turn long lists, pathways, and criteria into memorable English or Arabic study tricks.", ["💡 Memory", "🎨 Visual", "🧠 Quiz"]),
+    "clinical_calculators": ("🧮", "Clinical Calculators", "Use high-yield bedside scores with transparent inputs and risk interpretation.", ["GCS", "Wells", "eGFR"]),
+    "imaging_atlas": ("🩻", "Imaging & Pathology Atlas", "Build visual pattern recognition with filtered cases and annotation overlays.", ["X-ray", "CT/MRI", "Histology"]),
+    "pharmacology_matrix": ("💊", "Pharmacology Matrix", "Scan mechanisms, toxicities, black-box warnings, and drug interactions fast.", ["MOA", "Warnings", "Interactions"]),
     "osce_timer": ("🩺", "Clinical Skills Lab", "Practise stations like a real student exam: timing, structure, checklists, and closing summaries.", ["OSCE", "⏱ Timer", "✚ Skills"]),
     "pomodoro": ("⏱", "Focus Mode", "Start calm study blocks when you need to stop scrolling and finish one clear task.", ["⏱ Focus", "☕ Break", "✅ Session"]),
     "analytics": ("📊", "Performance Insights", "Find what is strong, what needs work, and what to study next without guessing.", ["📈 Trends", "🎯 Weak Areas", "🏆 Strong"]),

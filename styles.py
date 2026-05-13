@@ -102,23 +102,17 @@ html,body {{
 p,li,span,label,td,th,.stMarkdown,.stMarkdown *,[data-testid="stMarkdownContainer"],[data-testid="stMarkdownContainer"] * {{ color:var(--text) !important; }}
 small,.stCaption {{ color:var(--subtext) !important; }}
 
-/* ── SIDEBAR — HARDCODED BACKGROUND (guaranteed visible) ────── */
+/* ── Native sidebar shell ───────────────────────────────────── */
 html body section[data-testid="stSidebar"],
-html body [data-testid="stSidebar"],
-html body [data-testid="stSidebar"] > div,
-html body [data-testid="stSidebar"] > div > div,
-html body [data-testid="stSidebar"] > div > div > div {{
-    background-color: {sb} !important;
-    background:       {sb} !important;
-    min-width:        250px !important;
-    max-width:        280px !important;
-    width:            250px !important;
-    transform:        none !important;
-    left:             0 !important;
-    opacity:          1 !important;
-    visibility:       visible !important;
-    border-right:     3px solid {p} !important;
-    box-shadow:       6px 0 24px rgba(0,0,0,0.20) !important;
+html body [data-testid="stSidebar"] {{
+    background: {sb} !important;
+    min-width: 250px !important;
+    max-width: 290px !important;
+    width: 250px !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    border-right: 1px solid {p}55 !important;
+    box-shadow: 6px 0 24px rgba(0,0,0,0.12) !important;
 }}
 html body [data-testid="stSidebar"] p,
 html body [data-testid="stSidebar"] span,
@@ -128,7 +122,6 @@ html body [data-testid="stSidebar"] div {{ color:{txt} !important; }}
 html body [data-testid="stSidebar"] {{
     overflow: auto !important;
 }}
-html body [data-testid="stSidebar"] *,
 html body [data-testid="stSidebar"] [data-testid="stSidebarContent"],
 html body [data-testid="stSidebar"] [data-testid="stSidebarContent"] * {{
     opacity: 1 !important;
@@ -137,12 +130,16 @@ html body [data-testid="stSidebar"] [data-testid="stSidebarContent"] * {{
 html body [data-testid="stSidebar"] [data-testid="stSidebarContent"] {{
     display: block !important;
     width: 100% !important;
-    min-width: 250px !important;
+    min-width: 0 !important;
     transform: none !important;
     left: 0 !important;
+    position: relative !important;
+    z-index: 5 !important;
 }}
 html body [data-testid="stSidebar"] [data-testid="stVerticalBlock"] {{
     gap: 0.35rem !important;
+    position: relative !important;
+    z-index: 6 !important;
 }}
 html body [data-testid="stSidebar"] .stButton > button {{
     justify-content: flex-start !important;
@@ -296,24 +293,6 @@ hr {{
 
 @media (max-width:768px) {{
     .ai-bubble {{ right: 14px; bottom: 82px; width: 46px; height: 46px; }}
-}}
-
-/* The app uses in-page navigation. Hide Streamlit's native sidebar because
-   some desktop builds can reserve a blank collapsed layer over the content. */
-section[data-testid="stSidebar"],
-[data-testid="stSidebar"],
-[data-testid="stSidebar"] > div,
-[data-testid="stSidebar"] > div > div,
-[data-testid="stSidebar"] > div > div > div,
-[data-testid="collapsedControl"] {{
-    display: none !important;
-    min-width: 0 !important;
-    max-width: 0 !important;
-    width: 0 !important;
-    border: 0 !important;
-    box-shadow: none !important;
-    padding: 0 !important;
-    margin: 0 !important;
 }}
 
 /* ── Scrollbar ───────────────────────────────────────────────── */

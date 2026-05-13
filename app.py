@@ -12,7 +12,7 @@ st.set_page_config(
     page_title="MedStudy Oman",
     page_icon="🩺",
     layout="wide",
-    initial_sidebar_state="collapsed",
+    initial_sidebar_state="expanded",
 )
 
 from database import get_profile_overview, get_user_preferences, init_db, login_user, reset_password, signup_user
@@ -26,6 +26,12 @@ from ai_chat_page import ai_tutor_page as ai_chat_tutor_page
 from study_pillars_page import study_pillars_page
 from about_page import about_page
 from content_system import render_admin_content_panel, render_content_library
+from clinical_tools_pages import (
+    render_clinical_calculators,
+    render_imaging_pathology_atlas,
+    render_interactive_cases,
+    render_pharmacology_matrix,
+)
 from premium_platform import (
     apply_rtl_if_arabic,
     get_translation,
@@ -36,7 +42,6 @@ from premium_platform import (
     render_profile_dashboard,
     render_settings,
     render_sidebar,
-    render_topbar,
     render_ai_mnemonics,
 )
 
@@ -137,7 +142,8 @@ init_session()
 query_page = st.query_params.get("page")
 valid_pages = {
     "dashboard", "profile", "study_pillars", "az_hub", "subjects", "mcq_quiz", "flashcards",
-    "ai_tutor", "ai_mnemonics", "osce_timer", "pomodoro", "analytics",
+    "interactive_cases", "ai_tutor", "ai_mnemonics", "clinical_calculators",
+    "imaging_atlas", "pharmacology_matrix", "osce_timer", "pomodoro", "analytics",
     "resources", "shared_notes", "settings", "about", "admin_content",
 }
 if query_page in valid_pages and query_page != st.session_state.get("page"):
@@ -156,7 +162,6 @@ inject_mobile(theme)
 inject_premium_css(theme)
 apply_rtl_if_arabic()
 
-render_topbar(theme, THEMES)
 if st.session_state.page != "auth":
     render_sidebar()
 
@@ -193,8 +198,20 @@ elif page == "mcq_quiz":
 elif page == "flashcards":
     flashcards_page(theme)
 
+elif page == "interactive_cases":
+    render_interactive_cases(theme)
+
 elif page == "ai_tutor":
     ai_chat_tutor_page(theme)
+
+elif page == "clinical_calculators":
+    render_clinical_calculators(theme)
+
+elif page == "imaging_atlas":
+    render_imaging_pathology_atlas(theme)
+
+elif page == "pharmacology_matrix":
+    render_pharmacology_matrix(theme)
 
 elif page == "analytics":
     if st.session_state.get("logged_in") and "dashboard_page" in globals():

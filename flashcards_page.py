@@ -14,6 +14,11 @@ except Exception:
     get_flashcard_deck = None
     save_flashcard_review = None
 
+try:
+    from clinical_tools_pages import render_spaced_repetition_analytics
+except Exception:
+    render_spaced_repetition_analytics = None
+
 # ─────────────────────────────────────────────────────────────────────────────
 # BUILT-IN FLASHCARD DECKS
 # ─────────────────────────────────────────────────────────────────────────────
@@ -263,6 +268,10 @@ def _render_fc_setup(theme: dict):
             )
         st.markdown("</div>", unsafe_allow_html=True)
 
+    if render_spaced_repetition_analytics:
+        st.markdown("<div style='height:1rem'></div>", unsafe_allow_html=True)
+        render_spaced_repetition_analytics(theme)
+
 
 # ─────────────────────────────────────────────────────────────────────────────
 # MAIN FLASHCARD SESSION
@@ -466,6 +475,10 @@ def _render_fc_done(theme: dict, sess: dict, total: int):
         if st.button("🏠 Back to Setup", use_container_width=True):
             st.session_state.fc_started = False
             st.rerun()
+
+    if render_spaced_repetition_analytics:
+        st.markdown("<div style='height:1rem'></div>", unsafe_allow_html=True)
+        render_spaced_repetition_analytics(theme)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
