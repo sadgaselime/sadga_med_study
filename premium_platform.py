@@ -540,6 +540,17 @@ def inject_premium_css(theme):
             text-transform:uppercase;
             letter-spacing:.1em;
         }}
+        [data-testid="collapsedControl"] {{
+            display: none !important;
+        }}
+        button[data-testid="stBaseButton-headerNoPadding"][kind="headerNoPadding"] {{
+            display: none !important;
+        }}
+        .sidebar-route-list {{
+            margin: 2px 0 10px 10px;
+            padding: 2px 0 2px 9px;
+            border-left: 1px solid rgba(99, 102, 241, 0.22);
+        }}
         [data-testid="stSidebar"] [data-testid="stExpander"] {{
             border: 1px solid var(--line) !important;
             border-radius: 16px !important;
@@ -566,6 +577,14 @@ def inject_premium_css(theme):
             text-align:left !important;
             padding:.48rem .62rem !important;
             margin:1px 0 !important;
+            white-space: normal !important;
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
+        }}
+        [data-testid="stSidebar"] .stButton > button p {{
+            white-space: normal !important;
+            overflow-wrap: anywhere !important;
+            line-height: 1.12 !important;
         }}
         [data-testid="stSidebar"] .stButton > button:hover {{
             background: {theme["hover_bg"]} !important;
@@ -582,6 +601,17 @@ def inject_premium_css(theme):
         [data-testid="stSidebar"] [data-testid="stSelectbox"],
         [data-testid="stSidebar"] [data-testid="stTextInput"] {{
             margin-bottom: .45rem;
+        }}
+        [data-testid="stSidebar"] [data-testid="stTextInput"] input,
+        [data-testid="stSidebar"] [data-testid="stSelectbox"] div[data-baseweb="select"] > div {{
+            border: 1px solid var(--line) !important;
+            border-radius: 16px !important;
+            background: rgba(255,255,255,0.62) !important;
+            color: var(--ink) !important;
+            box-shadow: 0 10px 26px rgba(31,41,55,0.045) !important;
+        }}
+        [data-testid="stSidebar"] [data-testid="stTextInput"] input::placeholder {{
+            color: rgba(71, 61, 108, 0.55) !important;
         }}
         .language-chip {{
             display:flex;
@@ -1299,6 +1329,176 @@ def inject_premium_css(theme):
             font-weight:800;
             font-size:.78rem;
         }}
+        .education-notice {{
+            margin: -8px 0 16px;
+            width: fit-content;
+            max-width: 100%;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--muted) !important;
+            border: 1px solid var(--line);
+            background: var(--glass);
+            border-radius: 999px;
+            padding: 8px 12px;
+            font-size: .78rem;
+            font-weight: 800;
+            box-shadow: var(--soft-shadow);
+            backdrop-filter: blur(18px);
+        }}
+        .education-notice::before {{
+            content: "i";
+            width: 18px;
+            height: 18px;
+            display: inline-grid;
+            place-items: center;
+            border-radius: 999px;
+            background: linear-gradient(135deg, var(--cyan), var(--emerald));
+            color: {theme["text_inverse"]} !important;
+            font-size: .72rem;
+            font-weight: 950;
+        }}
+        .student-mission-shell {{
+            position: relative;
+            overflow: hidden;
+            display: grid;
+            grid-template-columns: minmax(0, 1.45fr) minmax(280px, .9fr);
+            gap: 16px;
+            margin: 18px 0 20px;
+            padding: clamp(16px, 2.2vw, 24px);
+            border-radius: 30px;
+            border: 1px solid rgba(99, 102, 241, 0.18);
+            background:
+                radial-gradient(circle at 12% 16%, rgba(34, 211, 238, 0.18), transparent 30%),
+                radial-gradient(circle at 82% 12%, rgba(139, 92, 246, 0.18), transparent 28%),
+                linear-gradient(135deg, rgba(255,255,255,0.74), rgba(255,255,255,0.46));
+            box-shadow: 0 28px 90px rgba(79, 70, 229, 0.13);
+            backdrop-filter: blur(24px);
+            isolation: isolate;
+        }}
+        .student-mission-shell::after {{
+            content: "";
+            position: absolute;
+            right: -8%;
+            bottom: -42%;
+            width: 34vw;
+            height: 34vw;
+            min-width: 260px;
+            min-height: 260px;
+            border-radius: 999px;
+            background: conic-gradient(from 90deg, rgba(16,185,129,.16), rgba(99,102,241,.20), rgba(34,211,238,.18), rgba(16,185,129,.16));
+            filter: blur(14px);
+            z-index: -1;
+            animation: clinicalOrb 22s linear infinite;
+        }}
+        .mission-kicker {{
+            display: inline-flex;
+            width: fit-content;
+            gap: 8px;
+            align-items: center;
+            padding: 8px 11px;
+            border: 1px solid rgba(99,102,241,.18);
+            border-radius: 999px;
+            background: rgba(255,255,255,.62);
+            color: #4f46e5 !important;
+            font-size: .74rem;
+            font-weight: 950;
+            text-transform: uppercase;
+            letter-spacing: .08em;
+        }}
+        .mission-title {{
+            color: var(--ink) !important;
+            font-size: clamp(1.55rem, 3vw, 2.9rem);
+            line-height: 1.04;
+            font-weight: 950;
+            margin: 12px 0 8px;
+        }}
+        .mission-copy {{
+            color: var(--muted) !important;
+            max-width: 760px;
+            line-height: 1.65;
+            font-size: .98rem;
+        }}
+        .mission-path {{
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0,1fr));
+            gap: 10px;
+            margin-top: 18px;
+        }}
+        .mission-step {{
+            border: 1px solid rgba(99,102,241,.14);
+            border-radius: 20px;
+            padding: 13px;
+            background: rgba(255,255,255,.62);
+            color: var(--premium-card-text) !important;
+            box-shadow: 0 14px 34px rgba(31,41,55,.055);
+        }}
+        .mission-step-num {{
+            color: #4f46e5 !important;
+            font-weight: 950;
+            font-size: .72rem;
+            text-transform: uppercase;
+            letter-spacing: .08em;
+        }}
+        .mission-step-title {{
+            color: var(--premium-card-text) !important;
+            font-weight: 950;
+            margin-top: 5px;
+        }}
+        .mission-step-copy {{
+            color: var(--premium-card-body) !important;
+            font-size: .82rem;
+            margin-top: 4px;
+            line-height: 1.42;
+        }}
+        .student-radar-card {{
+            border: 1px solid rgba(16,185,129,.18);
+            border-radius: 26px;
+            background:
+                linear-gradient(135deg, rgba(255,255,255,.72), rgba(255,255,255,.46)),
+                radial-gradient(circle at 82% 12%, rgba(16,185,129,.18), transparent 36%);
+            padding: 18px;
+            min-height: 100%;
+            box-shadow: 0 18px 44px rgba(16,185,129,.08);
+        }}
+        .radar-ring {{
+            width: 148px;
+            height: 148px;
+            margin: 8px auto 14px;
+            border-radius: 999px;
+            display: grid;
+            place-items: center;
+            background:
+                conic-gradient(var(--emerald) var(--readiness), rgba(99,102,241,.12) 0),
+                radial-gradient(circle, rgba(255,255,255,.94) 56%, transparent 57%);
+            box-shadow: inset 0 0 0 1px rgba(255,255,255,.72), 0 18px 38px rgba(16,185,129,.14);
+        }}
+        .radar-ring strong {{
+            color: var(--premium-card-text) !important;
+            font-size: 1.85rem;
+            font-weight: 950;
+        }}
+        .radar-label {{
+            color: var(--muted) !important;
+            text-align: center;
+            font-size: .82rem;
+            font-weight: 850;
+        }}
+        .radar-chip-grid {{
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0,1fr));
+            gap: 8px;
+            margin-top: 14px;
+        }}
+        .radar-chip {{
+            border-radius: 16px;
+            border: 1px solid var(--line);
+            background: rgba(255,255,255,.58);
+            padding: 10px;
+            color: var(--premium-card-text) !important;
+            font-size: .78rem;
+            font-weight: 900;
+        }}
         .disclaimer {{
             margin-top: 22px;
             color:var(--muted) !important;
@@ -1311,11 +1511,13 @@ def inject_premium_css(theme):
             .lux-grid {{ grid-template-columns: repeat(2, minmax(0,1fr)); }}
             .clinical-headline {{ grid-template-columns: 1fr; }}
             .telemetry-grid {{ grid-template-columns: 1fr; }}
+            .student-mission-shell {{ grid-template-columns: 1fr; }}
             .brand-title {{ font-size: clamp(1.38rem, 5vw, 1.82rem); }}
         }}
         @media (max-width: 680px) {{
             .lux-grid {{ grid-template-columns: 1fr; }}
             .hero-panel {{ border-radius:22px; }}
+            .mission-path {{ grid-template-columns: 1fr; }}
             .module-card, .lux-card {{ border-radius:20px; }}
             .student-workspace {{ grid-template-columns: auto 1fr; }}
             .student-badge {{ display:none; }}
@@ -1445,6 +1647,10 @@ def render_sidebar():
         st.text_input("Search", placeholder=get_translation("search"), key="sidebar_search", label_visibility="collapsed")
 
         st.markdown('<div class="sidebar-mini-label">Workspace</div>', unsafe_allow_html=True)
+        if "sidebar_group_open" not in st.session_state:
+            st.session_state.sidebar_group_open = {group["title"]: group["title"] == "Dashboard" for group in SIDEBAR_NAV_GROUPS}
+
+        active_group_title = None
         for group in SIDEBAR_NAV_GROUPS:
             visible_items = []
             for page_id, icon, label in group["items"]:
@@ -1458,8 +1664,37 @@ def render_sidebar():
                 visible_items.append((page_id, icon, label))
             if not visible_items:
                 continue
-            expanded = any(page_id == current_page for page_id, _, _ in visible_items)
-            with st.expander(f"{group['icon']} {group['title']}", expanded=expanded):
+            if any(page_id == current_page for page_id, _, _ in visible_items):
+                active_group_title = group["title"]
+                st.session_state.sidebar_group_open[group["title"]] = True
+
+        for group in SIDEBAR_NAV_GROUPS:
+            visible_items = []
+            for page_id, icon, label in group["items"]:
+                if page_id == "admin_content":
+                    try:
+                        from content_system import is_admin_user
+                        if not is_admin_user(st.session_state.get("user")):
+                            continue
+                    except Exception:
+                        continue
+                visible_items.append((page_id, icon, label))
+            if not visible_items:
+                continue
+
+            group_key = re.sub(r"[^a-z0-9]+", "_", group["title"].lower()).strip("_")
+            group_open = st.session_state.sidebar_group_open.get(group["title"], group["title"] == active_group_title)
+            marker = "▾" if group_open else "▸"
+            if st.button(
+                f"{marker} {group['icon']} {group['title']}",
+                key=f"side_group_toggle_{group_key}",
+                use_container_width=True,
+            ):
+                st.session_state.sidebar_group_open[group["title"]] = not group_open
+                st.rerun()
+
+            if group_open:
+                st.markdown('<div class="sidebar-route-list">', unsafe_allow_html=True)
                 for page_id, icon, label in visible_items:
                     active = page_id == current_page
                     if st.button(f"{icon} {label}", key=f"side_nav_{page_id}", type="primary" if active else "secondary"):
@@ -1467,6 +1702,7 @@ def render_sidebar():
                             st.session_state.page = page_id
                             st.query_params["page"] = page_id
                             st.rerun()
+                st.markdown("</div>", unsafe_allow_html=True)
 
         st.markdown('<div class="sidebar-mini-label">Preferences</div>', unsafe_allow_html=True)
         try:
@@ -1796,7 +2032,78 @@ def render_clinical_dashboard_visuals(stats):
     )
 
 
+def render_student_mission(stats):
+    progress = _clamp_percent(stats.get("overall_progress", 38), 38)
+    quiz = _clamp_percent(stats.get("mcq_percent", 0), 42)
+    streak = int(stats.get("streak", 0) or 0)
+    study_hours = float(stats.get("study_hours", 0) or 0)
+    readiness = _clamp_percent(round((progress * 0.45) + (quiz * 0.45) + min(streak, 14) * 0.7), 58)
+    review_due = max(8, 28 - min(streak * 2, 18))
+    weak_area = html.escape(str((stats.get("weak_areas") or ["Renal acid-base"])[0]))
+    strong_area = html.escape(str((stats.get("strong_areas") or ["Clinical reasoning"])[0]))
+    time_label = f"{study_hours:.1f}".rstrip("0").rstrip(".")
+
+    st.markdown(
+        f"""
+        <section class="student-mission-shell">
+            <div>
+                <div class="mission-kicker"><span class="status-dot"></span> Today's student mission</div>
+                <div class="mission-title">Study smarter, test actively, and protect your clinical confidence.</div>
+                <div class="mission-copy">
+                    Start with your highest-yield weak spot, convert it into recall, then finish with one clinical reasoning task.
+                    Your current priority is <strong>{weak_area}</strong>, while <strong>{strong_area}</strong> is your momentum area.
+                </div>
+                <div class="mission-path">
+                    <div class="mission-step">
+                        <div class="mission-step-num">Step 01</div>
+                        <div class="mission-step-title">Warm up notes</div>
+                        <div class="mission-step-copy">Read one focused topic and mark the exact point that feels unclear.</div>
+                    </div>
+                    <div class="mission-step">
+                        <div class="mission-step-num">Step 02</div>
+                        <div class="mission-step-title">Active recall</div>
+                        <div class="mission-step-copy">Review {review_due} due cards, then create one new pearl from memory.</div>
+                    </div>
+                    <div class="mission-step">
+                        <div class="mission-step-num">Step 03</div>
+                        <div class="mission-step-title">Clinical close</div>
+                        <div class="mission-step-copy">Do a case or 10 MCQs and read every explanation like ward teaching.</div>
+                    </div>
+                </div>
+            </div>
+            <div class="student-radar-card">
+                <div class="card-kicker">Exam readiness radar</div>
+                <div class="radar-ring" style="--readiness:{readiness}%"><strong>{readiness}%</strong></div>
+                <div class="radar-label">Built from progress, MCQ accuracy, streak, and saved study activity.</div>
+                <div class="radar-chip-grid">
+                    <div class="radar-chip">🔥 {streak} day streak</div>
+                    <div class="radar-chip">⏱ {time_label} study hrs</div>
+                    <div class="radar-chip">📝 {quiz}% MCQ avg</div>
+                    <div class="radar-chip">🔁 {review_due} cards due</div>
+                </div>
+            </div>
+        </section>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    actions = [
+        ("Start 10 MCQs", "mcq_quiz"),
+        ("Review Cards", "flashcards"),
+        ("Open Cases", "interactive_cases"),
+        ("Ask AI Tutor", "ai_tutor"),
+    ]
+    cols = st.columns(4)
+    for col, (label, page_id) in zip(cols, actions):
+        with col:
+            if st.button(label, key=f"mission_action_{page_id}", use_container_width=True):
+                st.session_state.page = page_id
+                st.query_params["page"] = page_id
+                st.rerun()
+
+
 def render_dashboard(stats):
+    render_student_mission(stats)
     render_hero()
     render_clinical_dashboard_visuals(stats)
     st.markdown(

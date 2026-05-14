@@ -158,8 +158,9 @@ html body [data-testid="stSidebar"] .stButton > button:hover {{
     transform: none !important;
 }}
 
-/* ── Sidebar toggle — ALWAYS show ──────────────────────────── */
-[data-testid="collapsedControl"] {{ display:flex !important; visibility:visible !important; opacity:1 !important; }}
+/* ── Sidebar toggle — suppress raw Material icon text from Streamlit ─── */
+[data-testid="collapsedControl"] {{ display:none !important; }}
+button[data-testid="stBaseButton-headerNoPadding"][kind="headerNoPadding"] {{ display:none !important; }}
 
 /* ── Header transparent (keep in DOM for sidebar toggle) ────── */
 [data-testid="stHeader"] {{ background:transparent !important; border-bottom:none !important; }}

@@ -18,7 +18,7 @@ st.set_page_config(
 from database import get_profile_overview, get_user_preferences, init_db, login_user, reset_password, signup_user
 from login_page import auth_page
 from styles import THEMES, ThemeManager
-from mobile import inject_mobile, render_bottom_nav
+from mobile import inject_mobile
 from timer_enhanced import timer_page
 from mcq_quiz_page import mcq_quiz_page
 from flashcards_page import flashcards_page
@@ -169,6 +169,10 @@ page = st.session_state.page
 
 if page != "auth":
     render_cinematic_page_banner(page)
+    st.markdown(
+        f'<div class="education-notice">{get_translation("educational_only")}</div>',
+        unsafe_allow_html=True,
+    )
 
 if page == "auth":
     auth_page(theme, login_user, signup_user)
@@ -298,6 +302,3 @@ elif page == "about":
 else:
     st.session_state.page = "dashboard"
     st.rerun()
-
-st.markdown(f'<div class="disclaimer">{get_translation("educational_only")}</div>', unsafe_allow_html=True)
-render_bottom_nav(theme)
